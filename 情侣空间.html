@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>情侣空间 - 湫丘捕梦机</title>   
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" sizes="180x180">
+    <meta name="theme-color" content="#f1f3f4">
+    <!-- iOS PWA 兼容 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="湫丘捕梦机">
+    <link rel="stylesheet" href="css/core-icons.min.css">
+    <link rel="stylesheet" href="css/core-ui.css">
+    <style>
+        :root {
+            --safe-inset-top: env(safe-area-inset-top, 0px);
+            --safe-inset-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        html, body {
+            height: 100%;
+            min-height: 100svh;
+            margin: 0;
+            padding: 0;
+            background: #ffffff;
+            overflow: hidden;
+        }
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button, .feature-card, .menu-item, .header-left, .header-right, .mailbox-action-btn, .friend-item {
+            touch-action: manipulation;
+        }
+
+        /* 简约黑白线条设计 */
+        .couple-space {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100svh;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: calc(16px + var(--safe-inset-top)) 20px calc(16px + var(--safe-inset-bottom));
+            background: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        
+        .header {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e5e5ea;
+            position: relative;
+            margin-bottom: 0;
+        }
+
+        /* 视图容器，支持滚动 */
+        #mainView, #selectionView {
+            flex: 1;
+            padding-top: 24px;
+            padding-bottom: calc(24px + var(--safe-inset-bottom));
+            min-height: 0;
+            position: relative;
+            z-index: 1;
+            /* iOS Safari 滚动优化 */
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+            touch-action: pan-y;
+        }
+
+        #mainView.hidden, #selectionView.hidden {
+            display: none !important;
+        }
+
+        .header-left {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: -10px;
+        }
+
+        .header-left i {
+            font-size: 20px;
+            color: #000;
+        }
+
+        .header h1 {
+            color: #000000;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: -0.5px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .header-right {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-right: -10px;
+        }
+
+        .header-right i {
+            font-size: 20px;
+            color: #000;
+        }
+
+        /* 隐藏类 */
+        .hidden {
+            display: none !important;
+        }
+
+        /* 选角色页样式 */
+        .selection-view {
+            text-align: center;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border: 1px solid #000;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 30px;
+            color: #666;
+        }
+
+        .selection-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #000;
+        }
+
+        .selection-subtitle {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        /* 好友列表样式 */
+        .friend-list {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .friend-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 15px;
+            min-height: 56px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+            /* iOS 长按防护 */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: pan-y;
+        }
+
+        .friend-item:active {
+            background: #fafafa;
+        }
+
+        .friend-avatar {
+            width: 44px;
+            height: 44px;
+            border: 1px solid #000;
+            border-radius: 50%;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 500;
+            background: #fff;
+            overflow: hidden;
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .friend-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .friend-info {
+            flex: 1;
+        }
+
+        .friend-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #000;
+            margin-bottom: 2px;
+        }
+
+        .friend-desc {
+            font-size: 12px;
+            color: #999;
+        }
+
+        /* 菜单样式 */
+        .menu-dropdown {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: #fff;
+            border: 1px solid #000;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            z-index: 1000;
+            display: none;
+            min-width: 100px;
+            overflow: hidden;
+        }
+
+        .menu-dropdown.active {
+            display: block;
+        }
+
+        .menu-item {
+            padding: 12px 16px;
+            min-height: 44px;
+            font-size: 14px;
+            color: #000;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .menu-item:active {
+            background: #f5f5f5;
+        }
+
+        .avatar-connection-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin: 50px 0 30px;
+            position: relative;
+            padding: 0 20px;
+        }
+        
+        .avatar-placeholder {
+            width: 80px;
+            height: 80px;
+            border: 1.5px solid #000000;
+            border-radius: 50%;
+            background: #ffffff;
+            flex-shrink: 0;
+            z-index: 2;
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .connection-design {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .connection-line {
+            width: 100%;
+            height: 1px;
+            background: #000;
+            position: relative;
+        }
+
+        .connection-line::before,
+        .connection-line::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #000;
+            top: -1.5px;
+        }
+
+        .connection-line::before { left: 0; }
+        .connection-line::after { right: 0; }
+
+        .heart-center {
+            position: absolute;
+            background: #ffffff;
+            padding: 0 10px;
+            font-size: 20px;
+            color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .heart-center i {
+            font-size: 16px;
+        }
+        
+        .header-desc {
+            color: #888888;
+            margin: 0 0 40px;
+            font-size: 13px;
+            font-weight: 400;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        
+        .feature-card {
+            /* iOS 长按防护 */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            background: #ffffff;
+            border: 1px solid #e5e5ea;
+            border-radius: 12px;
+            padding: 18px 12px;
+            text-align: center;
+            transition: all 0.2s ease;
+            position: relative;
+            min-height: 96px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .feature-card:active {
+            background: #f5f5f5;
+            transform: translateY(1px);
+        }
+        
+        .feature-icon {
+            font-size: 26px;
+            color: #000000;
+            margin-bottom: 2px;
+            opacity: 0.9;
+            line-height: 1;
+        }
+        
+        .feature-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #000000;
+            margin: 0;
+            letter-spacing: -0.2px;
+            line-height: 1.25;
+        }
+        
+        .love-timer {
+            background: #f2f2f7;
+            border: 1px solid #e5e5ea;
+            border-radius: 12px;
+            padding: 18px 16px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .timer-title {
+            font-size: 15px;
+            color: #666666;
+            margin: 0 0 12px;
+            font-weight: 500;
+        }
+        
+        .timer-display {
+            font-size: 22px;
+            font-weight: 600;
+            color: #000000;
+            font-family: 'SF Mono', Monaco, monospace;
+            letter-spacing: -0.5px;
+        }
+        
+        .back-btn {
+            display: block;
+            width: 100%;
+            background: #000000;
+            border: 1px solid #000000;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 16px;
+            color: #ffffff;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 48px;
+        }
+        
+        .back-btn:active {
+            background: #333333;
+            transform: translateY(1px);
+        }
+
+        /* 弹窗样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: #fff;
+            width: 80%;
+            max-width: 300px;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .modal-text {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .modal-btns {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            min-height: 44px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-btn.cancel {
+            background: #f5f5f5;
+            color: #666;
+            border: none;
+        }
+
+        .modal-btn.confirm {
+            background: #000;
+            color: #fff;
+            border: none;
+        }
+
+        /* 邀请好友浮窗列表 */
+        .invite-list-modal {
+            max-width: 320px;
+            width: 90%;
+            max-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .invite-list-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            background: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .invite-list-container {
+            flex: 1;
+            padding: 10px 0;
+        }
+
+        .invite-list-footer {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            background: #fff;
+        }
+
+        .invite-list-modal .friend-item {
+            padding: 12px 20px;
+        }
+
+        .invite-list-modal .friend-avatar {
+            width: 40px;
+            height: 40px;
+        }
+
+        .invite-list-modal .friend-name {
+            font-size: 14px;
+        }
+
+        .selection-header {
+            margin-bottom: 30px;
+        }
+
+        /* 信箱样式 - 全屏模式 */
+        #mailboxView {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100svh;
+            min-height: 100%;
+            background: #fff;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            padding-top: 0; /* 重置可能继承的 padding */
+        }
+
+        .mailbox-header-bar {
+            padding-top: calc(16px + var(--safe-inset-top)); /* 保持与 .couple-space 一致的顶部 padding */
+            height: auto; /* 高度由内容决定 */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-left: 20px; /* 保持与 .couple-space 一致的水平 padding */
+            padding-right: 20px;
+            padding-bottom: 12px; /* 保持与 .header 一致的底部 padding */
+            border-bottom: 1px solid #e0e0e0;
+            background: #fff;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .mailbox-center-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 12px; /* 调整位置 */
+            height: 44px; /* 保持按钮区域高度 */
+        }
+
+        .mailbox-title-text {
+            font-size: 20px; /* 调整字体大小与 .header h1 一致 */
+            font-weight: 600;
+            color: #000;
+            letter-spacing: -0.5px;
+        }
+
+        .mailbox-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid #000;
+            background-size: cover;
+            background-position: center;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #333;
+            overflow: hidden;
+        }
+
+        .mailbox-content-scroll {
+            flex: 1;
+            padding: 16px;
+            padding-bottom: calc(20px + var(--safe-inset-bottom, 0px));
+        }
+
+        /* 顶部栏按钮区域 */
+        .mailbox-action-btn {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px; /* 调整图标大小与 .header-left i 一致 */
+            color: #000;
+            cursor: pointer;
+            margin-left: -10px; /* 调整左边距 */
+        }
+        
+        .mailbox-action-btn:last-child {
+            margin-left: 0;
+            margin-right: -10px; /* 调整右边距 */
+        }
+
+        .mailbox-action-btn:active {
+            opacity: 0.6;
+        }
+
+        .mail-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .mail-item {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .mail-item:active {
+            background: #f9f9f9;
+            transform: scale(0.99);
+        }
+        
+        .mail-item.unread {
+            border-left: 4px solid #000;
+        }
+
+        .mail-icon-box {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            flex-shrink: 0;
+            color: #333;
+        }
+
+        .mail-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .mail-item-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: #000;
+            margin: 0 0 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mail-item-preview {
+            font-size: 12px;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .mail-item-meta {
+            font-size: 11px;
+            color: #bbb;
+            margin-top: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 0;
+            color: #bbb;
+        }
+
+        .empty-state i {
+            font-size: 40px;
+            margin-bottom: 16px;
+            color: #ddd;
+        }
+        
+        .empty-state p {
+            font-size: 14px;
+            margin: 0;
+        }
+
+        /* 弹窗定制 */
+        .mail-detail-content {
+            width: 90%;
+            max-width: 340px;
+            padding: 0;
+            background: transparent;
+            box-shadow: none;
+            overflow: visible;
+        }
+
+        .mail-paper {
+            background: #fff;
+            border-radius: 4px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            position: relative;
+            background-image: linear-gradient(#e0e0e0 1px, transparent 1px);
+            background-size: 100% 24px;
+            line-height: 24px;
+        }
+        
+        .mail-paper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 24px;
+            bottom: 0;
+            width: 2px;
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        .mail-paper-header {
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #000;
+            background: #fff; /* 遮盖横线 */
+            position: relative;
+            z-index: 1;
+        }
+
+        .mail-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .mail-title-display {
+            font-size: 18px;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .mail-body-container {
+            max-height: 50vh;
+            position: relative;
+            background: rgba(255,255,255,0.9);
+        }
+
+        .mail-body {
+            font-size: 15px;
+            color: #333;
+            white-space: pre-wrap;
+            line-height: 24px;
+            font-family: 'Georgia', serif;
+        }
+
+        .mail-footer {
+            margin-top: 20px;
+            text-align: right;
+            position: relative;
+            z-index: 1;
+        }
+
+        .reply-btn {
+            background: #000;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .close-mail-btn-round {
+            position: absolute;
+            top: -15px;
+            right: -10px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .compose-content {
+            text-align: left;
+            padding: 24px;
+        }
+
+        .compose-input {
+            width: 100%;
+            border: none;
+            border-bottom: 1px solid #ddd;
+            padding: 12px 0;
+            font-size: 16px;
+            outline: none;
+            margin-bottom: 16px;
+            border-radius: 0;
+            font-family: inherit;
+        }
+        
+        .compose-input:focus {
+            border-bottom-color: #000;
+        }
+
+        .compose-textarea {
+            width: 100%;
+            height: 150px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 14px;
+            outline: none;
+            resize: none;
+            background: #f9f9f9;
+            font-family: inherit;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .compose-textarea:focus {
+            background: #fff;
+            border-color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="couple-space">
+        <div class="header">
+            <div class="header-left" id="headerBackBtn">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <h1>情侣空间</h1>
+            <div class="header-right" id="headerMenuBtn">
+                <i class="fas fa-ellipsis-v"></i>
+                <div class="menu-dropdown" id="menuDropdown">
+                    <div class="menu-item" id="menuInvite">邀请</div>
+                    <div class="menu-item" id="menuBeautify">美化</div>
+                    <div class="menu-item" id="menuSettings">设置</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主界面内容 -->
+        <div id="mainView" class="hidden scroll-y-hidebar flex-scroll">
+            <div class="avatar-connection-section">
+                <div class="avatar-placeholder" id="userAvatar"></div>
+                <div class="connection-design">
+                    <div class="connection-line"></div>
+                    <div class="heart-center">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                </div>
+                <div class="avatar-placeholder" id="partnerAvatar"></div>
+            </div>
+            <p class="header-desc">TWO SOULS, ONE HEART</p>
+            
+            <div class="love-timer">
+                <div class="timer-title">在一起天数</div>
+                <div class="timer-display" id="loveDays">加载中...</div>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">相册</div>
+                    <div class="feature-title">甜蜜相册</div>
+                </div>
+                
+                <div class="feature-card" id="mailboxCard">
+                    <div class="feature-icon">信箱</div>
+                    <div class="feature-title">情书信箱</div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">任务</div>
+                    <div class="feature-title">恋爱任务</div>
+                </div>
+
+                <div class="feature-card" id="memorialCard">
+                    <div class="feature-icon">纪念</div>
+                    <div class="feature-title">纪念日</div>
+                </div>
+            </div>
+            
+            <button class="back-btn" id="enterSpaceBtn" style="margin-top: 20px;">进入共同空间</button>
+        </div>
+
+        <!-- 信箱列表页 -->
+        <div id="mailboxView" class="hidden">
+            <div class="mailbox-header-bar">
+                <div class="mailbox-action-btn" id="exitMailboxBtn">
+                    <i class="fas fa-chevron-left"></i>
+                </div>
+                <div class="mailbox-center-group">
+                    <div class="mailbox-avatar" id="mailboxUserAvatar">我</div>
+                    <div class="mailbox-title-text">时光信箱</div>
+                    <div class="mailbox-avatar" id="mailboxPartnerAvatar">TA</div>
+                </div>
+                <div class="mailbox-action-btn" id="writeLetterBtn">
+                    <i class="fas fa-pen"></i>
+                </div>
+            </div>
+            
+            <div class="mailbox-content-scroll scroll-y-hidebar flex-scroll">
+                <div class="mail-list" id="mailList">
+                    <!-- 动态生成 -->
+                </div>
+                <div class="empty-state hidden" id="mailEmptyState">
+                    <i class="far fa-envelope-open"></i>
+                    <p>还没有收到信件哦</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 选角色页 -->
+        <div id="selectionView" class="hidden scroll-y-hidebar flex-scroll">
+            <div class="selection-view">
+                <div id="selectionHeader" class="selection-header">
+                    <div class="status-badge">未开启情侣空间</div>
+                    <h2 class="selection-title">开启专属空间</h2>
+                    <p class="selection-subtitle">选择一位好友邀请开启情侣空间</p>
+                </div>
+                
+                <div class="friend-list" id="friendListContainer">
+                    <!-- 已邀请的好友列表将在这里动态渲染 -->
+                    <div style="text-align:center; color:#999; padding:40px 0; font-size:13px;">暂无已邀请好友</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 邀请好友列表浮窗 -->
+    <div class="modal-overlay" id="inviteListModal">
+        <div class="modal-content invite-list-modal">
+            <div class="invite-list-header">
+                <div class="modal-title" style="margin-bottom:0">选择好友邀请</div>
+            </div>
+            <div class="invite-list-container scroll-y-hidebar flex-scroll" id="uninvitedFriendList">
+                <!-- 未邀请好友列表将在这里动态渲染 -->
+            </div>
+            <div class="invite-list-footer">
+                <button class="modal-btn cancel" id="closeInviteList">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 邀请确认弹窗 -->
+    <div class="modal-overlay" id="inviteModal">
+        <div class="modal-content">
+            <div class="modal-title">发起邀请</div>
+            <div class="modal-text" id="inviteModalText">是否要邀请该好友开启情侣空间？</div>
+            <div class="modal-btns">
+                <button class="modal-btn cancel" id="cancelInvite">取消</button>
+                <button class="modal-btn confirm" id="confirmInvite">确认邀请</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 信件详情弹窗 -->
+    <div class="modal-overlay" id="mailDetailModal">
+        <div class="modal-content mail-detail-content">
+            <div class="mail-paper">
+                <div class="mail-paper-header">
+                    <div class="mail-info">
+                        <span class="mail-from" id="mailDetailFrom"></span>
+                        <span class="mail-date" id="mailDetailDate"></span>
+                    </div>
+                    <div class="mail-title-display" id="mailDetailTitle"></div>
+                </div>
+                <div class="mail-body-container scroll-y-hidebar flex-scroll">
+                    <div class="mail-body" id="mailDetailBody"></div>
+                </div>
+                <div class="mail-footer">
+                    <button class="reply-btn" id="replyMailBtn">
+                        <i class="fas fa-reply"></i> 回信
+                    </button>
+                </div>
+            </div>
+            <button class="close-mail-btn-round" id="closeMailDetail">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 写信弹窗 -->
+    <div class="modal-overlay" id="composeModal">
+        <div class="modal-content compose-content">
+            <div class="modal-title" id="composeModalTitle">写一封信</div>
+            <input type="text" id="composeTitle" class="compose-input" placeholder="信件标题...">
+            <textarea id="composeBody" class="compose-textarea" placeholder="在这里写下你想对TA说的话..."></textarea>
+            <div class="modal-btns">
+                <button class="modal-btn cancel" id="cancelCompose">取消</button>
+                <button class="modal-btn confirm" id="sendLetter">投递</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/core/SafeArea.js"></script>
+    <script src="js/core/StorageService.js"></script>
+    <script>
+        let currentPartner = null;
+        let selectedFriend = null;
+        let currentViewId = '';
+
+        // ==================== 存储服务 ====================
+        // IndexedDB 助手 (委派给 Core.StorageService)
+        window.ChatStorageDB = {
+            dbName: 'PhoneAppImages',
+            version: 5,
+
+            _req(request) {
+                return new Promise((resolve, reject) => {
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            },
+
+            async get(id) {
+                if (!window.parent.Core || !window.parent.Core.StorageService) return null;
+                return window.parent.Core.StorageService.transaction(this.dbName, ['images'], async (tx) => {
+                    const store = tx.objectStore('images');
+                    const result = await this._req(store.get(id));
+                    return result ? result.data : null;
+                });
+            },
+
+            async getAppData(key) {
+                if (!window.parent.Core || !window.parent.Core.StorageService) return null;
+                return window.parent.Core.StorageService.transaction(this.dbName, ['appData'], async (tx) => {
+                    const store = tx.objectStore('appData');
+                    const result = await this._req(store.get(key));
+                    return result ? result.value : null;
+                });
+            }
+        };
+
+        window.ImageStorageDB = window.ChatStorageDB;
+
+        const GROUP_ID = 'couple_space_main';
+
+        function getBlobUrlService() {
+            if (window.parent && window.parent.Core && window.parent.Core.BlobUrlService) return window.parent.Core.BlobUrlService;
+            if (window.Core && window.Core.BlobUrlService) return window.Core.BlobUrlService;
+            return null;
+        }
+
+        async function setElementImageFromStore(element, storedValue, fallbackText = '') {
+            if (!element) return;
+            const normalized = String(storedValue || '').trim();
+            
+            const prevUrl = element.dataset ? element.dataset.tempObjectUrl : '';
+            if (prevUrl) {
+                const blobUrlService = getBlobUrlService();
+                if (blobUrlService) blobUrlService.revokeObjectUrl(prevUrl);
+            }
+            if (element.dataset) delete element.dataset.tempObjectUrl;
+
+            if (!normalized) {
+                element.style.backgroundImage = '';
+                element.textContent = fallbackText;
+                return;
+            }
+
+            const setBgImage = (src, isTemp) => {
+                element.style.backgroundImage = `url("${src}")`;
+                element.style.backgroundSize = '100% 100%';
+                element.style.backgroundPosition = 'center';
+                element.style.backgroundRepeat = 'no-repeat';
+                element.textContent = '';
+                if (isTemp && element.dataset) element.dataset.tempObjectUrl = src;
+            };
+
+            if (normalized.startsWith('idb:')) {
+                const idbId = normalized.slice(4).trim();
+                try {
+                    const data = await window.ImageStorageDB.get(idbId);
+                    if (!data) {
+                        element.textContent = fallbackText;
+                        return;
+                    }
+                    if (typeof data === 'string') {
+                        setBgImage(data, false);
+                    } else {
+                        const blobUrlService = getBlobUrlService();
+                        if (!blobUrlService) throw new Error('BlobUrlService不可用');
+                        const url = await blobUrlService.toDisplayUrl(data, { preferDataUrlInFileProtocol: true, groupId: GROUP_ID + '-avatar' });
+                        setBgImage(url, true);
+                    }
+                } catch (e) {
+                    element.textContent = fallbackText;
+                }
+            } else {
+                setBgImage(normalized, false);
+            }
+        }
+
+        // 检查绑定状态
+        function checkBindingStatus() {
+            const boundPartner = localStorage.getItem('coupleSpace_partner');
+            const invitedListRaw = localStorage.getItem('coupleSpace_invited_list');
+            const invitedList = invitedListRaw ? JSON.parse(invitedListRaw) : [];
+
+            if (boundPartner) {
+                currentPartner = JSON.parse(boundPartner);
+                showView('mainView');
+                renderMainView();
+            } else {
+                showView('selectionView');
+                loadFriendsList();
+            }
+        }
+
+        // 切换视图
+        function showView(viewId) {
+            currentViewId = viewId;
+            document.getElementById('mainView').classList.add('hidden');
+            document.getElementById('selectionView').classList.add('hidden');
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        // 加载好友列表
+        function loadFriendsList() {
+            const container = document.getElementById('friendListContainer');
+            const uninvitedContainer = document.getElementById('uninvitedFriendList');
+            const selectionHeader = document.getElementById('selectionHeader');
+            
+            try {
+                const raw = localStorage.getItem('wechatAppData');
+                const invitedListRaw = localStorage.getItem('coupleSpace_invited_list');
+                const invitedIds = invitedListRaw ? JSON.parse(invitedListRaw) : [];
+
+                // 动态隐藏/显示引导页标题和提示
+                if (selectionHeader) {
+                    if (invitedIds.length > 0) {
+                        selectionHeader.classList.add('hidden');
+                    } else {
+                        selectionHeader.classList.remove('hidden');
+                    }
+                }
+
+                if (raw) {
+                    const appData = JSON.parse(raw);
+                    const contacts = appData.contacts || [];
+                    
+                    if (contacts.length === 0) {
+                        const emptyMsg = '<div style="text-align:center; color:#999; padding:40px 0; font-size:13px;">暂无好友，请先在“传讯”中添加</div>';
+                        container.innerHTML = emptyMsg;
+                        uninvitedContainer.innerHTML = emptyMsg;
+                        return;
+                    }
+
+                    // 区分已邀请和未邀请
+                    const invitedFriends = contacts.filter(f => invitedIds.includes(f.id));
+                    const uninvitedFriends = contacts.filter(f => !invitedIds.includes(f.id));
+
+                    // 渲染已邀请列表（引导页常态显示）
+                    renderFriendList(container, invitedFriends, '暂无已邀请好友', true);
+                    
+                    // 渲染未邀请列表（浮窗显示）
+                    renderFriendList(uninvitedContainer, uninvitedFriends, '所有好友均已邀请', false);
+                } else {
+                    const noDataMsg = '<div style="text-align:center; color:#999; padding:40px 0; font-size:13px;">暂无好友数据</div>';
+                    container.innerHTML = noDataMsg;
+                    uninvitedContainer.innerHTML = noDataMsg;
+                }
+            } catch (e) {
+                console.error('加载好友列表失败:', e);
+                container.innerHTML = '<div style="text-align:center; color:#f00; padding:40px 0; font-size:13px;">加载失败，请重试</div>';
+            }
+        }
+
+        // 通用渲染好友列表函数
+        function renderFriendList(container, friends, emptyText, isInvitedList = false) {
+            if (friends.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color:#999; padding:40px 0; font-size:13px;">${emptyText}</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            friends.forEach(friend => {
+                const item = document.createElement('div');
+                item.className = 'friend-item';
+                
+                const avatarId = `friend_avatar_${Math.random().toString(36).substr(2, 9)}_${friend.id}`;
+                const fallbackText = friend.name ? friend.name.charAt(0).toUpperCase() : '?';
+                
+                item.innerHTML = `
+                    <div class="friend-avatar" id="${avatarId}">${fallbackText}</div>
+                    <div class="friend-info">
+                        <div class="friend-name">${friend.name || '未知好友'}</div>
+                        <div class="friend-desc">${friend.intro || '这个人很懒，什么都没有留下...'}</div>
+                    </div>
+                `;
+                
+                // 异步加载头像
+                setTimeout(() => {
+                    const avatarEl = document.getElementById(avatarId);
+                    if (friend.hasCustomAvatar) {
+                        const avatarKey = `avatar_${friend.id}`;
+                        const avatarData = localStorage.getItem(avatarKey);
+                        if (avatarData) {
+                            setElementImageFromStore(avatarEl, avatarData, fallbackText);
+                        }
+                    }
+                }, 0);
+
+                item.onclick = () => {
+                    if (isInvitedList) {
+                        // 如果已经是已邀请好友，直接进入空间
+                        enterSpaceWithFriend(friend);
+                    } else {
+                        // 如果是未邀请好友，显示邀请弹窗
+                        hideInviteListModal();
+                        showInviteModal(friend);
+                    }
+                };
+                container.appendChild(item);
+            });
+        }
+
+        // 直接进入空间（绑定并切换视图）
+        function enterSpaceWithFriend(friend) {
+            localStorage.setItem('coupleSpace_partner', JSON.stringify({
+                id: friend.id,
+                name: friend.name,
+                avatarText: friend.name ? friend.name.charAt(0).toUpperCase() : '?',
+                startDate: new Date().toISOString()
+            }));
+            checkBindingStatus();
+        }
+
+        // 显示邀请列表浮窗
+        function showInviteListModal() {
+            document.getElementById('inviteListModal').classList.add('active');
+            loadFriendsList(); // 重新加载以确保列表最新
+        }
+
+        // 隐藏邀请列表浮窗
+        function hideInviteListModal() {
+            document.getElementById('inviteListModal').classList.remove('active');
+        }
+
+        // 显示邀请弹窗
+        function showInviteModal(friend) {
+            selectedFriend = friend;
+            const modal = document.getElementById('inviteModal');
+            const text = document.getElementById('inviteModalText');
+            text.textContent = `是否要邀请“${friend.name}”开启情侣空间？`;
+            modal.classList.add('active');
+        }
+
+        // 隐藏邀请弹窗
+        function hideInviteModal() {
+            document.getElementById('inviteModal').classList.remove('active');
+            selectedFriend = null;
+        }
+
+        // 确认邀请（绑定/加入已邀请列表）
+        function confirmInvite() {
+            if (!selectedFriend) return;
+            
+            // 更新已邀请列表
+            const invitedListRaw = localStorage.getItem('coupleSpace_invited_list');
+            const invitedList = invitedListRaw ? JSON.parse(invitedListRaw) : [];
+            if (!invitedList.includes(selectedFriend.id)) {
+                invitedList.push(selectedFriend.id);
+                localStorage.setItem('coupleSpace_invited_list', JSON.stringify(invitedList));
+            }
+
+            // 模拟绑定逻辑，保存到 localStorage (这里保持原逻辑，但也支持以后扩展)
+            // 如果用户点击已邀请的好友，会进入主界面
+            localStorage.setItem('coupleSpace_partner', JSON.stringify({
+                id: selectedFriend.id,
+                name: selectedFriend.name,
+                avatarText: selectedFriend.name ? selectedFriend.name.charAt(0).toUpperCase() : '?',
+                startDate: new Date().toISOString()
+            }));
+
+            hideInviteModal();
+            checkBindingStatus();
+        }
+
+        // 渲染主界面
+        async function renderMainView() {
+            if (!currentPartner) return;
+            
+            const partnerId = currentPartner.id;
+            const partnerAvatar = document.getElementById('partnerAvatar');
+            const userAvatar = document.getElementById('userAvatar');
+
+            let appData = null;
+            try {
+                const raw = localStorage.getItem('wechatAppData');
+                if (raw) appData = JSON.parse(raw);
+            } catch (e) {}
+
+            let contact = null;
+            if (appData && Array.isArray(appData.contacts)) {
+                contact = appData.contacts.find(c => String(c.id) === String(partnerId)) || null;
+            }
+
+            const partnerName = contact && contact.name ? String(contact.name) : (currentPartner.name || '');
+            const partnerFallback = (contact && contact.avatarText) ? contact.avatarText : (partnerName ? partnerName.charAt(0).toUpperCase() : '?');
+            if (partnerAvatar) {
+                if (contact && contact.hasCustomAvatar) {
+                    const avatarKey = `avatar_${contact.id}`;
+                    const avatarData = localStorage.getItem(avatarKey);
+                    if (avatarData) {
+                        setElementImageFromStore(partnerAvatar, avatarData, partnerFallback);
+                    } else {
+                        partnerAvatar.textContent = partnerFallback;
+                    }
+                } else {
+                    partnerAvatar.textContent = partnerFallback;
+                }
+            }
+
+            let personaAvatar = '';
+            let personaName = '';
+            let personaLibrary = null;
+            let friendMyPersonaSettings = null;
+
+            try {
+                if (window.ImageStorageDB && typeof window.ImageStorageDB.getAppData === 'function') {
+                    personaLibrary = await window.ImageStorageDB.getAppData('personaLibrary');
+                    friendMyPersonaSettings = await window.ImageStorageDB.getAppData('friendMyPersonaSettings');
+                }
+            } catch (e) {}
+
+            if (!personaLibrary) {
+                const rawList = localStorage.getItem('chat20.personaLibrary');
+                const rawDefaultId = localStorage.getItem('chat20.personaDefaultId') || '';
+                if (rawList) {
+                    try {
+                        const list = JSON.parse(rawList);
+                        personaLibrary = { list, defaultId: rawDefaultId };
+                    } catch (e) {}
+                }
+            }
+
+            if (!friendMyPersonaSettings) {
+                const rawMyPersona = localStorage.getItem('friendMyPersonaSettings');
+                if (rawMyPersona) {
+                    try { friendMyPersonaSettings = JSON.parse(rawMyPersona); } catch (e) {}
+                }
+            }
+
+            const selectedPersonaId = friendMyPersonaSettings && partnerId ? (friendMyPersonaSettings[partnerId] || '') : '';
+            const defaultPersonaId = personaLibrary && personaLibrary.defaultId ? personaLibrary.defaultId : '';
+            const personaId = selectedPersonaId || defaultPersonaId;
+
+            if (personaId && personaLibrary && Array.isArray(personaLibrary.list)) {
+                const persona = personaLibrary.list.find(p => String(p.id) === String(personaId));
+                if (persona) {
+                    personaAvatar = persona.avatar || '';
+                    personaName = persona.name || '';
+                }
+            }
+
+            if (userAvatar) {
+                if (personaAvatar) {
+                    setElementImageFromStore(userAvatar, personaAvatar, personaName ? personaName.charAt(0).toUpperCase() : '我');
+                } else if (appData && appData.currentUser && appData.currentUser.hasCustomAvatar) {
+                    const meAvatarKey = 'user_avatar';
+                    const meAvatarData = localStorage.getItem(meAvatarKey);
+                    if (meAvatarData) {
+                        setElementImageFromStore(userAvatar, meAvatarData, '我');
+                    } else {
+                        userAvatar.textContent = '我';
+                    }
+                } else {
+                    userAvatar.textContent = '我';
+                }
+            }
+
+            // 计算天数
+            calculateLoveDays(currentPartner.startDate);
+        }
+
+        // 计算在一起天数
+        function calculateLoveDays(startDateStr) {
+            const startDate = startDateStr ? new Date(startDateStr) : new Date('2024-01-01');
+            const today = new Date();
+            const diffTime = Math.abs(today - startDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            document.getElementById('loveDays').textContent = diffDays + ' 天';
+        }
+        
+        // 返回功能处理
+        function initApp() {
+            const handleBack = function() {
+                if (currentViewId === 'mainView') {
+                    showView('selectionView');
+                    loadFriendsList();
+                } else {
+                    if (window.parent && window.parent.mainApp && typeof window.parent.mainApp.closeCurrentApp === 'function') {
+                        window.parent.mainApp.closeCurrentApp();
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                }
+            };
+
+            const headerMenuBtn = document.getElementById('headerMenuBtn');
+            const menuDropdown = document.getElementById('menuDropdown');
+            
+            if (headerMenuBtn) {
+                headerMenuBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    menuDropdown.classList.toggle('active');
+                });
+            }
+
+            document.addEventListener('click', function() {
+                if (menuDropdown) menuDropdown.classList.remove('active');
+            });
+
+            const menuInvite = document.getElementById('menuInvite');
+            const menuBeautify = document.getElementById('menuBeautify');
+            const menuSettings = document.getElementById('menuSettings');
+            
+            if (menuInvite) menuInvite.addEventListener('click', showInviteListModal);
+            if (menuBeautify) menuBeautify.addEventListener('click', () => console.log('点击美化'));
+            if (menuSettings) menuSettings.addEventListener('click', () => console.log('点击设置'));
+
+            const closeInviteList = document.getElementById('closeInviteList');
+            if (closeInviteList) closeInviteList.addEventListener('click', hideInviteListModal);
+
+            const enterSpaceBtn = document.getElementById('enterSpaceBtn');
+            const headerBackBtn = document.getElementById('headerBackBtn');
+            const cancelInvite = document.getElementById('cancelInvite');
+            const confirmInviteBtn = document.getElementById('confirmInvite');
+            const memorialCard = document.getElementById('memorialCard');
+            
+            if (enterSpaceBtn) enterSpaceBtn.addEventListener('click', function() {
+                window.location.href = '共同空间.html';
+            });
+
+            if (memorialCard) memorialCard.addEventListener('click', function() {
+                window.location.href = '纪念日.html';
+            });
+            
+            if (headerBackBtn) headerBackBtn.addEventListener('click', handleBack);
+            if (cancelInvite) cancelInvite.addEventListener('click', hideInviteModal);
+            if (confirmInviteBtn) confirmInviteBtn.addEventListener('click', confirmInvite);
+
+            // 添加触摸反馈
+            const cards = document.querySelectorAll('.feature-card');
+            cards.forEach(card => {
+                card.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.95)';
+                });
+                
+                card.addEventListener('touchend', function() {
+                    this.style.transform = 'scale(1)';
+                });
+            });
+
+            // 检查初始状态
+            checkBindingStatus();
+
+            try {
+                window.parent.postMessage({ type: 'app_ready', appId: 'couple' }, '*');
+            } catch (e) {
+                console.error('Failed to send app_ready message:', e);
+            }
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        // ==================== 信箱功能模块 ====================
+        const MailboxApp = {
+            storageKey: 'couple_mailbox_data',
+            
+            init() {
+                this.bindEvents();
+                // 预置数据检查
+                const data = this.getData();
+                if (data.length === 0) {
+                    this.seedData();
+                }
+            },
+
+            bindEvents() {
+                // 入口点击
+                document.getElementById('mailboxCard').addEventListener('click', () => {
+                    this.openMailbox();
+                });
+
+                // 返回按钮
+                document.getElementById('exitMailboxBtn').addEventListener('click', () => {
+                    document.getElementById('mailboxView').classList.add('hidden');
+                    // 不需要操作 mainView，因为是覆盖模式
+                });
+
+                // 写信按钮
+                document.getElementById('writeLetterBtn').addEventListener('click', () => {
+                    this.openCompose();
+                });
+
+                // 关闭详情
+                document.getElementById('closeMailDetail').addEventListener('click', () => {
+                    document.getElementById('mailDetailModal').classList.remove('active');
+                });
+
+                // 详情页回信
+                document.getElementById('replyMailBtn').addEventListener('click', () => {
+                    document.getElementById('mailDetailModal').classList.remove('active');
+                    // 自动填充标题
+                    const currentTitle = document.getElementById('mailDetailTitle').textContent;
+                    const replyTitle = currentTitle.startsWith('Re:') ? currentTitle : `Re: ${currentTitle}`;
+                    this.openCompose(replyTitle);
+                });
+
+                // 写信弹窗取消
+                document.getElementById('cancelCompose').addEventListener('click', () => {
+                    document.getElementById('composeModal').classList.remove('active');
+                });
+
+                // 发送
+                document.getElementById('sendLetter').addEventListener('click', () => {
+                    this.sendLetter();
+                });
+            },
+
+            getData() {
+                try {
+                    return JSON.parse(localStorage.getItem(this.storageKey) || '[]');
+                } catch (e) {
+                    return [];
+                }
+            },
+
+            saveData(data) {
+                localStorage.setItem(this.storageKey, JSON.stringify(data));
+            },
+
+            seedData() {
+                const initialMails = [
+                    {
+                        id: 'mail_' + Date.now(),
+                        from: 'char',
+                        title: '第一封信',
+                        content: '这是我们的专属信箱，以后有什么想说的话，都可以写在这里哦。\n\n哪怕是碎碎念，或者是一个小小的愿望，我都会认真看的。',
+                        timestamp: Date.now() - 86400000,
+                        read: false
+                    }
+                ];
+                this.saveData(initialMails);
+            },
+
+            openMailbox() {
+                // 不需要隐藏 mainView，直接覆盖
+                document.getElementById('mailboxView').classList.remove('hidden');
+                
+                // 同步头像
+                this.syncAvatars();
+                
+                this.renderList();
+            },
+
+            syncAvatars() {
+                // 辅助函数：从源元素复制样式到目标元素
+                const copyAvatarStyle = (sourceId, targetId) => {
+                    const source = document.getElementById(sourceId);
+                    const target = document.getElementById(targetId);
+                    if (!source || !target) return;
+                    
+                    target.style.backgroundImage = source.style.backgroundImage;
+                    target.textContent = source.textContent;
+                    // 如果有背景图，清除文字
+                    if (source.style.backgroundImage && source.style.backgroundImage !== 'none') {
+                         target.textContent = '';
+                    }
+                };
+                
+                copyAvatarStyle('userAvatar', 'mailboxUserAvatar');
+                copyAvatarStyle('partnerAvatar', 'mailboxPartnerAvatar');
+            },
+
+            renderList() {
+                const list = this.getData();
+                const container = document.getElementById('mailList');
+                const emptyState = document.getElementById('mailEmptyState');
+                
+                container.innerHTML = '';
+                
+                if (list.length === 0) {
+                    emptyState.classList.remove('hidden');
+                } else {
+                    emptyState.classList.add('hidden');
+                    // 按时间倒序
+                    list.sort((a, b) => b.timestamp - a.timestamp);
+                    
+                    list.forEach(mail => {
+                        const item = document.createElement('div');
+                        item.className = `mail-item ${!mail.read ? 'unread' : ''}`;
+                        item.onclick = () => this.openMail(mail.id);
+                        
+                        const dateStr = new Date(mail.timestamp).toLocaleDateString();
+                        const fromName = mail.from === 'user' ? '我' : (selectedFriend ? selectedFriend.name : 'TA');
+                        
+                        item.innerHTML = `
+                            <div class="mail-icon-box">
+                                <i class="${mail.read ? 'far fa-envelope-open' : 'fas fa-envelope'}"></i>
+                            </div>
+                            <div class="mail-item-content">
+                                <div class="mail-item-title">${mail.title}</div>
+                                <div class="mail-item-preview">${mail.content.substring(0, 20)}...</div>
+                                <div class="mail-item-meta">
+                                    <span>From: ${fromName}</span>
+                                    <span>${dateStr}</span>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(item);
+                    });
+                }
+            },
+
+            openMail(id) {
+                const list = this.getData();
+                const mailIndex = list.findIndex(m => m.id === id);
+                if (mailIndex === -1) return;
+                
+                const mail = list[mailIndex];
+                
+                // 标记已读
+                if (!mail.read) {
+                    list[mailIndex].read = true;
+                    this.saveData(list);
+                    this.renderList(); // 刷新列表状态
+                }
+
+                const fromName = mail.from === 'user' ? '我' : (selectedFriend ? selectedFriend.name : 'TA');
+                
+                document.getElementById('mailDetailFrom').textContent = fromName;
+                document.getElementById('mailDetailDate').textContent = new Date(mail.timestamp).toLocaleString();
+                document.getElementById('mailDetailTitle').textContent = mail.title;
+                document.getElementById('mailDetailBody').textContent = mail.content;
+                
+                // 如果是自己发的信，隐藏回复按钮
+                const replyBtn = document.getElementById('replyMailBtn');
+                if (mail.from === 'user') {
+                    replyBtn.style.display = 'none';
+                } else {
+                    replyBtn.style.display = 'inline-flex';
+                }
+
+                document.getElementById('mailDetailModal').classList.add('active');
+            },
+
+            openCompose(defaultTitle = '') {
+                document.getElementById('composeTitle').value = defaultTitle;
+                document.getElementById('composeBody').value = '';
+                document.getElementById('composeModal').classList.add('active');
+            },
+
+            sendLetter() {
+                const title = document.getElementById('composeTitle').value.trim();
+                const content = document.getElementById('composeBody').value.trim();
+                
+                if (!title || !content) {
+                    alert('请把信写完再寄出哦~');
+                    return;
+                }
+
+                const newMail = {
+                    id: 'mail_' + Date.now(),
+                    from: 'user',
+                    title: title,
+                    content: content,
+                    timestamp: Date.now(),
+                    read: true // 自己写的默认已读
+                };
+
+                const list = this.getData();
+                list.push(newMail);
+                this.saveData(list);
+
+                document.getElementById('composeModal').classList.remove('active');
+                this.renderList();
+                
+                // 模拟回复 (如果是 demo)
+                if (selectedFriend && selectedFriend.id && selectedFriend.id.startsWith('ai_')) {
+                    setTimeout(() => {
+                        this.simulateReply(title);
+                    }, 5000);
+                }
+            },
+            
+            simulateReply(userTitle) {
+                // 简单的自动回复模拟
+                const list = this.getData();
+                const replyMail = {
+                    id: 'mail_' + Date.now(),
+                    from: 'char',
+                    title: `Re: ${userTitle}`,
+                    content: '收到你的信啦！\n\n(这是一个自动回复，真正的AI回复功能需要接入后端哦)',
+                    timestamp: Date.now(),
+                    read: false
+                };
+                list.push(replyMail);
+                this.saveData(list);
+                // 如果还在列表页，刷新
+                if (!document.getElementById('mailboxView').classList.contains('hidden')) {
+                    this.renderList();
+                }
+            }
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            MailboxApp.init();
+        });
+    </script>
+</body>
+</html>

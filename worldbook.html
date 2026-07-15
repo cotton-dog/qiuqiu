@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>世界书 - 独立版</title>
+    <!-- 核心样式库 -->
+    <link rel="stylesheet" href="css/core-icons.min.css">
+    <link rel="stylesheet" href="css/core-ui.css">
+    <script src="js/core/OperaKeyboardFix.js"></script>
+    <link rel="stylesheet" href="css/apps/worldbook.css">
+</head>
+<body>
+    <div class="phone-container">
+        <!-- 世界书应用容器 -->
+        <div class="phone-app-container world-book-app-container" id="worldBookAppContainer">
+            <div class="phone-app-header">
+                <div class="phone-app-header-left">
+                    <button class="phone-app-back-btn" id="worldBookBackBtn" title="返回主页">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+                <div class="phone-app-title">世界书</div>
+                <div class="phone-app-header-right world-book-header-right">
+                    <button class="phone-app-add-friend-btn" id="worldBookMenuBtn" title="菜单"><i class="fas fa-ellipsis-v"></i></button>
+                    <!-- 菜单下拉框 -->
+                    <div class="world-book-menu-dropdown" id="worldBookMenuDropdown">
+                        <div class="menu-item" data-action="create-category"><i class="fas fa-folder-plus"></i> 新建分类</div>
+                        <div class="menu-item" data-action="rename-category"><i class="fas fa-edit"></i> 重命名分类</div>
+                        <div class="menu-item" data-action="delete-category" style="color: #ff4d4f;"><i class="fas fa-trash-alt"></i> 删除分类</div>
+                    </div>
+                </div>
+            </div>
+            <div class="phone-app-content world-book-app-content">
+                <div class="world-book-tabs" id="worldBookTabs">
+                    <!-- 动态生成分类标签 -->
+                </div>
+                
+                <div id="worldBookList" class="world-book-list scroll-y-hidebar flex-scroll">
+                    <!-- 列表容器 -->
+                </div>
+
+                <!-- 编辑器覆盖层 -->
+                <div id="worldBookEditor" class="world-book-editor">
+                    <div class="phone-app-header">
+                        <div class="phone-app-header-left">
+                            <button class="phone-app-back-btn" id="editorCancelBtn"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="phone-app-title" id="editorHeaderTitle">新建条目</div>
+                        <div class="phone-app-header-right">
+                            <button class="phone-app-add-friend-btn" id="editorSaveBtn"><i class="fas fa-check"></i></button>
+                        </div>
+                    </div>
+                    <div class="world-book-editor-content">
+                        <input type="text" id="editorEntryTitle" class="world-book-entry-title" placeholder="条目名称 (如: 某个角色名)">
+                        <div class="world-book-settings-panel">
+                            <div class="world-book-settings-row">
+                                <div class="world-book-setting-label">注入位置</div>
+                                <div class="world-book-setting-options">
+                                    <label class="wb-option-label">
+                                        <input type="radio" name="wb_position" value="pre" class="wb-radio">
+                                        前置
+                                    </label>
+                                    <label class="wb-option-label">
+                                        <input type="radio" name="wb_position" value="mid" class="wb-radio">
+                                        中置
+                                    </label>
+                                    <label class="wb-option-label">
+                                        <input type="radio" name="wb_position" value="post" class="wb-radio" checked>
+                                        后置
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="world-book-settings-row">
+                                <div class="world-book-setting-label">触发模式</div>
+                                <div class="world-book-setting-options">
+                                    <label class="wb-option-label">
+                                        <input type="radio" name="wb_mode" value="always" class="wb-radio">
+                                        始终生效
+                                    </label>
+                                    <label class="wb-option-label">
+                                        <input type="radio" name="wb_mode" value="keyword" class="wb-radio" checked>
+                                        关键词生效
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="world-book-settings-row keyword-row" id="worldBookKeywordRow">
+                                <div class="world-book-setting-label">关键词</div>
+                                <input type="text" id="editorEntryKeywords" class="world-book-setting-input" placeholder="输入触发关键词，用空格分隔">
+                                <div class="world-book-keyword-chips" id="editorKeywordChips"></div>
+                            </div>
+                        </div>
+                        <textarea id="editorEntryContent" class="world-book-entry-content" placeholder="输入详细设定内容..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 简易输入对话框 -->
+        <div class="popup-window" id="simpleInputDialog">
+            <div class="popup-window-header">
+                <h3 id="simpleInputDialogTitle">标题</h3>
+                <button class="close-btn" id="simpleInputDialogClose" type="button" aria-label="关闭">&times;</button>
+            </div>
+            <div class="popup-window-content">
+                <div class="popup-window-section">
+                    <input type="text" id="simpleInputDialogInput" class="world-book-input" placeholder="">
+                </div>
+            </div>
+            <div class="popup-window-footer">
+                <button class="reset-btn" id="simpleInputDialogCancel">取消</button>
+                <button class="save-btn" id="simpleInputDialogConfirm">确认</button>
+            </div>
+        </div>
+
+        <!-- 成功提示 -->
+        <div class="phone-app-toast" id="appToast">
+            操作成功！
+        </div>
+    </div>
+
+    <!-- 依赖脚本 -->
+    <script src="js/core/StorageService.js"></script>
+    <script src="js/core/SafeArea.js"></script>
+    <script src="js/ImageStorageDB.js"></script>
+
+    <script>
+        // 尝试获取父窗口的 mainApp，否则使用 Mock 防止报错
+        if (window.parent && window.parent !== window && window.parent.mainApp) {
+            window.mainApp = window.parent.mainApp;
+        } else {
+            // 独立运行模式，不提供 mock 的 closeCurrentApp，或者提供一个能触发本地逻辑的 mock
+            window.mainApp = null; 
+        }
+
+        // 世界书应用模块
+        class WorldBookModule {
+            constructor() {
+                this.dbName = 'PhoneAppImages';
+                this.storeName = 'appData';
+                this.contentKey = 'worldBookContent'; // 旧的/扁平化数据 key，供 AI 读取
+                this.structureKey = 'worldBookStructure'; // 新的结构化数据 key
+                
+                this.categories = ['通用', '角色', '论坛', '同人文', '其他'];
+                this.currentCategory = '通用';
+                this.dataStructure = {}; // 内存中的数据缓存
+                this.currentEditingId = null;
+
+                this.appContainer = document.getElementById('worldBookAppContainer');
+                this.tabsContainer = document.getElementById('worldBookTabs');
+                
+                this.listContainer = document.getElementById('worldBookList');
+                this.menuBtn = document.getElementById('worldBookMenuBtn'); // 改为菜单按钮
+                this.menuDropdown = document.getElementById('worldBookMenuDropdown'); // 菜单下拉
+                this.backBtn = document.getElementById('worldBookBackBtn');
+
+                // Editor elements
+                this.editorContainer = document.getElementById('worldBookEditor');
+                this.editorCancelBtn = document.getElementById('editorCancelBtn');
+                this.editorSaveBtn = document.getElementById('editorSaveBtn');
+                this.editorTitleInput = document.getElementById('editorEntryTitle');
+                this.editorContentInput = document.getElementById('editorEntryContent');
+                this.editorHeaderTitle = document.getElementById('editorHeaderTitle');
+                this.positionRadios = document.querySelectorAll('input[name="wb_position"]');
+                this.modeRadios = document.querySelectorAll('input[name="wb_mode"]');
+                this.keywordRow = document.getElementById('worldBookKeywordRow');
+                this.keywordInput = document.getElementById('editorEntryKeywords');
+                this.keywordChips = document.getElementById('editorKeywordChips');
+                this.editorMode = 'edit';
+
+                // Dialog elements
+                this.dialog = document.getElementById('simpleInputDialog');
+                this.dialogTitle = document.getElementById('simpleInputDialogTitle');
+                this.dialogInput = document.getElementById('simpleInputDialogInput');
+                this.dialogCancel = document.getElementById('simpleInputDialogCancel');
+                this.dialogConfirm = document.getElementById('simpleInputDialogConfirm');
+                this.dialogClose = document.getElementById('simpleInputDialogClose');
+                this.dialogCallback = null;
+            }
+
+            init() {
+                // Menu Events
+                if (this.menuBtn) {
+                    this.menuBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.toggleMenu();
+                    });
+                }
+                document.addEventListener('click', () => this.closeMenu());
+
+                // Dropdown Items
+                if (this.menuDropdown) {
+                    const menuItems = this.menuDropdown.querySelectorAll('.menu-item');
+                    menuItems.forEach(item => {
+                        item.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            this.handleMenuAction(item.getAttribute('data-action'));
+                            this.closeMenu();
+                        });
+                    });
+                }
+                
+                if (this.backBtn) this.backBtn.addEventListener('click', () => {
+                    // 修复：优先使用postMessage通知父窗口关闭应用（iframe环境）
+                    const isIframe = window.self !== window.top;
+                    if (isIframe) {
+                        try {
+                            const origin = window.location.origin;
+                            const target = origin && origin !== 'null' ? origin : '*';
+                            window.parent.postMessage({ type: 'closeApp', appId: 'worldbook' }, target);
+                            return;
+                        } catch (e) {
+                            console.error('postMessage failed:', e);
+                        }
+                    }
+                    
+                    if (window.mainApp && typeof window.mainApp.closeCurrentApp === 'function') {
+                        window.mainApp.closeCurrentApp();
+                    } else {
+                        try {
+                            const params = new URLSearchParams(window.location.search);
+                            const back = String(params.get('back') || '').trim();
+                            if (back) {
+                                window.location.href = back;
+                                return;
+                            }
+                        } catch (e) {}
+                        try {
+                            if (window.history && window.history.length > 1) {
+                                window.history.back();
+                                return;
+                            }
+                        } catch (e) {}
+                        window.location.href = 'index.html';
+                    }
+                });
+                
+                // Editor events
+                if (this.editorCancelBtn) this.editorCancelBtn.addEventListener('click', () => this.closeEditor());
+                if (this.editorSaveBtn) this.editorSaveBtn.addEventListener('click', () => this.handleEditorAction());
+                if (this.modeRadios && this.modeRadios.length > 0) {
+                    Array.from(this.modeRadios).forEach(radio => {
+                        radio.addEventListener('change', () => {
+                            const mode = this._getCheckedValue(this.modeRadios, 'keyword');
+                            this._updateKeywordRow(mode);
+                        });
+                    });
+                }
+                
+                // Dialog events
+                if (this.dialogCancel) this.dialogCancel.addEventListener('click', () => this.closeDialog());
+                if (this.dialogClose) this.dialogClose.addEventListener('click', () => this.closeDialog());
+                if (this.dialogConfirm) this.dialogConfirm.addEventListener('click', () => {
+                    if (this.dialogCallback && this.dialogInput) {
+                        this.dialogCallback(this.dialogInput.value.trim());
+                    }
+                    this.closeDialog();
+                });
+
+                // 渲染分类标签
+                this.renderTabs();
+                this._updateKeywordRow(this._getCheckedValue(this.modeRadios, 'keyword'));
+                
+                // 自动加载数据 (独立运行时)
+                this.loadData().then(() => {
+                    this.renderList();
+                });
+
+                return this;
+            }
+
+            toggleMenu() {
+                if (this.menuDropdown) this.menuDropdown.classList.toggle('active');
+            }
+            closeMenu() {
+                if (this.menuDropdown) this.menuDropdown.classList.remove('active');
+            }
+
+            handleMenuAction(action) {
+                if (action === 'create-category') {
+                    this.showDialog('新建分类', '', (val) => {
+                        if (!val) return;
+                        if (this.categories.includes(val)) {
+                            this._toast('分类已存在');
+                            return;
+                        }
+                        this.categories.push(val);
+                        this.dataStructure[val] = [];
+                        this.saveData();
+                        this.renderTabs();
+                        this.switchCategory(val);
+                    });
+                } else if (action === 'rename-category') {
+                    if (this.currentCategory === '通用') {
+                        this._toast('“通用”分类不可重命名');
+                        return;
+                    }
+                    this.showDialog('重命名分类', this.currentCategory, (val) => {
+                        if (!val || val === this.currentCategory) return;
+                        if (this.categories.includes(val)) {
+                            this._toast('分类名已存在');
+                            return;
+                        }
+                        const oldCat = this.currentCategory;
+                        const data = this.dataStructure[oldCat];
+                        this.dataStructure[val] = data;
+                        delete this.dataStructure[oldCat];
+                        
+                        const idx = this.categories.indexOf(oldCat);
+                        if (idx > -1) this.categories[idx] = val;
+                        
+                        this.currentCategory = val;
+                        this.saveData();
+                        this.renderTabs();
+                    });
+                } else if (action === 'delete-category') {
+                    if (this.currentCategory === '通用') {
+                        this._toast('“通用”分类不可删除');
+                        return;
+                    }
+                    if (confirm(`确定要删除分类【${this.currentCategory}】及其下所有条目吗？`)) {
+                        const oldCat = this.currentCategory;
+                        delete this.dataStructure[oldCat];
+                        this.categories = this.categories.filter(c => c !== oldCat);
+                        this.currentCategory = '通用';
+                        this.saveData();
+                        this.renderTabs();
+                        this.renderList();
+                    }
+                }
+            }
+
+            showDialog(title, placeholder, callback) {
+                if (this.dialog) {
+                    if (this.dialogTitle) this.dialogTitle.textContent = title;
+                    if (this.dialogInput) {
+                        this.dialogInput.value = placeholder || '';
+                        this.dialogInput.placeholder = '请输入...';
+                    }
+                    this.dialogCallback = callback;
+                    this.dialog.classList.add('active');
+                    setTimeout(() => {
+                        if (this.dialogInput) this.dialogInput.focus();
+                    }, 100);
+                }
+            }
+            closeDialog() {
+                if (this.dialog) this.dialog.classList.remove('active');
+                this.dialogCallback = null;
+            }
+
+            renderTabs() {
+                if (!this.tabsContainer) return;
+                this.tabsContainer.innerHTML = '';
+                this.categories.forEach(cat => {
+                    const tab = document.createElement('div');
+                    tab.className = 'world-book-tab-item';
+                    if (cat === this.currentCategory) tab.classList.add('active');
+                    tab.textContent = cat;
+                    tab.onclick = () => this.switchCategory(cat);
+                    this.tabsContainer.appendChild(tab);
+                });
+            }
+
+            switchCategory(newCat) {
+                if (newCat === this.currentCategory) return;
+                this.currentCategory = newCat;
+                this.renderTabs();
+                this.renderList();
+            }
+
+            async open() {
+                if (window.mainApp && typeof window.mainApp.closeCurrentApp === 'function') {
+                    window.mainApp.closeCurrentApp(true);
+                }
+                
+                // 加载数据
+                await this.loadData();
+                this.renderList();
+            }
+
+            close() {
+                this.closeEditor();
+            }
+
+            async loadData() {
+                // 尝试加载结构化数据
+                const struct = await this._getDbValue(this.structureKey);
+                
+                if (struct && typeof struct === 'object' && !Array.isArray(struct)) {
+                    this.dataStructure = struct;
+                    // 恢复分类列表
+                    if (Array.isArray(struct.__categories__)) {
+                        this.categories = struct.__categories__;
+                    }
+                } else {
+                    // 迁移旧数据
+                    const content = await this._getDbValue(this.contentKey);
+                    this.dataStructure = {};
+                    this.categories.forEach(c => this.dataStructure[c] = []);
+                    
+                    if (typeof content === 'string' && content.trim()) {
+                        // 将旧的“通用”内容迁移为一条条目
+                        this.dataStructure['通用'] = [{
+                            id: Date.now(),
+                            title: '迁移数据',
+                            content: content
+                        }];
+                    }
+                }
+
+                // 确保当前分类存在
+                if (!this.categories.includes(this.currentCategory)) {
+                    this.currentCategory = this.categories[0] || '通用';
+                }
+
+                // 确保所有分类都是数组
+                this.categories.forEach(c => {
+                    if (!Array.isArray(this.dataStructure[c])) {
+                        // 如果是字符串（之前的内存结构），尝试迁移
+                        if (typeof this.dataStructure[c] === 'string' && this.dataStructure[c]) {
+                             this.dataStructure[c] = [{
+                                id: Date.now() + Math.random(),
+                                title: '未命名',
+                                content: this.dataStructure[c]
+                            }];
+                        } else {
+                            this.dataStructure[c] = [];
+                        }
+                    }
+                });
+            }
+
+            renderList() {
+                if (!this.listContainer) return;
+                this.listContainer.innerHTML = '';
+                
+                // 1. 添加“新建条目”入口
+                const createEl = document.createElement('div');
+                createEl.className = 'world-book-create-item';
+                createEl.innerHTML = `<i class="fas fa-plus"></i> 新建条目`;
+                createEl.onclick = () => this.openEditor(null);
+                this.listContainer.appendChild(createEl);
+
+                // 2. 渲染列表
+                const list = this.dataStructure[this.currentCategory] || [];
+                
+                if (list.length === 0) {
+                    const emptyTip = document.createElement('div');
+                    emptyTip.className = 'empty-state';
+                    emptyTip.style.padding = '20px';
+                    emptyTip.textContent = '此分类下暂无内容';
+                    this.listContainer.appendChild(emptyTip);
+                    return;
+                }
+
+                list.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'world-book-item';
+                    el.innerHTML = `
+                        <div class="world-book-item-title">
+                            <span>${this.escapeHtml(item.title || '未命名')}</span>
+                            <span class="world-book-item-delete" title="删除">删除</span>
+                        </div>
+                        <div class="world-book-item-preview">${this.escapeHtml(item.content || '')}</div>
+                    `;
+                    
+                    // 点击卡片编辑
+                    el.addEventListener('click', (e) => {
+                         // 如果点击的是删除按钮，不触发编辑
+                        if (e.target.classList.contains('world-book-item-delete')) {
+                            e.stopPropagation();
+                            this.deleteEntry(item.id);
+                            return;
+                        }
+                        this.openEditor(item);
+                    });
+                    
+                    this.listContainer.appendChild(el);
+                });
+            }
+
+            openEditor(entry) {
+                if (!this.editorContainer) return;
+
+                this.closeMenu();
+                
+                if (entry) {
+                    this.currentEditingId = entry.id;
+                    if (this.editorHeaderTitle) this.editorHeaderTitle.textContent = '编辑条目';
+                    if (this.editorTitleInput) this.editorTitleInput.value = entry.title || '';
+                    if (this.editorContentInput) this.editorContentInput.value = entry.content || '';
+                    if (this.keywordInput) this.keywordInput.value = entry.keywords || '';
+                    this._setCheckedValue(this.positionRadios, entry.position || 'post');
+                    this._setCheckedValue(this.modeRadios, entry.mode || 'keyword');
+                    this._updateKeywordRow(entry.mode || 'keyword');
+                    this.enterViewMode(entry);
+                } else {
+                    this.currentEditingId = null;
+                    if (this.editorHeaderTitle) this.editorHeaderTitle.textContent = '新建条目';
+                    if (this.editorTitleInput) this.editorTitleInput.value = '';
+                    if (this.editorContentInput) this.editorContentInput.value = '';
+                    if (this.keywordInput) this.keywordInput.value = '';
+                    this._setCheckedValue(this.positionRadios, 'post');
+                    this._setCheckedValue(this.modeRadios, 'keyword');
+                    this._updateKeywordRow('keyword');
+                    this.enterEditMode();
+                }
+                
+                this.editorContainer.classList.add('active');
+                if (this.editorTitleInput) setTimeout(() => this.editorTitleInput.focus(), 300);
+            }
+
+            closeEditor() {
+                if (this.editorContainer) this.editorContainer.classList.remove('active');
+                this.currentEditingId = null;
+                this.editorMode = 'edit';
+            }
+
+            handleEditorAction() {
+                if (this.editorMode === 'view') {
+                    this.enterEditMode();
+                    return;
+                }
+                this.saveEntry();
+            }
+
+            enterViewMode(entry) {
+                this.editorMode = 'view';
+                if (this.editorTitleInput) this.editorTitleInput.readOnly = true;
+                if (this.editorContentInput) this.editorContentInput.readOnly = true;
+                if (this.keywordInput) this.keywordInput.readOnly = true;
+                if (this.positionRadios && this.positionRadios.length > 0) {
+                    Array.from(this.positionRadios).forEach(radio => { radio.disabled = true; });
+                }
+                if (this.modeRadios && this.modeRadios.length > 0) {
+                    Array.from(this.modeRadios).forEach(radio => { radio.disabled = true; });
+                }
+                if (this.editorSaveBtn) {
+                    this.editorSaveBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                    this.editorSaveBtn.setAttribute('title', '编辑');
+                    this.editorSaveBtn.setAttribute('aria-label', '编辑');
+                }
+                this._renderKeywordChips(entry ? entry.keywords : (this.keywordInput ? this.keywordInput.value : ''));
+                this._syncKeywordInputs();
+            }
+
+            enterEditMode() {
+                this.editorMode = 'edit';
+                if (this.editorTitleInput) this.editorTitleInput.readOnly = false;
+                if (this.editorContentInput) this.editorContentInput.readOnly = false;
+                if (this.keywordInput) this.keywordInput.readOnly = false;
+                if (this.positionRadios && this.positionRadios.length > 0) {
+                    Array.from(this.positionRadios).forEach(radio => { radio.disabled = false; });
+                }
+                if (this.modeRadios && this.modeRadios.length > 0) {
+                    Array.from(this.modeRadios).forEach(radio => { radio.disabled = false; });
+                }
+                if (this.editorSaveBtn) {
+                    this.editorSaveBtn.innerHTML = '<i class="fas fa-check"></i>';
+                    this.editorSaveBtn.setAttribute('title', '保存');
+                    this.editorSaveBtn.setAttribute('aria-label', '保存');
+                }
+                this._syncKeywordInputs();
+            }
+
+            async saveEntry() {
+                const title = this.editorTitleInput ? this.editorTitleInput.value.trim() : '';
+                const content = this.editorContentInput ? this.editorContentInput.value : '';
+                const position = this._getCheckedValue(this.positionRadios, 'post');
+                const mode = this._getCheckedValue(this.modeRadios, 'keyword');
+                const keywords = this.keywordInput ? this.keywordInput.value.trim() : '';
+                
+                if (!title) {
+                    this._toast('请输入条目名称');
+                    return;
+                }
+
+                const list = this.dataStructure[this.currentCategory];
+                
+                if (this.currentEditingId) {
+                    // 编辑现有
+                    const idx = list.findIndex(i => i.id === this.currentEditingId);
+                    if (idx > -1) {
+                        list[idx].title = title;
+                        list[idx].content = content;
+                        list[idx].position = position;
+                        list[idx].mode = mode;
+                        list[idx].keywords = mode === 'keyword' ? keywords : '';
+                        list[idx].updatedAt = Date.now();
+                    }
+                } else {
+                    // 新增
+                    list.push({
+                        id: Date.now(),
+                        title: title,
+                        content: content,
+                        position: position,
+                        mode: mode,
+                        keywords: mode === 'keyword' ? keywords : '',
+                        createdAt: Date.now()
+                    });
+                }
+
+                await this.saveData();
+                this.closeEditor();
+                this.renderList();
+            }
+
+            async deleteEntry(id) {
+                if (!confirm('确定要删除这个条目吗？')) return;
+                
+                const list = this.dataStructure[this.currentCategory];
+                const idx = list.findIndex(i => i.id === id);
+                if (idx > -1) {
+                    list.splice(idx, 1);
+                    await this.saveData();
+                    this.renderList();
+                }
+            }
+
+            async saveData() {
+                console.log('[WorldBook] saveData called, dataStructure:', JSON.stringify(this.dataStructure).substring(0, 500));
+                
+                this.dataStructure.__categories__ = this.categories;
+                console.log('[WorldBook] Categories to save:', this.categories);
+
+                await this._setDbValue(this.structureKey, this.dataStructure);
+                
+                let fullContent = '';
+                this.categories.forEach(cat => {
+                    const list = this.dataStructure[cat];
+                    if (list && list.length > 0) {
+                        fullContent += `【${cat}】\n`;
+                        list.forEach(item => {
+                            fullContent += `Title: ${item.title}\n${item.content}\n---\n`;
+                        });
+                        fullContent += `\n`;
+                    }
+                });
+                
+                await this._setDbValue(this.contentKey, fullContent.trim());
+                
+                console.log('[WorldBook] saveData completed');
+                this._toast('已保存');
+            }
+
+            escapeHtml(text) {
+                if (!text) return '';
+                return text
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            _getCheckedValue(nodeList, fallback) {
+                if (!nodeList || nodeList.length === 0) return fallback;
+                const selected = Array.from(nodeList).find(el => el && el.checked);
+                return selected ? selected.value : fallback;
+            }
+
+            _setCheckedValue(nodeList, value) {
+                if (!nodeList || nodeList.length === 0) return;
+                let matched = false;
+                Array.from(nodeList).forEach(el => {
+                    if (!el) return;
+                    const isMatch = el.value === value;
+                    el.checked = isMatch;
+                    if (isMatch) matched = true;
+                    if (isMatch) matched = true;
+                });
+                if (!matched) {
+                    const fallbackEl = Array.from(nodeList).find(el => el && el.value === 'post') || Array.from(nodeList).find(el => el && el.value === 'keyword') || nodeList[0];
+                    if (fallbackEl) fallbackEl.checked = true;
+                }
+            }
+
+            _updateKeywordRow(mode) {
+                if (!this.keywordRow) return;
+                if (mode === 'keyword') {
+                    this.keywordRow.style.display = 'flex';
+                } else {
+                    this.keywordRow.style.display = 'none';
+                }
+                this._syncKeywordInputs();
+            }
+
+            _syncKeywordInputs() {
+                if (this.keywordInput) this.keywordInput.style.display = this.editorMode === 'edit' ? 'block' : 'none';
+                if (this.keywordChips) this.keywordChips.style.display = this.editorMode === 'view' ? 'flex' : 'none';
+                if (this.editorMode === 'view') {
+                    this._renderKeywordChips(this.keywordInput ? this.keywordInput.value : '');
+                }
+            }
+
+            _renderKeywordChips(raw) {
+                if (!this.keywordChips) return;
+                const keywords = String(raw || '').trim().split(/\s+/).filter(Boolean);
+                this.keywordChips.innerHTML = '';
+                if (keywords.length === 0) return;
+                keywords.forEach(word => {
+                    const chip = document.createElement('div');
+                    chip.className = 'world-book-keyword-chip';
+                    chip.textContent = word;
+                    this.keywordChips.appendChild(chip);
+                });
+            }
+
+            _req(request) {
+                return new Promise((resolve, reject) => {
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async _ensureDb() {
+                const core = window.Core && window.Core.StorageService;
+                if (!core) return null;
+                try {
+                    await core.openDB(this.dbName, 5, (db) => {
+                        if (!db.objectStoreNames.contains(this.storeName)) {
+                            db.createObjectStore(this.storeName, { keyPath: 'key' });
+                        }
+                    });
+                    return core;
+                } catch (e) {
+                    console.error('[WorldBook] _ensureDb failed:', e);
+                    return null;
+                }
+            }
+
+            async _getDbValue(key) {
+                const core = await this._ensureDb();
+                if (!core) {
+                    console.error('[WorldBook] _getDbValue: core not available');
+                    return null;
+                }
+                try {
+                    const res = await core.transaction(this.dbName, [this.storeName], async (tx) => {
+                        const store = tx.objectStore(this.storeName);
+                        const result = await this._req(store.get(key));
+                        return result ? result.value : null;
+                    });
+                    console.log('[WorldBook] _getDbValue: key:', key, 'result type:', typeof res, 'has value:', !!res);
+                    return res;
+                } catch (e) {
+                    console.error('[WorldBook] _getDbValue error:', e);
+                    return null;
+                }
+            }
+
+            async _setDbValue(key, value) {
+                const core = await this._ensureDb();
+                if (!core) {
+                    console.error('[WorldBook] _setDbValue: core not available');
+                    return;
+                }
+                try {
+                    console.log('[WorldBook] _setDbValue: saving key:', key, 'value type:', typeof value);
+                    await core.transaction(this.dbName, [this.storeName], async (tx) => {
+                        const store = tx.objectStore(this.storeName);
+                        await this._req(store.put({ key: key, value: value, timestamp: Date.now() }));
+                    });
+                    console.log('[WorldBook] _setDbValue: saved successfully for key:', key);
+                } catch (e) {
+                    console.error('[WorldBook] _setDbValue error:', e);
+                }
+            }
+
+            _toast(text) {
+                const toast = document.getElementById('appToast');
+                if (toast) {
+                    toast.textContent = String(text || '');
+                    toast.classList.add('active');
+                    setTimeout(() => {
+                        toast.classList.remove('active');
+                    }, 1800);
+                }
+            }
+        }
+
+        // 初始化
+        window.worldBookModule = new WorldBookModule().init();
+
+        try {
+            window.parent.postMessage({ type: 'app_ready', appId: 'worldbook' }, '*');
+        } catch (e) {
+            console.error('Failed to send app_ready message:', e);
+        }
+    </script>
+</body>
+</html>

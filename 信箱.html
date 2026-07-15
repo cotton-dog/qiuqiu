@@ -1,0 +1,3747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#fdf2f8">  
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" sizes="180x180">
+    <!-- iOS PWA 兼容 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="湫丘捕梦机">
+    <title>信箱</title>
+    <link rel="stylesheet" href="css/core-icons.min.css">
+    <link rel="stylesheet" href="css/core-ui.css">
+    <script src="js/core/OperaKeyboardFix.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            height: 100%;
+        }
+        
+        :root {
+            --primary-color: #f8e1e7;
+            --secondary-color: #d8a1c4;
+            --accent-color: #b86b9a;
+            --dark-color: #8a4b6f;
+            --light-color: #fff8fb;
+            --text-color: #5a3a4c;
+            --shadow-color: rgba(138, 75, 111, 0.15);
+            --envelope-color: #f9e9ef;
+            --paper-color: #fffcf9;
+            --mailbox-font-family: 'Noto Serif SC', serif;
+            --theme-font-family: 'Noto Serif SC', serif;
+            --paper-font-family: 'Noto Serif SC', serif;
+            --paper-font-size: 0.95rem;
+            --paper-font-color: var(--text-color);
+            --envelope-text-font-family: 'Noto Serif SC', serif;
+            --envelope-text-size: 0.85rem;
+            --envelope-text-color: var(--accent-color);
+            --mailbox-home-bg: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+            --mailbox-topbar-bg: rgba(255, 255, 255, 0.92);
+            --mailbox-paper-bg: none;
+            --mailbox-paper-bg-image: none;
+        }
+        
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: var(--theme-font-family, var(--mailbox-font-family));
+            background: var(--mailbox-home-bg);
+            color: var(--text-color);
+            /* 移除 position: fixed，改用 overflow: hidden 锁定根容器 */
+            overflow: hidden;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        body.is-scroll-locked {
+            overflow: hidden;
+            /* iOS Safari: 仅在需要锁定时使用，避免影响子元素滚动 */
+            /* touch-action: none 会阻止所有触摸，改用 overflow 控制 */
+        }
+
+        button,
+        input,
+        textarea {
+            font: inherit;
+            color: inherit;
+        }
+
+        button {
+            touch-action: manipulation;
+        }
+
+        :focus-visible {
+            outline: 3px solid rgba(184, 107, 154, 0.45);
+            outline-offset: 2px;
+        }
+        
+        .app-container {
+            max-width: 100%;
+            height: var(--app-height, 100svh);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        /* 顶部标题栏 */
+        .app-header {
+            background: var(--mailbox-topbar-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: calc(20px + var(--safe-inset-top, env(safe-area-inset-top))) calc(20px + env(safe-area-inset-right)) 20px calc(20px + env(safe-area-inset-left));
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            z-index: 100;
+            position: relative;
+        }
+        
+        .app-title {
+            font-size: 1.8rem;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .app-title i {
+            font-size: 2rem;
+        }
+        
+        .add-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .add-btn:active {
+            transform: scale(0.95);
+        }
+
+        .fab-compose {
+            position: fixed;
+            right: calc(22px + env(safe-area-inset-right));
+            bottom: calc(86px + env(safe-area-inset-bottom));
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
+            background: var(--accent-color);
+            color: #fff;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.45rem;
+            box-shadow: 0 14px 40px rgba(138, 75, 111, 0.28);
+            z-index: 120;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: transform 0.2s ease;
+        }
+
+        .fab-compose:active {
+            transform: scale(0.96);
+        }
+
+        .is-icon-image {
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 100% 100% !important;
+            border: none !important;
+        }
+
+        .is-icon-image i {
+            opacity: 0;
+        }
+        
+        /* 信件列表区域 - iOS滚动优化 */
+        .letters-container {
+            flex: 1;
+            padding: 20px;
+            padding-bottom: 80px;
+            min-height: 0;
+            /* iOS Safari 滚动必需属性 */
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+            touch-action: pan-y;
+        }
+        
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 60vh;
+            color: var(--accent-color);
+            text-align: center;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-state p {
+            font-size: 1.2rem;
+            max-width: 80%;
+            line-height: 1.5;
+        }
+        
+        /* 信封样式 */
+        .envelope-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .envelope-item {
+            background: var(--envelope-color);
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+            border: 1px solid rgba(216, 161, 196, 0.5);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            /* iOS 长按防护（已存在，确保完整） */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: pan-y;
+        }
+        
+        .envelope-item:active {
+            transform: scale(0.98);
+        }
+        
+        /* 对角线交叉的半透明实线 */
+        .diagonal-line {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        
+        .diagonal-line::before,
+        .diagonal-line::after {
+            content: '';
+            position: absolute;
+            background: rgba(184, 107, 154, 0.2);
+            width: 1px;
+            height: 140%;
+            top: -20%;
+            left: 50%;
+        }
+        
+        .diagonal-line::before {
+            transform: translateX(-50%) rotate(45deg);
+        }
+        
+        .diagonal-line::after {
+            transform: translateX(-50%) rotate(-45deg);
+        }
+        
+        /* 圆形白底爱心图标 */
+        .envelope-heart {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 36px;
+            height: 36px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(138, 75, 111, 0.2);
+            z-index: 2;
+        }
+        
+        .envelope-heart i {
+            color: var(--accent-color);
+            font-size: 1.2rem;
+        }
+        
+        /* 日期显示在爱心图标上方 */
+        .envelope-date {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            width: 100%;
+            font-size: var(--envelope-text-size);
+            color: var(--envelope-text-color);
+            font-family: var(--envelope-text-font-family);
+            text-align: center;
+            font-style: italic;
+            opacity: 0.8;
+            z-index: 2;
+        }
+        
+        /* 信件内容全屏视图 */
+        .letter-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            height: 100svh;
+            background: var(--paper-color);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .letter-header {
+            padding: calc(20px + var(--safe-inset-top, env(safe-area-inset-top))) calc(20px + env(safe-area-inset-right)) 20px calc(20px + env(safe-area-inset-left));
+            background: var(--mailbox-topbar-bg);
+            border-bottom: 1px solid rgba(216, 161, 196, 0.3);
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+        
+        .back-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+        
+        .letter-header-title {
+            font-size: 1.2rem;
+            color: var(--dark-color);
+        }
+
+        .letter-actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .letter-action-btn {
+            background: transparent;
+            border: none;
+            color: var(--accent-color);
+            font-size: 1.05rem;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .letter-delete-btn {
+            color: #c0392b;
+        }
+        
+        .letter-content-wrapper {
+            flex: 1;
+            padding: 25px 20px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        /* 信件内容虚线框 */
+        .letter-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border: 1px dashed rgba(184, 107, 154, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.82)), var(--mailbox-paper-bg-image, none);
+            background-size: cover, cover;
+            background-position: center, center;
+            background-repeat: no-repeat, no-repeat;
+            position: relative;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: pan-y;
+        }
+        
+        /* 信件内部字体缩小1/3 */
+        .recipient-line {
+            font-size: 1.1rem; /* 原1.4rem缩小1/3 */
+            margin-bottom: 20px; /* 相应缩小间距 */
+            color: var(--dark-color);
+        }
+        
+        .letter-body {
+            flex: 1;
+            min-height: 200px;
+            font-family: var(--paper-font-family);
+            font-size: var(--paper-font-size);
+            line-height: 1.6; /* 原1.8缩小1/3 */
+            color: var(--paper-font-color);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-bottom: 15px; /* 相应缩小间距 */
+        }
+
+        .letter-edit-body {
+            flex: 1;
+            min-height: 200px;
+            outline: none;
+            border: none;
+            font-family: var(--paper-font-family);
+            font-size: var(--paper-font-size);
+            line-height: 1.6;
+            color: var(--paper-font-color);
+            background: transparent;
+            resize: none;
+            margin-bottom: 15px;
+        }
+        
+        .sender-info {
+            align-self: flex-end;
+            text-align: right;
+            margin-top: 15px; /* 相应缩小间距 */
+        }
+        
+        .sender-name {
+            font-size: 1.05rem; /* 原1.3rem缩小1/3 */
+            color: var(--dark-color);
+            margin-bottom: 6px; /* 相应缩小间距 */
+        }
+        
+        .letter-date-full {
+            font-size: 0.85rem; /* 原1rem缩小1/3 */
+            color: var(--accent-color);
+        }
+        
+        /* 写新信浮窗 */
+        .new-letter-modal {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: var(--z-overlay, 2000);
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+            padding: calc(10vh + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(138, 75, 111, 0.3);
+            animation: scaleIn 0.3s ease;
+            max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: none;
+            touch-action: pan-y;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .keyboard-spacer {
+            flex: 0 0 auto;
+            height: 0;
+            min-height: 0;
+            max-height: 0;
+            will-change: auto;
+            transition: height 0.3s ease;
+        }
+
+        html.ua-android-opera .keyboard-spacer {
+            will-change: auto !important;
+            transition: none !important;
+        }
+
+        .modal-content.keyboard-open .keyboard-spacer {
+            flex: 0 0 300px;
+        }
+        
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            color: var(--dark-color);
+            margin-bottom: 25px;
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--accent-color);
+            font-weight: 500;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid rgba(216, 161, 196, 0.5);
+            border-radius: 12px;
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            color: var(--text-color);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(184, 107, 154, 0.2);
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+        }
+        
+        .btn-primary:active {
+            transform: translateY(2px);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+        }
+        
+        .btn-secondary:active {
+            background: rgba(216, 161, 196, 0.1);
+        }
+        
+        /* 全屏写信页面 */
+        .compose-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            height: 100svh;
+            background: var(--paper-color);
+            z-index: 1500;
+            display: none;
+            flex-direction: column;
+        }
+        
+        .compose-header {
+            padding: calc(20px + var(--safe-inset-top, env(safe-area-inset-top))) calc(20px + env(safe-area-inset-right)) 20px calc(20px + env(safe-area-inset-left));
+            background: var(--mailbox-topbar-bg);
+            border-bottom: 1px solid rgba(216, 161, 196, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .config-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            height: 100svh;
+            background: var(--paper-color);
+            z-index: 1800;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .config-header {
+            padding: calc(20px + var(--safe-inset-top, env(safe-area-inset-top))) calc(20px + env(safe-area-inset-right)) 20px calc(20px + env(safe-area-inset-left));
+            background: var(--mailbox-topbar-bg);
+            border-bottom: 1px solid rgba(216, 161, 196, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .config-title {
+            font-size: 1.25rem;
+            color: var(--dark-color);
+        }
+
+        .config-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-btn {
+            background: transparent;
+            border: 1px solid rgba(184, 107, 154, 0.35);
+            color: var(--accent-color);
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .config-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            min-height: 0;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            touch-action: pan-y;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .config-content::-webkit-scrollbar {
+            display: none;
+        }
+
+        .config-card {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(216, 161, 196, 0.45);
+            border-radius: 16px;
+            padding: 14px;
+            box-shadow: 0 10px 30px rgba(138, 75, 111, 0.12);
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            touch-action: pan-y;
+        }
+
+        .config-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .config-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .config-row label {
+            font-size: 0.95rem;
+            color: rgba(90, 58, 76, 0.9);
+        }
+
+        .config-input,
+        .config-select {
+            width: 100%;
+            padding: 12px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(216, 161, 196, 0.55);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .config-inline {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .config-inline > * {
+            flex: 1;
+        }
+
+        .config-small-btn {
+            flex: 0 0 auto;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(184, 107, 154, 0.35);
+            background: transparent;
+            color: var(--accent-color);
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .asset-line {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .asset-preview {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            border: 1px solid rgba(216, 161, 196, 0.55);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 20px rgba(138, 75, 111, 0.12);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            touch-action: manipulation;
+        }
+
+        .asset-preview.is-cover {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .asset-preview.is-cover i {
+            opacity: 0;
+        }
+
+        .bg-preview {
+            width: 128px;
+            height: 72px;
+            border-radius: 18px;
+            border: 1px solid rgba(216, 161, 196, 0.55);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 10px 26px rgba(138, 75, 111, 0.14);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            touch-action: manipulation;
+        }
+
+        .bg-line {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .bg-line .config-input {
+            flex: 1;
+        }
+
+        .bg-preview.is-cover {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .bg-preview i {
+            color: var(--accent-color);
+            font-size: 1.2rem;
+        }
+
+        .bg-preview.is-cover i {
+            opacity: 0;
+        }
+
+        .crop-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: calc(18px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+            background: rgba(24, 16, 22, 0.55);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .crop-modal.show {
+            display: flex;
+        }
+
+        .crop-content {
+            width: min(420px, 100%);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(216, 161, 196, 0.45);
+            box-shadow: 0 18px 56px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+
+        .crop-header {
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(216, 161, 196, 0.25);
+        }
+
+        .crop-header-title {
+            font-size: 1rem;
+            color: var(--dark-color);
+        }
+
+        .crop-wrapper {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            background: rgba(255, 255, 255, 0.7);
+            touch-action: none;
+        }
+
+        .crop-wrapper canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .crop-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid rgba(184, 107, 154, 0.95);
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+            border-radius: 14px;
+            pointer-events: none;
+        }
+
+        .crop-overlay.circle {
+            border-radius: 999px;
+        }
+
+        .crop-actions {
+            display: flex;
+            gap: 10px;
+            padding: 12px 14px 14px;
+            border-top: 1px solid rgba(216, 161, 196, 0.25);
+        }
+
+        .crop-btn {
+            flex: 1;
+            height: 44px;
+            border-radius: 14px;
+            border: 1px solid rgba(184, 107, 154, 0.35);
+            background: transparent;
+            color: var(--accent-color);
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .crop-btn.confirm {
+            background: var(--accent-color);
+            color: #fff;
+            border-color: rgba(184, 107, 154, 0.5);
+        }
+
+        .icon-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .icon-box {
+            border-radius: 16px;
+            border: 1px solid rgba(216, 161, 196, 0.45);
+            background: rgba(255, 255, 255, 0.6);
+            padding: 12px;
+            box-shadow: 0 10px 26px rgba(138, 75, 111, 0.12);
+        }
+
+        .icon-cell {
+            width: calc(50% - 6px);
+            padding: 6px;
+        }
+
+        .icon-label {
+            font-size: 0.92rem;
+            color: rgba(90, 58, 76, 0.88);
+            margin-bottom: 8px;
+        }
+
+        .asset-preview i {
+            color: var(--accent-color);
+            font-size: 1.2rem;
+        }
+
+        .asset-file {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .config-section-title {
+            font-size: 1rem;
+            color: var(--dark-color);
+        }
+
+        .config-divider {
+            height: 1px;
+            background: rgba(216, 161, 196, 0.35);
+            margin: 6px 0;
+        }
+
+        .config-textarea {
+            width: 100%;
+            min-height: 110px;
+            padding: 12px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(216, 161, 196, 0.55);
+            background: rgba(255, 255, 255, 0.9);
+            resize: vertical;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        body[data-envelope-style='plain'] .diagonal-line {
+            display: none;
+        }
+        
+        .compose-title {
+            font-size: 1.3rem;
+            color: var(--dark-color);
+        }
+        
+        .compose-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .compose-btn {
+            background: transparent;
+            border: none;
+            color: var(--accent-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 8px;
+        }
+        
+        .compose-content {
+            flex: 1;
+            min-height: 0;
+            padding: 25px 20px;
+            overflow-y: auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+            touch-action: pan-y;
+        }
+        
+        /* 写信时的虚线框 */
+        .compose-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border: 1px dashed rgba(184, 107, 154, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.82)), var(--mailbox-paper-bg-image, none);
+            background-size: cover, cover;
+            background-position: center, center;
+            background-repeat: no-repeat, no-repeat;
+            position: relative;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: pan-y;
+        }
+        
+        /* 写信页字体也缩小1/3 */
+        .compose-recipient-line {
+            font-size: 1.1rem; /* 原1.4rem缩小1/3 */
+            margin-bottom: 20px; /* 相应缩小间距 */
+            color: var(--dark-color);
+        }
+        
+        .compose-body {
+            flex: 1;
+            min-height: 200px;
+            outline: none;
+            border: none;
+            font-family: var(--paper-font-family);
+            font-size: var(--paper-font-size);
+            line-height: 1.6; /* 原1.8缩小1/3 */
+            color: var(--paper-font-color);
+            background: transparent;
+            resize: none;
+            margin-bottom: 15px; /* 相应缩小间距 */
+        }
+        
+        .compose-body::placeholder {
+            color: rgba(90, 58, 76, 0.5);
+            font-size: 0.95rem; /* 占位符字体也缩小 */
+        }
+
+        textarea.text-card {
+            background-image: none;
+        }
+        
+        .compose-sender-info {
+            align-self: flex-end;
+            text-align: right;
+            margin-top: 15px; /* 相应缩小间距 */
+        }
+        
+        .compose-sender-name {
+            font-size: 1.05rem; /* 原1.3rem缩小1/3 */
+            color: var(--dark-color);
+            margin-bottom: 6px; /* 相应缩小间距 */
+        }
+        
+        .compose-date {
+            font-size: 0.85rem; /* 原1rem缩小1/3 */
+            color: var(--accent-color);
+        }
+        
+        /* 确认投递提示 */
+        .confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .confirm-content {
+            background: white;
+            border-radius: 20px;
+            width: 85%;
+            max-width: 350px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(138, 75, 111, 0.3);
+            text-align: center;
+            max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            touch-action: pan-y;
+        }
+        
+        .confirm-icon {
+            font-size: 3rem;
+            color: var(--accent-color);
+            margin-bottom: 20px;
+        }
+        
+        .confirm-text {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+
+        .confirm-detail {
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: rgba(90, 58, 76, 0.75);
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: calc(18px + env(safe-area-inset-bottom));
+            transform: translateX(-50%);
+            max-width: calc(100% - 32px);
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 10px 30px rgba(138, 75, 111, 0.22);
+            border: 1px solid rgba(216, 161, 196, 0.55);
+            color: var(--text-color);
+            z-index: 3000;
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .toast.is-visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-4px);
+            visibility: visible;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+        
+        .confirm-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .font-input-group {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .font-input-group .config-input {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .font-upload-btn {
+            flex-shrink: 0;
+            padding: 6px 10px;
+        }
+        
+        .font-upload-btn i {
+            font-size: 0.85rem;
+        }
+        
+        /* 响应式调整 */
+        @media (min-width: 768px) {
+            .app-container {
+                max-width: 500px;
+                margin: 0 auto;
+                height: var(--app-height, 100svh);
+                box-shadow: 0 0 30px rgba(138, 75, 111, 0.1);
+            }
+            
+            .app-header {
+                border-radius: 0;
+            }
+            
+            .letters-container {
+                padding-bottom: 30px;
+            }
+            
+            .letter-content-wrapper,
+            .compose-content {
+                padding: 25px;
+            }
+        }
+
+        body.is-typing .app-header,
+        body.is-typing .letter-header,
+        body.is-typing .compose-header,
+        body.is-typing .config-header {
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        :root[data-surface-style="glass"] .letter-container,
+        :root[data-surface-style="glass"] .compose-container,
+        :root[data-surface-style="glass"] .config-card,
+        :root[data-surface-style="glass"] .new-letter-content,
+        :root[data-surface-style="glass"] .confirm-content {
+            background-color: rgba(255, 255, 255, 0.72);
+            border: 1px solid rgba(216, 161, 196, 0.38);
+        }
+
+        @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+            :root[data-surface-style="glass"] .letter-container,
+            :root[data-surface-style="glass"] .compose-container,
+            :root[data-surface-style="glass"] .config-card,
+            :root[data-surface-style="glass"] .new-letter-content,
+            :root[data-surface-style="glass"] .confirm-content {
+                -webkit-backdrop-filter: blur(12px);
+                backdrop-filter: blur(12px);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 主应用界面 -->
+    <div class="app-container">
+        <header class="app-header">
+            <div style="display: flex; align-items: center;">
+                <button class="back-btn" id="main-back-btn" style="margin-right: 10px;" aria-label="返回" type="button">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="app-title">
+                    <i class="fas fa-inbox"></i>
+                    <span>信箱</span>
+                </div>
+            </div>
+            <button class="add-btn" id="open-config-btn" aria-label="设置" type="button">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+        </header>
+        
+        <div class="letters-container scroll-y-hidebar flex-scroll" id="letters-container">
+            <!-- 信件列表将在这里动态生成 -->
+            <div class="empty-state" id="empty-state">
+                <i class="fas fa-envelope-open-text"></i>
+                <p>信箱空空如也<br>点击右下角写一封信</p>
+            </div>
+            
+            <!-- 信封列表 -->
+            <div class="envelope-list" id="envelope-list" style="display: none;">
+                <!-- 信封项将动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <button class="fab-compose" id="fab-compose-btn" aria-label="写一封信" type="button">
+        <i class="fas fa-feather-alt"></i>
+    </button>
+    
+    <!-- 信件内容全屏视图 -->
+    <div class="letter-fullscreen" id="letter-fullscreen">
+        <div class="letter-header">
+            <button class="back-btn" id="back-from-letter" aria-label="返回" type="button">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="letter-header-title">信件内容</div>
+            <div class="letter-actions">
+                <button class="letter-action-btn" id="edit-letter-btn" type="button">
+                    <i class="fas fa-pen"></i> 编辑
+                </button>
+                <button class="letter-action-btn" id="save-letter-btn" style="display: none;" type="button">
+                    <i class="fas fa-check"></i> 保存
+                </button>
+                <button class="letter-action-btn letter-delete-btn" id="delete-letter-btn" style="display: none;" type="button">
+                    <i class="fas fa-trash"></i> 删除
+                </button>
+            </div>
+        </div>
+        <div class="letter-content-wrapper scroll-y-hidebar flex-scroll">
+            <div class="letter-container" id="letter-container">
+                <!-- 信件内容将动态填充 -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- 写新信浮窗（第一步：填写发件人/收件人） -->
+    <div class="new-letter-modal" id="new-letter-modal">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-label="写一封信">
+            <div class="keyboard-spacer"></div>
+            <h2 class="modal-title">写一封信</h2>
+            <form id="sender-recipient-form">
+                <div class="form-group">
+                    <label class="form-label" for="sender-name">寄件人</label>
+                    <input type="text" id="sender-name" class="form-input" placeholder="您的名字" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="recipient-name">收件人</label>
+                    <input type="text" id="recipient-name" class="form-input" placeholder="收信人的名字" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-first-step">取消</button>
+                    <button type="submit" class="btn btn-primary">下一步</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 全屏写信页面（第二步：写信内容） -->
+    <div class="compose-fullscreen" id="compose-fullscreen">
+        <div class="compose-header">
+            <button class="back-btn" id="back-from-compose" aria-label="返回" type="button">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="compose-title">写信</div>
+            <div class="compose-actions">
+                <button class="compose-btn" id="complete-letter" type="button">
+                    <i class="fas fa-check"></i> 完成
+                </button>
+            </div>
+        </div>
+        <div class="compose-content">
+            <div class="compose-container">
+                <div class="compose-recipient-line" id="compose-recipient-line">致：</div>
+                <textarea class="compose-body" id="compose-body" placeholder="写下您想说的话..."></textarea>
+                <div class="compose-sender-info">
+                    <div class="compose-sender-name" id="compose-sender-name"></div>
+                    <div class="compose-date" id="compose-date"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 确认投递提示 -->
+    <div class="confirm-modal" id="confirm-modal">
+        <div class="confirm-content" role="dialog" aria-modal="true" aria-label="确认操作">
+            <div class="confirm-icon">
+                <i class="fas fa-paper-plane"></i>
+            </div>
+            <div class="confirm-text" id="confirm-text">确定要投递这封信吗？</div>
+            <div class="confirm-detail" id="confirm-detail" style="display: none;"></div>
+            <div class="confirm-actions">
+                <button class="btn btn-secondary" id="cancel-send" type="button">取消</button>
+                <button class="btn btn-primary" id="confirm-send" type="button">确定投递</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <div class="config-fullscreen" id="config-fullscreen">
+        <div class="config-header">
+            <button class="back-btn" id="back-from-config" aria-label="返回" type="button">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="config-title">设置</div>
+            <div class="config-actions">
+                <button class="config-btn" id="reset-config" type="button">恢复默认</button>
+            </div>
+        </div>
+        <div class="config-content">
+            <div class="config-card">
+                <div class="config-stack">
+                    <div class="config-section-title">主题</div>
+                    <div class="config-row">
+                        <label for="cfg-preset">主题预设</label>
+                        <select class="config-select" id="cfg-preset">
+                            <option value="default">柔粉</option>
+                            <option value="cream">奶油</option>
+                            <option value="night">夜色</option>
+                        </select>
+                    </div>
+
+                    <div class="config-row">
+                        <label>主色</label>
+                        <div class="config-inline">
+                            <input class="config-input" id="cfg-accent" type="color" value="#b86b9a" aria-label="强调色">
+                            <input class="config-input" id="cfg-theme-text" type="color" value="#5a3a4c" aria-label="主题文字颜色">
+                        </div>
+                    </div>
+
+                    <div class="config-row">
+                        <label for="cfg-theme-font-mode">主题字体</label>
+                        <select class="config-select" id="cfg-theme-font-mode">
+                            <option value="serif">宋体风格</option>
+                            <option value="hand">手写风格</option>
+                            <option value="system">系统默认</option>
+                            <option value="url">URL 导入</option>
+                        </select>
+                        <div class="font-input-group">
+                            <input class="config-input" id="cfg-theme-font-url" type="url" placeholder="字体文件 URL（woff2/woff/ttf/otf）">
+                            <button class="config-small-btn font-upload-btn" id="cfg-theme-font-upload" type="button" aria-label="上传字体文件">
+                                <i class="fas fa-upload"></i>
+                            </button>
+                            <input class="config-file" id="cfg-theme-font-file" type="file" accept=".woff2,.woff,.ttf,.otf" style="display: none;">
+                        </div>
+                    </div>
+
+                    <div class="config-divider"></div>
+
+                    <div class="config-section-title">信纸</div>
+
+                    <div class="config-row">
+                        <label>信封与信纸</label>
+                        <div class="config-inline">
+                            <input class="config-input" id="cfg-envelope" type="color" value="#f9e9ef" aria-label="信封颜色">
+                            <input class="config-input" id="cfg-paper" type="color" value="#fffcf9" aria-label="信纸颜色">
+                        </div>
+                    </div>
+
+                    <div class="config-row">
+                        <label for="cfg-paper-font-mode">信纸字体</label>
+                        <select class="config-select" id="cfg-paper-font-mode">
+                            <option value="inherit">跟随主题</option>
+                            <option value="serif">宋体风格</option>
+                            <option value="hand">手写风格</option>
+                            <option value="system">系统默认</option>
+                            <option value="url">URL 导入</option>
+                        </select>
+                        <div class="font-input-group">
+                            <input class="config-input" id="cfg-paper-font-url" type="url" placeholder="字体文件 URL（woff2/woff/ttf/otf）">
+                            <button class="config-small-btn font-upload-btn" id="cfg-paper-font-upload" type="button" aria-label="上传字体文件">
+                                <i class="fas fa-upload"></i>
+                            </button>
+                            <input class="config-file" id="cfg-paper-font-file" type="file" accept=".woff2,.woff,.ttf,.otf" style="display: none;">
+                        </div>
+                        <div class="config-inline">
+                            <input class="config-input" id="cfg-paper-font-color" type="color" value="#5a3a4c" aria-label="信纸文字颜色">
+                            <input class="config-input" id="cfg-paper-font-size" type="number" min="0.75" max="1.6" step="0.05" value="0.95" aria-label="信纸字号（rem）">
+                        </div>
+                    </div>
+
+                    <div class="config-divider"></div>
+
+                    <div class="config-section-title">信封样式</div>
+
+                    <div class="config-row">
+                        <label for="cfg-envelope-style">样式模式</label>
+                        <select class="config-select" id="cfg-envelope-style">
+                            <option value="diagonal">对角线</option>
+                            <option value="plain">素面</option>
+                            <option value="custom">自定义 CSS</option>
+                        </select>
+                    </div>
+
+                    <div class="config-row">
+                        <label for="cfg-envelope-text-font-mode">内部文字</label>
+                        <select class="config-select" id="cfg-envelope-text-font-mode">
+                            <option value="inherit">跟随主题</option>
+                            <option value="serif">宋体风格</option>
+                            <option value="hand">手写风格</option>
+                            <option value="system">系统默认</option>
+                            <option value="url">URL 导入</option>
+                        </select>
+                        <div class="font-input-group">
+                            <input class="config-input" id="cfg-envelope-text-font-url" type="url" placeholder="字体文件 URL（woff2/woff/ttf/otf）">
+                            <button class="config-small-btn font-upload-btn" id="cfg-envelope-text-font-upload" type="button" aria-label="上传字体文件">
+                                <i class="fas fa-upload"></i>
+                            </button>
+                            <input class="config-file" id="cfg-envelope-text-font-file" type="file" accept=".woff2,.woff,.ttf,.otf" style="display: none;">
+                        </div>
+                        <div class="config-inline">
+                            <input class="config-input" id="cfg-envelope-text-color" type="color" value="#b86b9a" aria-label="信封文字颜色">
+                            <input class="config-input" id="cfg-envelope-text-size" type="number" min="0.7" max="1.3" step="0.05" value="0.85" aria-label="信封文字大小（rem）">
+                        </div>
+                    </div>
+
+                    <div class="config-row">
+                        <label for="cfg-envelope-css">自定义 CSS</label>
+                        <textarea class="config-textarea" id="cfg-envelope-css" placeholder="例如：\n.envelope-item { border-radius: 18px; }\n.envelope-heart { transform: translate(-50%, -50%) scale(1.1); }"></textarea>
+                    </div>
+
+                    <div class="config-row">
+                        <label>预设</label>
+                        <div class="config-inline">
+                            <input class="config-input" id="cfg-envelope-preset-name" type="text" placeholder="预设名称">
+                            <button class="config-small-btn" id="save-envelope-preset" type="button">保存</button>
+                            <button class="config-small-btn" id="delete-envelope-preset" type="button">删除</button>
+                        </div>
+                    </div>
+
+                    <div class="config-divider"></div>
+
+                    <div class="config-section-title">背景</div>
+
+                    <div class="config-row">
+                        <label for="cfg-home-bg">信箱主页背景</label>
+                        <div class="bg-line">
+                            <input class="config-input" id="cfg-home-bg" type="text" placeholder="例如：linear-gradient(135deg, #fff 0%, #fce7f3 100%)">
+                            <button class="bg-preview" id="home-bg-preview" type="button" aria-label="上传主页背景">
+                                <i class="fas fa-image"></i>
+                            </button>
+                        </div>
+                        <div class="asset-line">
+                            <input class="asset-file" id="cfg-home-bg-file" type="file" accept="image/*">
+                            <button class="config-small-btn" id="clear-home-bg" type="button">清除</button>
+                        </div>
+                    </div>
+
+                    <div class="config-row">
+                        <label for="cfg-topbar-bg">顶部栏背景</label>
+                        <div class="bg-line">
+                            <input class="config-input" id="cfg-topbar-bg" type="text" placeholder="例如：rgba(255,255,255,0.92)">
+                            <button class="bg-preview" id="topbar-bg-preview" type="button" aria-label="上传顶部栏背景">
+                                <i class="fas fa-image"></i>
+                            </button>
+                        </div>
+                        <div class="asset-line">
+                            <input class="asset-file" id="cfg-topbar-bg-file" type="file" accept="image/*">
+                            <button class="config-small-btn" id="clear-topbar-bg" type="button">清除</button>
+                        </div>
+                    </div>
+
+                    <div class="config-row">
+                        <label for="cfg-paper-bg">信纸背景</label>
+                        <div class="bg-line">
+                            <input class="config-input" id="cfg-paper-bg" type="text" placeholder="例如：url(\"...\") center / cover no-repeat">
+                            <button class="bg-preview" id="paper-bg-preview" type="button" aria-label="上传信纸背景">
+                                <i class="fas fa-image"></i>
+                            </button>
+                        </div>
+                        <div class="asset-line">
+                            <input class="asset-file" id="cfg-paper-bg-file" type="file" accept="image/*">
+                            <button class="config-small-btn" id="clear-paper-bg" type="button">清除</button>
+                        </div>
+                    </div>
+
+                    <div class="config-row">
+                        <label>按钮贴图</label>
+
+                        <div class="icon-box">
+                        <div class="icon-grid">
+                            <div class="icon-cell">
+                                <div class="icon-label">写信</div>
+                                <div class="asset-line">
+                                    <button class="asset-preview" id="preview-icon-compose" type="button" aria-label="上传写信按钮贴图">
+                                        <i class="fas fa-feather-alt"></i>
+                                    </button>
+                                    <input class="asset-file" id="cfg-icon-compose" type="file" accept="image/*">
+                                    <button class="config-small-btn" data-icon-clear="compose" type="button">清除</button>
+                                </div>
+                            </div>
+
+                            <div class="icon-cell">
+                                <div class="icon-label">设置</div>
+                                <div class="asset-line">
+                                    <button class="asset-preview" id="preview-icon-config" type="button" aria-label="上传设置按钮贴图">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <input class="asset-file" id="cfg-icon-config" type="file" accept="image/*">
+                                    <button class="config-small-btn" data-icon-clear="config" type="button">清除</button>
+                                </div>
+                            </div>
+
+                            <div class="icon-cell">
+                                <div class="icon-label">返回</div>
+                                <div class="asset-line">
+                                    <button class="asset-preview" id="preview-icon-back" type="button" aria-label="上传返回按钮贴图">
+                                        <i class="fas fa-arrow-left"></i>
+                                    </button>
+                                    <input class="asset-file" id="cfg-icon-back" type="file" accept="image/*">
+                                    <button class="config-small-btn" data-icon-clear="back" type="button">清除</button>
+                                </div>
+                            </div>
+
+                            <div class="icon-cell">
+                                <div class="icon-label">完成/保存</div>
+                                <div class="asset-line">
+                                    <button class="asset-preview" id="preview-icon-done" type="button" aria-label="上传完成按钮贴图">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <input class="asset-file" id="cfg-icon-done" type="file" accept="image/*">
+                                    <button class="config-small-btn" data-icon-clear="done" type="button">清除</button>
+                                </div>
+                            </div>
+
+                            <div class="icon-cell">
+                                <div class="icon-label">编辑</div>
+                                <div class="asset-line">
+                                    <button class="asset-preview" id="preview-icon-edit" type="button" aria-label="上传编辑按钮贴图">
+                                        <i class="fas fa-pen"></i>
+                                    </button>
+                                    <input class="asset-file" id="cfg-icon-edit" type="file" accept="image/*">
+                                    <button class="config-small-btn" data-icon-clear="edit" type="button">清除</button>
+                                </div>
+                            </div>
+
+                            <div class="icon-cell">
+                                <div class="icon-label">删除</div>
+                                <div class="asset-line">
+                                    <button class="asset-preview" id="preview-icon-delete" type="button" aria-label="上传删除按钮贴图">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <input class="asset-file" id="cfg-icon-delete" type="file" accept="image/*">
+                                    <button class="config-small-btn" data-icon-clear="delete" type="button">清除</button>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="crop-modal" id="cropModal" role="dialog" aria-modal="true">
+        <div class="crop-content">
+            <div class="crop-header">
+                <div class="crop-header-title">裁剪</div>
+                <button class="config-small-btn" id="cropCancelBtn" type="button">取消</button>
+            </div>
+            <div class="crop-wrapper" id="cropWrapper">
+                <canvas id="cropCanvas"></canvas>
+                <div class="crop-overlay" id="cropOverlay"></div>
+            </div>
+            <div class="crop-actions">
+                <button class="crop-btn cancel" id="cropCancelBtn2" type="button">取消</button>
+                <button class="crop-btn confirm" id="cropConfirmBtn" type="button">确定</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/core/StorageService.js"></script>
+    <script src="js/core/SafeArea.js"></script>
+    <script>
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isIframe = window.self !== window.top;
+
+        const GROUP_ID = 'mailbox';
+
+        function getBlobUrlService() {
+            if (window.Core && window.Core.BlobUrlService) return window.Core.BlobUrlService;
+            if (window.parent && window.parent.Core && window.parent.Core.BlobUrlService) return window.parent.Core.BlobUrlService;
+            return null;
+        }
+
+        function _getPostTargetOrigin() {
+            const origin = window.location.origin;
+            return origin && origin !== 'null' ? origin : '*';
+        }
+
+        function _isAllowedMessageOrigin(origin) {
+            const expected = window.location.origin;
+            if (!expected || expected === 'null') return true;
+            return origin === expected;
+        }
+
+        window.addEventListener('message', (event) => {
+            if (!_isAllowedMessageOrigin(event.origin)) return;
+            if (event.data && event.data.type === 'surfaceStyle') {
+                const payload = (event.data && event.data.payload) ? event.data.payload : {};
+                const mode = String((payload && payload.mode) || '').trim();
+                if (mode === 'glass') {
+                    document.documentElement.setAttribute('data-surface-style', 'glass');
+                } else {
+                    document.documentElement.removeAttribute('data-surface-style');
+                }
+                return;
+            }
+        });
+
+        (function () {
+            if (!isIframe) return;
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'requestSurfaceStyle' }, _getPostTargetOrigin());
+                }
+            } catch (e) {}
+        })();
+
+        (function () {
+            let typingTimer = null;
+
+            const isTypingTarget = (el) => {
+                if (!el) return false;
+                const tag = String(el.tagName || '').toLowerCase();
+                if (tag === 'textarea') return true;
+                if (tag === 'input') {
+                    const type = String(el.getAttribute('type') || 'text').toLowerCase();
+                    return !['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'file', 'color', 'hidden'].includes(type);
+                }
+                return false;
+            };
+
+            const refresh = () => {
+                if (typingTimer) {
+                    clearTimeout(typingTimer);
+                    typingTimer = null;
+                }
+                typingTimer = setTimeout(() => {
+                    typingTimer = null;
+                    const active = document.activeElement;
+                    if (isTypingTarget(active)) document.body.classList.add('is-typing');
+                    else document.body.classList.remove('is-typing');
+                }, 30);
+            };
+
+            document.addEventListener('focusin', (e) => {
+                if (isTypingTarget(e && e.target)) document.body.classList.add('is-typing');
+            }, true);
+
+            document.addEventListener('focusout', refresh, true);
+        })();
+
+        window.MailboxStorageDB = {
+            dbName: 'MailboxDB',
+            version: 1,
+            _db: null,
+            _initPromise: null,
+
+            _req(request) {
+                return new Promise((resolve, reject) => {
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            },
+
+            _txDone(tx) {
+                return new Promise((resolve, reject) => {
+                    tx.oncomplete = () => resolve();
+                    tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
+                    tx.onerror = () => reject(tx.error || new Error('Transaction failed'));
+                });
+            },
+
+            _getCoreStorageService() {
+                try {
+                    const parent = window.parent;
+                    const core = parent && parent !== window ? parent.Core : null;
+                    return core && core.StorageService ? core.StorageService : null;
+                } catch (e) {
+                    return null;
+                }
+            },
+
+            async init() {
+                if (this._initPromise) return this._initPromise;
+
+                this._initPromise = (async () => {
+                    const storageService = this._getCoreStorageService();
+                    if (storageService) {
+                        await storageService.openDB(this.dbName, this.version, (db) => {
+                            if (!db.objectStoreNames.contains('letters')) {
+                                db.createObjectStore('letters', { keyPath: 'id' });
+                            }
+                        });
+                        return;
+                    }
+
+                    await new Promise((resolve, reject) => {
+                        const request = indexedDB.open(this.dbName, this.version);
+                        request.onupgradeneeded = () => {
+                            const db = request.result;
+                            if (!db.objectStoreNames.contains('letters')) {
+                                db.createObjectStore('letters', { keyPath: 'id' });
+                            }
+                        };
+                        request.onsuccess = () => {
+                            this._db = request.result;
+                            resolve();
+                        };
+                        request.onerror = () => reject(request.error);
+                    });
+                })();
+
+                return this._initPromise;
+            },
+
+            async getAllLetters() {
+                await this.init();
+                const storageService = this._getCoreStorageService();
+                if (storageService) {
+                    return storageService.transaction(this.dbName, ['letters'], async (tx) => {
+                        const store = tx.objectStore('letters');
+                        return await this._req(store.getAll());
+                    });
+                }
+
+                if (!this._db) return [];
+                const tx = this._db.transaction(['letters'], 'readonly');
+                const store = tx.objectStore('letters');
+                const result = await this._req(store.getAll());
+                await this._txDone(tx);
+                return result;
+            },
+
+            async saveLetter(letter) {
+                await this.init();
+                const storageService = this._getCoreStorageService();
+                if (storageService) {
+                    return storageService.transaction(this.dbName, ['letters'], async (tx) => {
+                        const store = tx.objectStore('letters');
+                        await this._req(store.put(letter));
+                    });
+                }
+
+                if (!this._db) return;
+                const tx = this._db.transaction(['letters'], 'readwrite');
+                const store = tx.objectStore('letters');
+                await this._req(store.put(letter));
+                await this._txDone(tx);
+            },
+
+            async putLetters(letterList) {
+                await this.init();
+                const list = Array.isArray(letterList) ? letterList : [];
+
+                const storageService = this._getCoreStorageService();
+                if (storageService) {
+                    return storageService.transaction(this.dbName, ['letters'], async (tx) => {
+                        const store = tx.objectStore('letters');
+                        for (const letter of list) {
+                            await this._req(store.put(letter));
+                        }
+                    });
+                }
+
+                if (!this._db) return;
+                const tx = this._db.transaction(['letters'], 'readwrite');
+                const store = tx.objectStore('letters');
+                for (const letter of list) {
+                    await this._req(store.put(letter));
+                }
+                await this._txDone(tx);
+            },
+
+            async deleteLetter(id) {
+                await this.init();
+                const storageService = this._getCoreStorageService();
+                if (storageService) {
+                    return storageService.transaction(this.dbName, ['letters'], async (tx) => {
+                        const store = tx.objectStore('letters');
+                        await this._req(store.delete(id));
+                    });
+                }
+
+                if (!this._db) return;
+                const tx = this._db.transaction(['letters'], 'readwrite');
+                const store = tx.objectStore('letters');
+                await this._req(store.delete(id));
+                await this._txDone(tx);
+            }
+        };
+
+        // 初始化数据
+        let letters = [];
+        let currentLetter = { sender: '', recipient: '', content: '' };
+        let currentOpenLetterIndex = null;
+        let isEditingOpenLetter = false;
+        let confirmAction = null;
+
+        async function loadLetters() {
+            try {
+                // 1. Try to load from IndexedDB
+                const dbLetters = await window.MailboxStorageDB.getAllLetters();
+                if (dbLetters && dbLetters.length > 0) {
+                    letters = dbLetters;
+                    try { localStorage.removeItem('mobile-letters'); } catch (e) {}
+                } else {
+                    // 2. Fallback to localStorage and migrate
+                    const lsData = localStorage.getItem('mobile-letters');
+                    if (lsData) {
+                        try {
+                            const lsLetters = JSON.parse(lsData);
+                            if (Array.isArray(lsLetters)) {
+                                letters = lsLetters;
+                                for (const letter of letters) {
+                                    if (!letter.id) letter.id = Date.now() + Math.random();
+                                    await window.MailboxStorageDB.saveLetter(letter);
+                                }
+                                try { localStorage.removeItem('mobile-letters'); } catch (e) {}
+                            }
+                        } catch (e) {
+                            console.error('Failed to parse localStorage letters', e);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to load letters', e);
+                const lsData = localStorage.getItem('mobile-letters');
+                if (lsData) {
+                    try {
+                        const parsed = JSON.parse(lsData);
+                        letters = Array.isArray(parsed) ? parsed : [];
+                        if (typeof showToast === 'function') showToast('已从本地备份加载信件');
+                    } catch (err) {
+                        letters = [];
+                    }
+                }
+            }
+            initLetters();
+        }
+
+        let persistQueue = Promise.resolve();
+
+        function persistLetters() {
+            persistQueue = persistQueue.then(async () => {
+                try {
+                    await window.MailboxStorageDB.putLetters(letters);
+                } catch (e) {
+                    if (typeof showToast === 'function') showToast('保存失败，请重试');
+                }
+            });
+            return persistQueue;
+        }
+
+
+        function getLetterSortTime(letter) {
+            const candidate = letter && (letter.date || letter.createdAt);
+            const t = candidate ? new Date(candidate).getTime() : 0;
+            return Number.isFinite(t) ? t : 0;
+        }
+
+        function removePresetLetters() {
+            const nextLetters = letters.filter(l => l && l.id !== 'welcome-letter-qiuqiuxiu');
+            if (nextLetters.length === letters.length) return;
+            letters = nextLetters;
+            persistLetters();
+        }
+        
+        // DOM元素
+        const mainBackBtn = document.getElementById('main-back-btn');
+        const openConfigBtn = document.getElementById('open-config-btn');
+        const fabComposeBtn = document.getElementById('fab-compose-btn');
+        const newLetterModal = document.getElementById('new-letter-modal');
+        const cancelFirstStepBtn = document.getElementById('cancel-first-step');
+        const senderRecipientForm = document.getElementById('sender-recipient-form');
+        const composeFullscreen = document.getElementById('compose-fullscreen');
+        const backFromComposeBtn = document.getElementById('back-from-compose');
+        const completeLetterBtn = document.getElementById('complete-letter');
+        const confirmModal = document.getElementById('confirm-modal');
+        const cancelSendBtn = document.getElementById('cancel-send');
+        const confirmSendBtn = document.getElementById('confirm-send');
+        const confirmTextEl = document.getElementById('confirm-text');
+        const confirmDetailEl = document.getElementById('confirm-detail');
+        const toastEl = document.getElementById('toast');
+        const composeBody = document.getElementById('compose-body');
+        const envelopeList = document.getElementById('envelope-list');
+        const emptyState = document.getElementById('empty-state');
+        const letterFullscreen = document.getElementById('letter-fullscreen');
+        const backFromLetterBtn = document.getElementById('back-from-letter');
+        const letterContainer = document.getElementById('letter-container');
+        const editLetterBtn = document.getElementById('edit-letter-btn');
+        const saveLetterBtn = document.getElementById('save-letter-btn');
+        const deleteLetterBtn = document.getElementById('delete-letter-btn');
+        const composeRecipientLine = document.getElementById('compose-recipient-line');
+        const composeSenderName = document.getElementById('compose-sender-name');
+        const composeDate = document.getElementById('compose-date');
+        const configFullscreen = document.getElementById('config-fullscreen');
+        const backFromConfigBtn = document.getElementById('back-from-config');
+        const resetConfigBtn = document.getElementById('reset-config');
+
+        const cfgPreset = document.getElementById('cfg-preset');
+        const cfgAccent = document.getElementById('cfg-accent');
+        const cfgThemeText = document.getElementById('cfg-theme-text');
+        const cfgThemeFontMode = document.getElementById('cfg-theme-font-mode');
+        const cfgThemeFontUrl = document.getElementById('cfg-theme-font-url');
+        const cfgEnvelope = document.getElementById('cfg-envelope');
+        const cfgPaper = document.getElementById('cfg-paper');
+
+        const cfgPaperFontMode = document.getElementById('cfg-paper-font-mode');
+        const cfgPaperFontUrl = document.getElementById('cfg-paper-font-url');
+        const cfgPaperFontColor = document.getElementById('cfg-paper-font-color');
+        const cfgPaperFontSize = document.getElementById('cfg-paper-font-size');
+
+        const cfgEnvelopeTextFontMode = document.getElementById('cfg-envelope-text-font-mode');
+        const cfgEnvelopeTextFontUrl = document.getElementById('cfg-envelope-text-font-url');
+        const cfgEnvelopeTextColor = document.getElementById('cfg-envelope-text-color');
+        const cfgEnvelopeTextSize = document.getElementById('cfg-envelope-text-size');
+
+        const cfgEnvelopeStyle = document.getElementById('cfg-envelope-style');
+        const cfgEnvelopeCss = document.getElementById('cfg-envelope-css');
+        const cfgEnvelopePresetName = document.getElementById('cfg-envelope-preset-name');
+        const saveEnvelopePresetBtn = document.getElementById('save-envelope-preset');
+        const deleteEnvelopePresetBtn = document.getElementById('delete-envelope-preset');
+
+        const cfgHomeBg = document.getElementById('cfg-home-bg');
+        const homeBgPreviewBtn = document.getElementById('home-bg-preview');
+        const cfgHomeBgFile = document.getElementById('cfg-home-bg-file');
+        const clearHomeBgBtn = document.getElementById('clear-home-bg');
+        const cfgTopbarBg = document.getElementById('cfg-topbar-bg');
+        const topbarBgPreviewBtn = document.getElementById('topbar-bg-preview');
+        const cfgTopbarBgFile = document.getElementById('cfg-topbar-bg-file');
+        const clearTopbarBgBtn = document.getElementById('clear-topbar-bg');
+
+        const cfgPaperBg = document.getElementById('cfg-paper-bg');
+        const paperBgPreviewBtn = document.getElementById('paper-bg-preview');
+        const cfgPaperBgFile = document.getElementById('cfg-paper-bg-file');
+        const clearPaperBgBtn = document.getElementById('clear-paper-bg');
+
+        const previewIconComposeBtn = document.getElementById('preview-icon-compose');
+        const cfgIconCompose = document.getElementById('cfg-icon-compose');
+        const previewIconConfigBtn = document.getElementById('preview-icon-config');
+        const cfgIconConfig = document.getElementById('cfg-icon-config');
+        const previewIconBackBtn = document.getElementById('preview-icon-back');
+        const cfgIconBack = document.getElementById('cfg-icon-back');
+        const previewIconDoneBtn = document.getElementById('preview-icon-done');
+        const cfgIconDone = document.getElementById('cfg-icon-done');
+        const previewIconEditBtn = document.getElementById('preview-icon-edit');
+        const cfgIconEdit = document.getElementById('cfg-icon-edit');
+        const previewIconDeleteBtn = document.getElementById('preview-icon-delete');
+        const cfgIconDelete = document.getElementById('cfg-icon-delete');
+        
+        // 格式化日期
+        function formatDate(date) {
+            if (!date) return '';
+            const d = new Date(date);
+            const year = d.getFullYear();
+            const month = d.getMonth() + 1;
+            const day = d.getDate();
+            return `${year}年${month}月${day}日`;
+        }
+        
+        // 格式化日期为注释格式
+        function formatDateNote(date) {
+            if (!date) return '未拆封';
+            const d = new Date(date);
+            const month = d.getMonth() + 1;
+            const day = d.getDate();
+            return `${month}月${day}日`;
+        }
+
+        let toastTimer = null;
+
+        function showToast(message, durationMs = 2000) {
+            if (!toastEl) return;
+            if (toastTimer) {
+                clearTimeout(toastTimer);
+                toastTimer = null;
+            }
+
+            toastEl.textContent = String(message || '');
+            toastEl.classList.add('is-visible');
+
+            toastTimer = setTimeout(() => {
+                toastEl.classList.remove('is-visible');
+            }, Math.max(800, Number(durationMs) || 2000));
+        }
+
+        const UI_CONFIG_KEY = 'mailbox-ui_config_v1';
+        const uiPresets = {
+            default: {
+                vars: {
+                    '--primary-color': '#f8e1e7',
+                    '--secondary-color': '#d8a1c4',
+                    '--accent-color': '#b86b9a',
+                    '--dark-color': '#8a4b6f',
+                    '--light-color': '#fff8fb',
+                    '--text-color': '#5a3a4c',
+                    '--envelope-color': '#f9e9ef',
+                    '--paper-color': '#fffcf9'
+                },
+                homeBg: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)',
+                topbarBg: 'rgba(255, 255, 255, 0.92)',
+                paperBg: '',
+                themeFont: { mode: 'serif', url: '' },
+                paperFont: { mode: 'inherit', url: '', color: '#5a3a4c', size: 0.95 },
+                envelopeText: { mode: 'inherit', url: '', color: '#b86b9a', size: 0.85 },
+                envelopeStyle: { mode: 'diagonal', css: '', presets: [], activePresetId: '' }
+            },
+            cream: {
+                vars: {
+                    '--primary-color': '#f6efe6',
+                    '--secondary-color': '#e8d3c2',
+                    '--accent-color': '#b48b6b',
+                    '--dark-color': '#7a573f',
+                    '--light-color': '#fffaf2',
+                    '--text-color': '#513b2e',
+                    '--envelope-color': '#fbf1e6',
+                    '--paper-color': '#fffaf2'
+                },
+                homeBg: 'linear-gradient(135deg, #fffaf2 0%, #f6efe6 100%)',
+                topbarBg: 'rgba(255, 255, 255, 0.9)',
+                paperBg: '',
+                themeFont: { mode: 'serif', url: '' },
+                paperFont: { mode: 'inherit', url: '', color: '#513b2e', size: 0.95 },
+                envelopeText: { mode: 'inherit', url: '', color: '#b48b6b', size: 0.85 },
+                envelopeStyle: { mode: 'diagonal', css: '', presets: [], activePresetId: '' }
+            },
+            night: {
+                vars: {
+                    '--primary-color': '#1f1a22',
+                    '--secondary-color': '#2f2635',
+                    '--accent-color': '#b86b9a',
+                    '--dark-color': '#e8d4e0',
+                    '--light-color': '#231d27',
+                    '--text-color': '#f0e6ef',
+                    '--envelope-color': '#2b232f',
+                    '--paper-color': '#231d27'
+                },
+                homeBg: 'linear-gradient(135deg, #161218 0%, #2a2230 100%)',
+                topbarBg: 'rgba(35, 29, 39, 0.82)',
+                paperBg: '',
+                themeFont: { mode: 'serif', url: '' },
+                paperFont: { mode: 'inherit', url: '', color: '#f0e6ef', size: 0.95 },
+                envelopeText: { mode: 'inherit', url: '', color: '#b86b9a', size: 0.85 },
+                envelopeStyle: { mode: 'diagonal', css: '', presets: [], activePresetId: '' }
+            }
+        };
+
+        function readUiConfig() {
+            try {
+                const raw = localStorage.getItem(UI_CONFIG_KEY);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                return parsed && typeof parsed === 'object' ? parsed : null;
+            } catch (e) {
+                console.error('readUiConfig', e);
+                return null;
+            }
+        }
+
+        function writeUiConfig(next) {
+            try {
+                localStorage.setItem(UI_CONFIG_KEY, JSON.stringify(next || {}));
+                return true;
+            } catch (e) {
+                showToast('设置保存失败，可能是空间不足');
+                return false;
+            }
+        }
+
+        function setRootVar(name, value) {
+            const root = document.documentElement;
+            if (!value) {
+                root.style.removeProperty(name);
+                return;
+            }
+            root.style.setProperty(name, String(value));
+        }
+
+        function applyButtonIcon(button, dataUrl) {
+        if (!button) return;
+        const v = typeof dataUrl === 'string' ? dataUrl.trim() : '';
+        if (!v) {
+            button.classList.remove('is-icon-image');
+            button.style.removeProperty('background-image');
+            button.style.removeProperty('background-color');
+            button.style.removeProperty('border-color');
+            button.style.removeProperty('color');
+            return;
+        }
+        button.classList.add('is-icon-image');
+        button.style.backgroundImage = `url("${v}")`;
+        button.style.backgroundColor = 'transparent';
+        button.style.color = 'transparent';
+    }
+
+        function getFontFamilyValue(fontMode) {
+            if (fontMode === 'hand') return "'Ma Shan Zheng', 'Noto Serif SC', serif";
+            if (fontMode === 'system') return "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif";
+            return "'Noto Serif SC', serif";
+        }
+
+        function normalizeFontMode(mode, fallbackMode = 'serif') {
+            const m = String(mode || '').trim();
+            if (m === 'hand' || m === 'system' || m === 'serif' || m === 'url' || m === 'inherit') return m;
+            return fallbackMode;
+        }
+
+        function normalizeFontUrl(url) {
+            const v = String(url || '').trim();
+            return v;
+        }
+
+        function ensureStyleElement(id) {
+            let el = document.getElementById(id);
+            if (el) return el;
+            el = document.createElement('style');
+            el.id = id;
+            document.head.appendChild(el);
+            return el;
+        }
+
+        function applyRemoteFonts(themeUrl, paperUrl, envelopeUrl) {
+            const styleEl = ensureStyleElement('mailbox-dynamic-fonts');
+            const blocks = [];
+            const entries = [
+                { family: 'MailboxThemeFont', url: themeUrl },
+                { family: 'MailboxPaperFont', url: paperUrl },
+                { family: 'MailboxEnvelopeFont', url: envelopeUrl }
+            ];
+
+            entries.forEach((entry) => {
+                const url = normalizeFontUrl(entry.url);
+                if (!url) return;
+                blocks.push(
+                    `@font-face{font-family:'${entry.family}';src:url("${url}");font-style:normal;font-weight:400;font-display:swap;}`
+                );
+            });
+
+            styleEl.textContent = blocks.join('\n');
+        }
+
+        function applyEnvelopeCustomCss(cssText) {
+            const styleEl = ensureStyleElement('mailbox-envelope-custom');
+            const t = String(cssText || '').trim();
+            styleEl.textContent = t;
+        }
+
+        function normalizeBgValue(value) {
+            const v = String(value || '').trim();
+            return v;
+        }
+
+        function getBgImageValue(backgroundValue) {
+            const v = String(backgroundValue || '').trim();
+            if (!v) return '';
+            if (/gradient\(/i.test(v)) return v;
+            const match = v.match(/url\(([^)]+)\)/i);
+            if (match && match[1]) return `url(${match[1]})`;
+            return '';
+        }
+
+        function applyPreviewBackground(previewBtn, backgroundValue) {
+            if (!previewBtn) return;
+            const v = String(backgroundValue || '').trim();
+            if (!v) {
+                previewBtn.style.removeProperty('background');
+                previewBtn.classList.remove('is-cover');
+                return;
+            }
+            previewBtn.style.background = v;
+            if (/url\(/i.test(v)) previewBtn.classList.add('is-cover');
+            else previewBtn.classList.remove('is-cover');
+        }
+
+        function applyUiConfig(config) {
+            const cfg = config && typeof config === 'object' ? config : {};
+            const vars = cfg.vars || {};
+            Object.keys(vars).forEach((k) => {
+                setRootVar(k, vars[k]);
+            });
+
+            const homeBg = normalizeBgValue(cfg.homeBg);
+            if (homeBg) setRootVar('--mailbox-home-bg', homeBg);
+            else document.documentElement.style.removeProperty('--mailbox-home-bg');
+
+            const topbarBg = normalizeBgValue(cfg.topbarBg);
+            if (topbarBg) setRootVar('--mailbox-topbar-bg', topbarBg);
+            else document.documentElement.style.removeProperty('--mailbox-topbar-bg');
+
+            const paperBg = normalizeBgValue(cfg.paperBg);
+            if (paperBg) setRootVar('--mailbox-paper-bg', paperBg);
+            else document.documentElement.style.removeProperty('--mailbox-paper-bg');
+
+            const paperBgImage = getBgImageValue(paperBg);
+            if (paperBgImage) setRootVar('--mailbox-paper-bg-image', paperBgImage);
+            else document.documentElement.style.removeProperty('--mailbox-paper-bg-image');
+
+            const themeFontRaw = cfg.themeFont || { mode: cfg.font, url: '' };
+            const themeFontMode = normalizeFontMode(themeFontRaw.mode, 'serif');
+            const themeFontUrl = normalizeFontUrl(themeFontRaw.url);
+
+            const paperFontRaw = cfg.paperFont || { mode: 'inherit', url: '', color: vars['--text-color'], size: 0.95 };
+            const paperFontMode = normalizeFontMode(paperFontRaw.mode, 'inherit');
+            const paperFontUrl = normalizeFontUrl(paperFontRaw.url);
+
+            const envelopeTextRaw = cfg.envelopeText || { mode: 'inherit', url: '', color: vars['--accent-color'], size: 0.85 };
+            const envelopeTextMode = normalizeFontMode(envelopeTextRaw.mode, 'inherit');
+            const envelopeTextUrl = normalizeFontUrl(envelopeTextRaw.url);
+
+            applyRemoteFonts(
+                themeFontMode === 'url' ? themeFontUrl : '',
+                paperFontMode === 'url' ? paperFontUrl : '',
+                envelopeTextMode === 'url' ? envelopeTextUrl : ''
+            );
+
+            const themeFamily = themeFontMode === 'url' && themeFontUrl ? `'MailboxThemeFont', ${getFontFamilyValue('serif')}` : getFontFamilyValue(themeFontMode);
+            setRootVar('--theme-font-family', themeFamily);
+            setRootVar('--mailbox-font-family', themeFamily);
+
+            let paperFamily = '';
+            if (paperFontMode === 'inherit') paperFamily = themeFamily;
+            else if (paperFontMode === 'url' && paperFontUrl) paperFamily = `'MailboxPaperFont', ${getFontFamilyValue('serif')}`;
+            else paperFamily = getFontFamilyValue(paperFontMode);
+
+            setRootVar('--paper-font-family', paperFamily);
+            const paperColor = String(paperFontRaw.color || vars['--text-color'] || '').trim();
+            setRootVar('--paper-font-color', paperColor || vars['--text-color'] || '#5a3a4c');
+            const paperSize = Number(paperFontRaw.size);
+            setRootVar('--paper-font-size', Number.isFinite(paperSize) && paperSize > 0 ? `${paperSize}rem` : '0.95rem');
+
+            let envelopeTextFamily = '';
+            if (envelopeTextMode === 'inherit') envelopeTextFamily = themeFamily;
+            else if (envelopeTextMode === 'url' && envelopeTextUrl) envelopeTextFamily = `'MailboxEnvelopeFont', ${getFontFamilyValue('serif')}`;
+            else envelopeTextFamily = getFontFamilyValue(envelopeTextMode);
+            setRootVar('--envelope-text-font-family', envelopeTextFamily);
+            const envelopeTextColor = String(envelopeTextRaw.color || vars['--accent-color'] || '').trim();
+            setRootVar('--envelope-text-color', envelopeTextColor || vars['--accent-color'] || '#b86b9a');
+            const envelopeTextSize = Number(envelopeTextRaw.size);
+            setRootVar('--envelope-text-size', Number.isFinite(envelopeTextSize) && envelopeTextSize > 0 ? `${envelopeTextSize}rem` : '0.85rem');
+
+            const envelopeStyleRaw = cfg.envelopeStyle || { mode: cfg.envelopeLines === 'off' ? 'plain' : 'diagonal', css: '' };
+            const envelopeStyleMode = String(envelopeStyleRaw.mode || '').trim();
+            const mode = envelopeStyleMode === 'plain' ? 'plain' : envelopeStyleMode === 'custom' ? 'custom' : 'diagonal';
+            document.body.dataset.envelopeStyle = mode;
+            applyEnvelopeCustomCss(mode === 'custom' ? envelopeStyleRaw.css : '');
+
+            const icons = cfg.icons || {};
+            applyButtonIcon(fabComposeBtn, icons.compose);
+            applyButtonIcon(openConfigBtn, icons.config);
+            applyButtonIcon(mainBackBtn, icons.back);
+            applyButtonIcon(backFromLetterBtn, icons.back);
+            applyButtonIcon(backFromComposeBtn, icons.back);
+            applyButtonIcon(backFromConfigBtn, icons.back);
+            applyButtonIcon(completeLetterBtn, icons.done);
+            applyButtonIcon(saveLetterBtn, icons.done);
+            applyButtonIcon(editLetterBtn, icons.edit);
+            applyButtonIcon(deleteLetterBtn, icons.delete);
+
+            applyButtonIcon(previewIconComposeBtn, icons.compose);
+            applyButtonIcon(previewIconConfigBtn, icons.config);
+            applyButtonIcon(previewIconBackBtn, icons.back);
+            applyButtonIcon(previewIconDoneBtn, icons.done);
+            applyButtonIcon(previewIconEditBtn, icons.edit);
+            applyButtonIcon(previewIconDeleteBtn, icons.delete);
+
+            applyPreviewBackground(homeBgPreviewBtn, homeBg || getComputedStyle(document.documentElement).getPropertyValue('--mailbox-home-bg'));
+            applyPreviewBackground(topbarBgPreviewBtn, topbarBg || getComputedStyle(document.documentElement).getPropertyValue('--mailbox-topbar-bg'));
+            applyPreviewBackground(paperBgPreviewBtn, paperBg || getComputedStyle(document.documentElement).getPropertyValue('--paper-color'));
+        }
+
+        function getDefaultUiConfig() {
+            const preset = uiPresets.default;
+            return {
+                preset: 'default',
+                vars: Object.assign({}, preset.vars),
+                homeBg: preset.homeBg,
+                topbarBg: preset.topbarBg,
+                paperBg: preset.paperBg,
+                themeFont: Object.assign({}, preset.themeFont),
+                paperFont: Object.assign({}, preset.paperFont),
+                envelopeText: Object.assign({}, preset.envelopeText),
+                envelopeStyle: Object.assign({}, preset.envelopeStyle, {
+                    presets: [
+                        {
+                            id: 'envelope_fold_01',
+                            name: '折纸光痕',
+                            mode: 'custom',
+                            css: [
+                                '.envelope-item{border-radius:18px;border:1px solid rgba(184,107,154,.28);box-shadow:0 18px 44px rgba(138,75,111,.14);transform:translateZ(0);}',
+                                '.envelope-item:active{transform:scale(.985);}',
+                                '.diagonal-line{display:none;}',
+                                '.envelope-item::before{content:"";position:absolute;inset:0;background:radial-gradient(120px 90px at 18% 18%,rgba(255,255,255,.75),rgba(255,255,255,0) 62%),linear-gradient(145deg,rgba(184,107,154,.14),rgba(255,255,255,0) 55%),linear-gradient(0deg,rgba(255,255,255,.22),rgba(255,255,255,0) 58%);pointer-events:none;}',
+                                '.envelope-item::after{content:"";position:absolute;right:-52px;top:-52px;width:150px;height:150px;background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(255,255,255,0) 60%);transform:rotate(45deg);opacity:.7;pointer-events:none;}',
+                                '.envelope-heart{width:44px;height:44px;background:rgba(255,255,255,.72);border:1px solid rgba(184,107,154,.24);box-shadow:0 10px 24px rgba(138,75,111,.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}',
+                                '.envelope-heart i{font-size:1.05rem;}',
+                                '.envelope-date{letter-spacing:.22em;opacity:.78;}',
+                                '.envelope-date::after{content:"";display:block;width:42px;height:1px;margin:10px auto 0;background:linear-gradient(90deg,rgba(184,107,154,0),rgba(184,107,154,.35),rgba(184,107,154,0));}'
+                            ].join(''),
+                            envelopeColor: '#fbf1f6',
+                            envelopeText: { size: 0.82 }
+                        }
+                    ]
+                }),
+                icons: {}
+            };
+        }
+
+        function migrateUiConfig(raw) {
+            const base = getDefaultUiConfig();
+            const cfg = raw && typeof raw === 'object' ? raw : {};
+
+            const next = Object.assign({}, base, cfg);
+            next.vars = Object.assign({}, base.vars, cfg.vars && typeof cfg.vars === 'object' ? cfg.vars : {});
+
+            if (!next.themeFont || typeof next.themeFont !== 'object') {
+                next.themeFont = { mode: cfg.font || base.themeFont.mode, url: '' };
+            }
+            if (!next.paperFont || typeof next.paperFont !== 'object') next.paperFont = Object.assign({}, base.paperFont);
+            if (!next.envelopeText || typeof next.envelopeText !== 'object') next.envelopeText = Object.assign({}, base.envelopeText);
+
+            if (!next.envelopeStyle || typeof next.envelopeStyle !== 'object') {
+                const legacyMode = cfg.envelopeLines === 'off' ? 'plain' : 'diagonal';
+                next.envelopeStyle = Object.assign({}, base.envelopeStyle, { mode: legacyMode });
+            }
+
+            const presets = next.envelopeStyle.presets;
+            next.envelopeStyle.presets = Array.isArray(presets) ? presets.filter(Boolean) : [];
+            if (!next.envelopeStyle.presets.length && base.envelopeStyle && Array.isArray(base.envelopeStyle.presets) && base.envelopeStyle.presets.length) {
+                next.envelopeStyle.presets = base.envelopeStyle.presets.slice();
+            }
+            next.envelopeStyle.activePresetId = typeof next.envelopeStyle.activePresetId === 'string' ? next.envelopeStyle.activePresetId : '';
+            next.envelopeStyle.mode = next.envelopeStyle.mode === 'plain' ? 'plain' : next.envelopeStyle.mode === 'custom' ? 'custom' : 'diagonal';
+            next.envelopeStyle.css = typeof next.envelopeStyle.css === 'string' ? next.envelopeStyle.css : '';
+
+            next.icons = next.icons && typeof next.icons === 'object' ? next.icons : {};
+            return next;
+        }
+
+        let uiConfig = migrateUiConfig(readUiConfig() || {});
+
+        function syncEnvelopeStyleOptions() {
+            if (!cfgEnvelopeStyle) return;
+            const envStyle = uiConfig.envelopeStyle || { presets: [], activePresetId: '' };
+            const list = Array.isArray(envStyle.presets) ? envStyle.presets : [];
+
+            const prev = String(cfgEnvelopeStyle.value || '').trim();
+            cfgEnvelopeStyle.innerHTML = '';
+
+            const optDiagonal = document.createElement('option');
+            optDiagonal.value = 'diagonal';
+            optDiagonal.textContent = '对角线';
+            cfgEnvelopeStyle.appendChild(optDiagonal);
+
+            const optPlain = document.createElement('option');
+            optPlain.value = 'plain';
+            optPlain.textContent = '素面';
+            cfgEnvelopeStyle.appendChild(optPlain);
+
+            const optCustom = document.createElement('option');
+            optCustom.value = 'custom';
+            optCustom.textContent = '自定义 CSS';
+            cfgEnvelopeStyle.appendChild(optCustom);
+
+            if (list.length) {
+                const group = document.createElement('optgroup');
+                group.label = '预设';
+                list.forEach((p) => {
+                    if (!p || !p.id) return;
+                    const opt = document.createElement('option');
+                    opt.value = `preset:${String(p.id)}`;
+                    opt.textContent = String(p.name || '未命名预设');
+                    group.appendChild(opt);
+                });
+                cfgEnvelopeStyle.appendChild(group);
+            }
+
+            const desired = envStyle.activePresetId ? `preset:${String(envStyle.activePresetId)}` : (envStyle.mode === 'plain' ? 'plain' : envStyle.mode === 'custom' ? 'custom' : 'diagonal');
+            const fallback = prev || desired || 'diagonal';
+            cfgEnvelopeStyle.value = desired;
+            if (cfgEnvelopeStyle.value !== desired) cfgEnvelopeStyle.value = fallback;
+        }
+
+        function getEnvelopePresetById(id) {
+            const envStyle = uiConfig.envelopeStyle || null;
+            const list = envStyle && Array.isArray(envStyle.presets) ? envStyle.presets : [];
+            return list.find((p) => p && String(p.id) === String(id)) || null;
+        }
+
+        function applyEnvelopePreset(presetId) {
+            const preset = getEnvelopePresetById(presetId);
+            if (!preset) {
+                const envStyle = Object.assign({}, uiConfig.envelopeStyle, { activePresetId: '' });
+                updateConfig({ envelopeStyle: envStyle });
+                return;
+            }
+
+            const envStyle = Object.assign({}, uiConfig.envelopeStyle, {
+                mode: preset.mode || 'diagonal',
+                css: preset.css || '',
+                activePresetId: String(preset.id)
+            });
+
+            const nextVars = Object.assign({}, uiConfig.vars);
+            if (preset.envelopeColor) nextVars['--envelope-color'] = preset.envelopeColor;
+            updateConfig({
+                preset: 'custom',
+                vars: nextVars,
+                envelopeStyle: envStyle,
+                envelopeText: Object.assign({}, uiConfig.envelopeText, preset.envelopeText || {})
+            });
+            syncConfigControls();
+        }
+
+        function saveEnvelopePreset() {
+            if (!cfgEnvelopeStyle || !cfgEnvelopePresetName) return;
+            const name = String(cfgEnvelopePresetName.value || '').trim();
+            const normalizedName = name || '未命名预设';
+            const selection = String(cfgEnvelopeStyle.value || '').trim();
+            let id = selection.indexOf('preset:') === 0 ? selection.slice(7) : '';
+
+            const envStyle = uiConfig.envelopeStyle || { presets: [], activePresetId: '' };
+            const list = Array.isArray(envStyle.presets) ? envStyle.presets.slice() : [];
+
+            const existing = id ? list.find((p) => p && String(p.id) === String(id)) : null;
+            if (!id || (existing && normalizedName && String(existing.name || '').trim() !== normalizedName)) {
+                id = String(Date.now());
+            }
+
+            const vars = uiConfig.vars || {};
+            const mode = (uiConfig.envelopeStyle && String(uiConfig.envelopeStyle.mode || '').trim()) || 'diagonal';
+            const css = cfgEnvelopeCss ? String(cfgEnvelopeCss.value || '') : '';
+
+            const payload = {
+                id,
+                name: normalizedName,
+                mode: mode === 'plain' ? 'plain' : mode === 'custom' ? 'custom' : 'diagonal',
+                css,
+                envelopeColor: String(vars['--envelope-color'] || '').trim(),
+                envelopeText: Object.assign({}, uiConfig.envelopeText || {})
+            };
+
+            const idx = list.findIndex((p) => p && String(p.id) === id);
+            if (idx >= 0) list[idx] = Object.assign({}, list[idx], payload);
+            else list.push(payload);
+
+            const nextEnvStyle = Object.assign({}, envStyle, {
+                presets: list,
+                activePresetId: id
+            });
+
+            updateConfig({ envelopeStyle: nextEnvStyle, preset: 'custom' });
+            syncEnvelopeStyleOptions();
+            if (cfgEnvelopeStyle) cfgEnvelopeStyle.value = `preset:${id}`;
+            showToast('预设已保存');
+        }
+
+        function deleteEnvelopePreset() {
+            if (!cfgEnvelopeStyle) return;
+            const selection = String(cfgEnvelopeStyle.value || '').trim();
+            const id = selection.indexOf('preset:') === 0 ? selection.slice(7) : '';
+            if (!id) {
+                showToast('请先选择要删除的预设');
+                return;
+            }
+
+            const envStyle = uiConfig.envelopeStyle || { presets: [], activePresetId: '' };
+            const list = Array.isArray(envStyle.presets) ? envStyle.presets.slice() : [];
+            const nextList = list.filter((p) => p && String(p.id) !== id);
+            const nextEnvStyle = Object.assign({}, envStyle, {
+                presets: nextList,
+                activePresetId: envStyle.activePresetId === id ? '' : envStyle.activePresetId
+            });
+
+            updateConfig({ envelopeStyle: nextEnvStyle, preset: 'custom' });
+            syncEnvelopeStyleOptions();
+            if (cfgEnvelopeStyle) cfgEnvelopeStyle.value = nextEnvStyle.mode || 'diagonal';
+            if (cfgEnvelopePresetName) cfgEnvelopePresetName.value = '';
+            showToast('预设已删除');
+        }
+
+        function syncConfigControls() {
+            if (!cfgPreset) return;
+            const vars = uiConfig.vars || {};
+
+            if (cfgAccent) cfgAccent.value = String(vars['--accent-color'] || '#b86b9a');
+            if (cfgThemeText) cfgThemeText.value = String(vars['--text-color'] || '#5a3a4c');
+            if (cfgEnvelope) cfgEnvelope.value = String(vars['--envelope-color'] || '#f9e9ef');
+            if (cfgPaper) cfgPaper.value = String(vars['--paper-color'] || '#fffcf9');
+
+            const themeFont = uiConfig.themeFont || { mode: uiConfig.font || 'serif', url: '' };
+            if (cfgThemeFontMode) cfgThemeFontMode.value = normalizeFontMode(themeFont.mode, 'serif');
+            if (cfgThemeFontUrl) cfgThemeFontUrl.value = themeFont.url || '';
+
+            const paperFont = uiConfig.paperFont || { mode: 'inherit', url: '', color: vars['--text-color'], size: 0.95 };
+            if (cfgPaperFontMode) cfgPaperFontMode.value = normalizeFontMode(paperFont.mode, 'inherit');
+            if (cfgPaperFontUrl) cfgPaperFontUrl.value = paperFont.url || '';
+            if (cfgPaperFontColor) cfgPaperFontColor.value = String(paperFont.color || vars['--text-color'] || '#5a3a4c');
+            if (cfgPaperFontSize) cfgPaperFontSize.value = String(paperFont.size || 0.95);
+
+            const envText = uiConfig.envelopeText || { mode: 'inherit', url: '', color: vars['--accent-color'], size: 0.85 };
+            if (cfgEnvelopeTextFontMode) cfgEnvelopeTextFontMode.value = normalizeFontMode(envText.mode, 'inherit');
+            if (cfgEnvelopeTextFontUrl) cfgEnvelopeTextFontUrl.value = envText.url || '';
+            if (cfgEnvelopeTextColor) cfgEnvelopeTextColor.value = String(envText.color || vars['--accent-color'] || '#b86b9a');
+            if (cfgEnvelopeTextSize) cfgEnvelopeTextSize.value = String(envText.size || 0.85);
+
+            const envStyle = uiConfig.envelopeStyle || { mode: 'diagonal', css: '', presets: [], activePresetId: '' };
+            syncEnvelopeStyleOptions();
+            if (cfgEnvelopeStyle) {
+                const v = envStyle.activePresetId ? `preset:${String(envStyle.activePresetId)}` : (envStyle.mode === 'plain' ? 'plain' : envStyle.mode === 'custom' ? 'custom' : 'diagonal');
+                cfgEnvelopeStyle.value = v;
+            }
+            if (cfgEnvelopeCss) cfgEnvelopeCss.value = envStyle.css || '';
+            if (cfgEnvelopePresetName) {
+                const active = getEnvelopePresetById(envStyle.activePresetId || '');
+                cfgEnvelopePresetName.value = active ? String(active.name || '') : '';
+            }
+            if (cfgHomeBg) cfgHomeBg.value = uiConfig.homeBg || '';
+            if (cfgTopbarBg) cfgTopbarBg.value = uiConfig.topbarBg || '';
+            if (cfgPaperBg) cfgPaperBg.value = uiConfig.paperBg || '';
+
+
+            const presetName = uiConfig.preset;
+            if (presetName && uiPresets[presetName]) cfgPreset.value = presetName;
+            else cfgPreset.value = 'default';
+        }
+
+        let scrollLockOffset = 0;
+        let scrollLockCount = 0;
+        let closeCropModalInternal = null;
+        const focusStack = [];
+        let suppressNextPopstate = false;
+        let historyBaseReady = false;
+
+        function lockPageScroll() {
+            if (scrollLockCount === 0) {
+                scrollLockOffset = window.scrollY || window.pageYOffset || 0;
+                if (isIOS && isIframe) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.classList.add('is-scroll-locked');
+                    document.body.style.top = `-${scrollLockOffset}px`;
+                }
+            }
+            scrollLockCount += 1;
+        }
+
+        function unlockPageScroll() {
+            if (scrollLockCount <= 0) return;
+            scrollLockCount -= 1;
+            if (scrollLockCount !== 0) return;
+            if (isIOS && isIframe) {
+                document.body.style.overflow = '';
+            } else {
+                document.body.classList.remove('is-scroll-locked');
+                document.body.style.top = '';
+                window.scrollTo(0, scrollLockOffset);
+            }
+        }
+
+        function pushFocus() {
+            const active = document.activeElement;
+            focusStack.push(active && typeof active.focus === 'function' ? active : null);
+        }
+
+        function popFocus() {
+            const el = focusStack.pop();
+            if (!el) return;
+            try {
+                el.focus({ preventScroll: true });
+            } catch (e) {
+                try { el.focus(); } catch (err) {}
+            }
+        }
+
+        function ensureHistoryBase() {
+            if (historyBaseReady) return;
+            try {
+                const st = history.state && typeof history.state === 'object' ? history.state : {};
+                if (!st || !st.mailboxLayer) {
+                    history.replaceState(Object.assign({}, st, { mailboxLayer: 'base' }), document.title);
+                }
+                historyBaseReady = true;
+            } catch (e) {}
+        }
+
+        function pushHistoryLayer(layer) {
+            ensureHistoryBase();
+            try {
+                history.pushState({ mailboxLayer: String(layer || '') }, document.title);
+            } catch (e) {}
+        }
+
+        function backHistoryLayer() {
+            try {
+                suppressNextPopstate = true;
+                history.back();
+            } catch (e) {
+                suppressNextPopstate = false;
+            }
+        }
+
+        function closeTopOverlayFromHistory() {
+            const cropModalEl = document.getElementById('cropModal');
+            if (cropModalEl && cropModalEl.classList.contains('show')) {
+                if (typeof closeCropModalInternal === 'function') closeCropModalInternal({ fromPopstate: true });
+                return;
+            }
+            if (confirmModal && confirmModal.style.display === 'flex') {
+                closeConfirmModal({ fromPopstate: true });
+                return;
+            }
+            if (newLetterModal && newLetterModal.style.display === 'flex') {
+                closeNewLetterModal({ fromPopstate: true });
+                return;
+            }
+            if (configFullscreen && configFullscreen.style.display === 'flex') {
+                closeConfigScreen({ fromPopstate: true });
+                return;
+            }
+            if (composeFullscreen && composeFullscreen.style.display === 'flex') {
+                closeComposeScreen({ fromPopstate: true });
+                return;
+            }
+            if (letterFullscreen && letterFullscreen.style.display === 'flex') {
+                closeLetterView({ fromPopstate: true });
+            }
+        }
+
+        window.addEventListener('popstate', () => {
+            if (suppressNextPopstate) {
+                suppressNextPopstate = false;
+                return;
+            }
+            closeTopOverlayFromHistory();
+        });
+
+        function openConfigScreen() {
+            if (!configFullscreen) return;
+            configFullscreen.style.display = 'flex';
+            syncConfigControls();
+            lockPageScroll();
+            pushFocus();
+            pushHistoryLayer('config');
+            setTimeout(() => {
+                try {
+                    const first = cfgPreset || configFullscreen.querySelector('select, input, textarea, button');
+                    if (first && typeof first.focus === 'function') first.focus({ preventScroll: true });
+                } catch (e) {}
+            }, 0);
+        }
+
+        function closeConfigScreen(opts) {
+            if (!configFullscreen) return;
+            configFullscreen.style.display = 'none';
+            unlockPageScroll();
+            popFocus();
+            if (!(opts && opts.fromPopstate)) backHistoryLayer();
+        }
+
+        function updateConfig(partial) {
+            uiConfig = migrateUiConfig(Object.assign({}, uiConfig, partial));
+            writeUiConfig(uiConfig);
+            applyUiConfig(uiConfig);
+        }
+
+        function updateVarConfig(varName, value) {
+            const prevVars = uiConfig.vars || {};
+            const nextVars = Object.assign({}, prevVars);
+            if (value) nextVars[varName] = value;
+            else delete nextVars[varName];
+            updateConfig({ vars: nextVars, preset: 'custom' });
+        }
+
+        function applyPreset(presetName) {
+            const preset = uiPresets[presetName] || uiPresets.default;
+            const existingEnvelopeStyle = uiConfig.envelopeStyle || { presets: [], activePresetId: '' };
+            uiConfig = migrateUiConfig(Object.assign({}, uiConfig, {
+                preset: presetName,
+                vars: Object.assign({}, preset.vars),
+                homeBg: preset.homeBg,
+                topbarBg: preset.topbarBg,
+                paperBg: preset.paperBg,
+                themeFont: Object.assign({}, preset.themeFont),
+                paperFont: Object.assign({}, preset.paperFont),
+                envelopeText: Object.assign({}, preset.envelopeText),
+                envelopeStyle: Object.assign({}, preset.envelopeStyle, {
+                    presets: Array.isArray(existingEnvelopeStyle.presets) ? existingEnvelopeStyle.presets : [],
+                    activePresetId: String(existingEnvelopeStyle.activePresetId || '')
+                })
+            }));
+            writeUiConfig(uiConfig);
+            applyUiConfig(uiConfig);
+            syncConfigControls();
+        }
+
+        function fileToDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result || ''));
+                reader.onerror = () => reject(reader.error || new Error('File read failed'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function openSharedCrop(imgSrc, options, done) {
+            const getOpenCrop = () => (typeof window.openCropModal === 'function') ? window.openCropModal : (window.parent && window.parent !== window && typeof window.parent.openCropModal === 'function') ? window.parent.openCropModal : null;
+            let openCrop = getOpenCrop();
+            if (!openCrop) {
+                ensureLocalCropModal();
+                openCrop = getOpenCrop();
+            }
+            if (!openCrop) {
+                done(imgSrc);
+                return;
+            }
+            try {
+                openCrop(imgSrc, options || { shape: 'rect', aspectRatio: null }, (croppedDataUrl) => {
+                    done(croppedDataUrl);
+                });
+            } catch (e) {
+                done(imgSrc);
+            }
+        }
+
+        let _localCropInited = false;
+        function ensureLocalCropModal() {
+            if (_localCropInited) return;
+            const cropModal = document.getElementById('cropModal');
+            const cropCanvas = document.getElementById('cropCanvas');
+            const cropWrapper = document.getElementById('cropWrapper');
+            const cropOverlay = document.getElementById('cropOverlay');
+            const cancelBtn = document.getElementById('cropCancelBtn');
+            const cancelBtn2 = document.getElementById('cropCancelBtn2');
+            const confirmBtn = document.getElementById('cropConfirmBtn');
+            if (!cropModal || !cropCanvas || !cropWrapper || !cropOverlay || !confirmBtn) return;
+
+            const ctx = cropCanvas.getContext('2d');
+            if (!ctx) return;
+
+            _localCropInited = true;
+
+            let cropImage = null;
+            let cropScale = 1;
+            let cropTranslateX = 0;
+            let cropTranslateY = 0;
+            let cropStartDistance = 0;
+            let cropStartScale = 1;
+            let cropStartX = 0;
+            let cropStartY = 0;
+            let cropIsDragging = false;
+            let currentCropOptions = {};
+            let currentCropCallback = null;
+
+            const drawCropImage = () => {
+                if (!cropImage) return;
+                const w = cropWrapper.clientWidth;
+                const h = cropWrapper.clientHeight;
+                cropCanvas.width = w;
+                cropCanvas.height = h;
+                const cx = w / 2;
+                const cy = h / 2;
+                ctx.clearRect(0, 0, w, h);
+                ctx.save();
+                ctx.translate(cx + cropTranslateX, cy + cropTranslateY);
+                ctx.scale(cropScale, cropScale);
+                ctx.drawImage(cropImage, -cropImage.width / 2, -cropImage.height / 2);
+                ctx.restore();
+            };
+
+            cropWrapper.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    cropIsDragging = true;
+                    cropStartX = e.touches[0].clientX - cropTranslateX;
+                    cropStartY = e.touches[0].clientY - cropTranslateY;
+                } else if (e.touches.length === 2) {
+                    cropIsDragging = false;
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    cropStartDistance = Math.sqrt(dx * dx + dy * dy);
+                    cropStartScale = cropScale;
+                }
+            }, { passive: false });
+
+            cropWrapper.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (e.touches.length === 1 && cropIsDragging) {
+                    cropTranslateX = e.touches[0].clientX - cropStartX;
+                    cropTranslateY = e.touches[0].clientY - cropStartY;
+                    drawCropImage();
+                } else if (e.touches.length === 2) {
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (cropStartDistance > 0) {
+                        const newScale = cropStartScale * (distance / cropStartDistance);
+                        cropScale = Math.max(0.1, Math.min(10, newScale));
+                        drawCropImage();
+                    }
+                }
+            }, { passive: false });
+
+            cropWrapper.addEventListener('touchend', () => {
+                cropIsDragging = false;
+            });
+
+            cropWrapper.addEventListener('mousedown', (e) => {
+                cropIsDragging = true;
+                cropStartX = e.clientX - cropTranslateX;
+                cropStartY = e.clientY - cropTranslateY;
+            });
+
+            cropWrapper.addEventListener('mousemove', (e) => {
+                if (cropIsDragging) {
+                    cropTranslateX = e.clientX - cropStartX;
+                    cropTranslateY = e.clientY - cropStartY;
+                    drawCropImage();
+                }
+            });
+
+            cropWrapper.addEventListener('mouseup', () => {
+                cropIsDragging = false;
+            });
+
+            cropWrapper.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                cropScale = Math.max(0.1, Math.min(10, cropScale * delta));
+                drawCropImage();
+            }, { passive: false });
+
+            const close = () => {
+                cropModal.classList.remove('show');
+                const inputs = document.querySelectorAll('input[type="file"]');
+                inputs.forEach(input => input.value = '');
+                unlockPageScroll();
+                popFocus();
+                backHistoryLayer();
+            };
+
+            closeCropModalInternal = (opts) => {
+                cropModal.classList.remove('show');
+                const inputs = document.querySelectorAll('input[type="file"]');
+                inputs.forEach(input => input.value = '');
+                unlockPageScroll();
+                popFocus();
+                if (!(opts && opts.fromPopstate)) backHistoryLayer();
+            };
+
+            if (cancelBtn) cancelBtn.addEventListener('click', close);
+            if (cancelBtn2) cancelBtn2.addEventListener('click', close);
+
+            confirmBtn.addEventListener('click', () => {
+                if (!currentCropCallback) return;
+
+                let maxOutputSize = 1024;
+                if (currentCropOptions.shape === 'circle') {
+                    maxOutputSize = 512;
+                } else if (currentCropOptions.aspectRatio === 1) {
+                    maxOutputSize = 512;
+                }
+
+                const overlayRect = cropOverlay.getBoundingClientRect();
+                const wrapperRect = cropWrapper.getBoundingClientRect();
+                
+                // 使用相对坐标，避免 getBoundingClientRect 在某些移动端浏览器下的绝对坐标偏移问题
+                const overlayCenterX = overlayRect.width / 2;
+                const overlayCenterY = overlayRect.height / 2;
+                const wrapperCenterX = wrapperRect.width / 2;
+                const wrapperCenterY = wrapperRect.height / 2;
+                
+                // 计算 overlay 相对于 wrapper 中心的偏移
+                // 注意：这里需要的是渲染时的真实偏移，getBoundingClientRect 包含了滚动和缩放的影响
+                const overlayRelativeLeft = overlayRect.left - wrapperRect.left;
+                const overlayRelativeTop = overlayRect.top - wrapperRect.top;
+                const offsetX = (overlayRelativeLeft + overlayRect.width / 2) - wrapperCenterX;
+                const offsetY = (overlayRelativeTop + overlayRect.height / 2) - wrapperCenterY;
+
+                const overlayWidth = overlayRect.width;
+                const overlayHeight = overlayRect.height;
+                let outputWidth = overlayWidth;
+                let outputHeight = overlayHeight;
+                const ratio = overlayWidth / overlayHeight;
+                
+                if (outputWidth > outputHeight) {
+                    if (outputWidth > maxOutputSize) {
+                        outputWidth = maxOutputSize;
+                        outputHeight = maxOutputSize / ratio;
+                    }
+                } else {
+                    if (outputHeight > maxOutputSize) {
+                        outputHeight = maxOutputSize;
+                        outputWidth = maxOutputSize * ratio;
+                    }
+                }
+
+                const outputCanvas = document.createElement('canvas');
+                outputCanvas.width = outputWidth;
+                outputCanvas.height = outputHeight;
+                const outCtx = outputCanvas.getContext('2d');
+                if (!outCtx || !cropImage) return;
+
+                outCtx.clearRect(0, 0, outputWidth, outputHeight);
+                outCtx.save();
+                outCtx.translate(outputWidth / 2, outputHeight / 2);
+                const scaleFactor = outputWidth / overlayWidth;
+                outCtx.scale(scaleFactor, scaleFactor);
+                // 修正偏移：我们需要的是 imageCenter 相对于 overlayCenter 的偏移
+                // imageCenter = wrapperCenter + cropTranslate
+                // imageCenter - overlayCenter = (wrapperCenter + cropTranslate) - overlayCenter
+                //                            = cropTranslate - (overlayCenter - wrapperCenter)
+                outCtx.translate(cropTranslateX - offsetX, cropTranslateY - offsetY);
+                outCtx.scale(cropScale, cropScale);
+                outCtx.drawImage(cropImage, -cropImage.width / 2, -cropImage.height / 2);
+                outCtx.restore();
+
+                const quality = 0.95;
+                const dataUrl = outputCanvas.toDataURL('image/png'); // 改用 PNG 确保不失真，后续存储会自动处理数据大小
+                currentCropCallback(dataUrl);
+
+                cropModal.classList.remove('show');
+                const inputs = document.querySelectorAll('input[type="file"]');
+                inputs.forEach(input => input.value = '');
+                unlockPageScroll();
+                popFocus();
+                backHistoryLayer();
+            });
+
+            window.openCropModal = (imgSrc, options, callback) => {
+                currentCropOptions = Object.assign({ aspectRatio: null, shape: 'rect' }, options);
+                currentCropCallback = callback;
+                lockPageScroll();
+                pushFocus();
+                pushHistoryLayer('crop');
+
+                cropImage = new Image();
+                cropImage.onload = () => {
+                    cropScale = 1;
+                    cropTranslateX = 0;
+                    cropTranslateY = 0;
+
+                    cropOverlay.className = 'crop-overlay ' + (currentCropOptions.shape === 'circle' ? 'circle' : 'rect');
+                    const baseSize = 280;
+                    if (currentCropOptions.aspectRatio) {
+                        if (currentCropOptions.aspectRatio >= 1) {
+                            cropOverlay.style.width = baseSize + 'px';
+                            cropOverlay.style.height = (baseSize / currentCropOptions.aspectRatio) + 'px';
+                        } else {
+                            cropOverlay.style.height = baseSize + 'px';
+                            cropOverlay.style.width = (baseSize * currentCropOptions.aspectRatio) + 'px';
+                        }
+                    } else {
+                        cropOverlay.style.width = baseSize + 'px';
+                        cropOverlay.style.height = baseSize + 'px';
+                    }
+
+                    const minDim = Math.min(cropImage.width, cropImage.height);
+                    const wrapperDim = Math.min(cropWrapper.clientWidth, cropWrapper.clientHeight);
+                    if (minDim > 0) {
+                        cropScale = (wrapperDim * 0.8) / minDim;
+                    }
+
+                    drawCropImage();
+                    cropModal.classList.add('show');
+                };
+                cropImage.src = imgSrc;
+            };
+        }
+
+        function getViewportAspectRatio() {
+            const w = Number(document.documentElement && document.documentElement.clientWidth) || Number(window.innerWidth) || 0;
+            const h = Number(window.innerHeight) || Number(document.documentElement && document.documentElement.clientHeight) || 0;
+            const r = w > 0 && h > 0 ? (w / h) : (9 / 16);
+            if (!Number.isFinite(r) || r <= 0) return 9 / 16;
+            return Math.max(0.35, Math.min(2.2, r));
+        }
+
+        function setIconValue(key, dataUrl) {
+            const prevIcons = uiConfig.icons || {};
+            const nextIcons = Object.assign({}, prevIcons);
+            if (dataUrl) nextIcons[key] = dataUrl;
+            else delete nextIcons[key];
+            updateConfig({ icons: nextIcons });
+        }
+
+        function bindPreviewFileClick(previewBtn, inputEl) {
+            if (!previewBtn || !inputEl) return;
+            previewBtn.addEventListener('click', () => {
+                try {
+                    inputEl.click();
+                } catch (e) {}
+            });
+        }
+
+        function updateThemeFont(partial) {
+            const prev = uiConfig.themeFont || { mode: 'serif', url: '' };
+            updateConfig({ themeFont: Object.assign({}, prev, partial), preset: 'custom' });
+        }
+
+        function updatePaperFont(partial) {
+            const prev = uiConfig.paperFont || { mode: 'inherit', url: '', color: '#5a3a4c', size: 0.95 };
+            updateConfig({ paperFont: Object.assign({}, prev, partial), preset: 'custom' });
+        }
+
+        function updateEnvelopeText(partial) {
+            const prev = uiConfig.envelopeText || { mode: 'inherit', url: '', color: '#b86b9a', size: 0.85 };
+            updateConfig({ envelopeText: Object.assign({}, prev, partial), preset: 'custom' });
+        }
+
+        function updateEnvelopeStyle(partial) {
+            const prev = uiConfig.envelopeStyle || { mode: 'diagonal', css: '', presets: [], activePresetId: '' };
+            updateConfig({ envelopeStyle: Object.assign({}, prev, partial), preset: 'custom' });
+        }
+
+        // 返回按钮事件
+        if (mainBackBtn) {
+            mainBackBtn.addEventListener('click', () => {
+                if (isIframe) {
+                    try {
+                        if (window.parent && window.parent !== window) {
+                            window.parent.postMessage({ type: 'closeApp', appId: 'xinxiang' }, _getPostTargetOrigin());
+                            return;
+                        }
+                    } catch (err) {}
+                }
+                window.location.href = 'index.html';
+            });
+        }
+        
+        // 初始化信件列表
+        function initLetters() {
+            if (letters.length === 0) {
+                envelopeList.style.display = 'none';
+                emptyState.style.display = 'flex';
+                return;
+            }
+            
+            envelopeList.style.display = 'flex';
+            emptyState.style.display = 'none';
+            
+            // 按日期排序（最新的在前面）
+            letters.sort((a, b) => getLetterSortTime(b) - getLetterSortTime(a));
+            
+            envelopeList.innerHTML = '';
+            letters.forEach((letter, index) => {
+                const formattedDate = formatDateNote(letter.date);
+                
+                const envelopeItem = document.createElement('div');
+                envelopeItem.className = 'envelope-item';
+                envelopeItem.setAttribute('data-index', index);
+                envelopeItem.setAttribute('role', 'button');
+                envelopeItem.setAttribute('tabindex', '0');
+                envelopeItem.setAttribute('aria-label', `打开信件：${formattedDate}`);
+                envelopeItem.innerHTML = `
+                    <div class="diagonal-line"></div>
+                    <div class="envelope-date">${formattedDate}</div>
+                    <div class="envelope-heart">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                `;
+                
+                // 添加点击事件
+                envelopeItem.addEventListener('click', function() {
+                    openLetter(index);
+                });
+                envelopeItem.addEventListener('keydown', function(e) {
+                    if (!e) return;
+                    const k = e.key;
+                    if (k === 'Enter' || k === ' ') {
+                        e.preventDefault();
+                        openLetter(index);
+                    }
+                });
+                
+                envelopeList.appendChild(envelopeItem);
+            });
+        }
+
+        function syncLetterHeaderActions() {
+            const hasOpenLetter = Number.isInteger(currentOpenLetterIndex) && currentOpenLetterIndex >= 0;
+            const canEdit = hasOpenLetter && !isEditingOpenLetter;
+            const canSaveOrDelete = hasOpenLetter && isEditingOpenLetter;
+
+            editLetterBtn.style.display = canEdit ? 'flex' : 'none';
+            saveLetterBtn.style.display = canSaveOrDelete ? 'flex' : 'none';
+            deleteLetterBtn.style.display = canSaveOrDelete ? 'flex' : 'none';
+        }
+
+        function renderOpenLetter() {
+            const letter = Number.isInteger(currentOpenLetterIndex) ? letters[currentOpenLetterIndex] : null;
+            if (!letter) {
+                closeLetterView();
+                return;
+            }
+
+            const formattedDate = formatDate(letter.date);
+
+            letterContainer.innerHTML = `
+                <div class="recipient-line" id="letter-recipient-line"></div>
+                <div class="letter-body" id="letter-body"></div>
+                <div class="sender-info">
+                    <div class="sender-name" id="letter-sender-name"></div>
+                    <div class="letter-date-full" id="letter-date-full"></div>
+                </div>
+            `;
+
+            document.getElementById('letter-recipient-line').textContent = `致${letter.recipient}：`;
+            document.getElementById('letter-body').textContent = letter.content || '';
+            document.getElementById('letter-sender-name').textContent = letter.sender || '';
+            document.getElementById('letter-date-full').textContent = formattedDate;
+        }
+
+        function renderOpenLetterEditor() {
+            const letter = Number.isInteger(currentOpenLetterIndex) ? letters[currentOpenLetterIndex] : null;
+            if (!letter) {
+                closeLetterView();
+                return;
+            }
+
+            const formattedDate = formatDate(letter.date);
+
+            letterContainer.innerHTML = `
+                <div class="recipient-line" id="letter-recipient-line"></div>
+                <textarea class="letter-edit-body" id="letter-edit-body" placeholder="写下您想说的话..."></textarea>
+                <div class="sender-info">
+                    <div class="sender-name" id="letter-sender-name"></div>
+                    <div class="letter-date-full" id="letter-date-full"></div>
+                </div>
+            `;
+
+            document.getElementById('letter-recipient-line').textContent = `致${letter.recipient}：`;
+            document.getElementById('letter-sender-name').textContent = letter.sender || '';
+            document.getElementById('letter-date-full').textContent = formattedDate;
+
+            const textarea = document.getElementById('letter-edit-body');
+            textarea.value = letter.content || '';
+            textarea.focus();
+        }
+
+        function enterOpenLetterEditMode() {
+            if (!Number.isInteger(currentOpenLetterIndex)) return;
+            isEditingOpenLetter = true;
+            syncLetterHeaderActions();
+            renderOpenLetterEditor();
+        }
+
+        function saveOpenLetterEdits() {
+            if (!Number.isInteger(currentOpenLetterIndex)) return;
+            const textarea = document.getElementById('letter-edit-body');
+            if (!textarea) return;
+
+            const content = textarea.value.trim();
+            if (!content) {
+                showToast('请输入信件内容');
+                return;
+            }
+
+            const letter = letters[currentOpenLetterIndex];
+            if (!letter) return;
+
+            letter.content = content;
+            window.MailboxStorageDB.saveLetter(letter).catch((e) => { console.error(e); });
+
+            isEditingOpenLetter = false;
+            syncLetterHeaderActions();
+            renderOpenLetter();
+        }
+
+        function deleteOpenLetter() {
+            if (!Number.isInteger(currentOpenLetterIndex)) return;
+            const letter = letters[currentOpenLetterIndex];
+            if (!letter) return;
+
+            openConfirmModal('确定要删除这封信吗？', null, () => {
+                letters.splice(currentOpenLetterIndex, 1);
+                if (letter && typeof letter.id !== 'undefined') {
+                    window.MailboxStorageDB.deleteLetter(letter.id).catch((e) => { console.error(e); });
+                }
+                closeLetterView();
+                initLetters();
+            }, '确定删除');
+        }
+        
+        // 打开信封查看信件内容
+        function openLetter(index) {
+            currentOpenLetterIndex = index;
+            isEditingOpenLetter = false;
+            syncLetterHeaderActions();
+            renderOpenLetter();
+            
+            // 显示信件内容全屏视图
+            letterFullscreen.style.display = 'flex';
+            lockPageScroll();
+            pushFocus();
+            pushHistoryLayer('letter');
+            setTimeout(() => {
+                try {
+                    if (backFromLetterBtn && typeof backFromLetterBtn.focus === 'function') backFromLetterBtn.focus({ preventScroll: true });
+                } catch (e) {}
+            }, 0);
+        }
+        
+        // 关闭信件内容视图
+        function closeLetterView(opts) {
+            letterFullscreen.style.display = 'none';
+            currentOpenLetterIndex = null;
+            isEditingOpenLetter = false;
+            syncLetterHeaderActions();
+            unlockPageScroll();
+            popFocus();
+            if (!(opts && opts.fromPopstate)) backHistoryLayer();
+        }
+        
+        // 打开写新信第一步
+        function openNewLetterModal() {
+            newLetterModal.style.display = 'flex';
+            document.getElementById('sender-name').value = '';
+            document.getElementById('recipient-name').value = '';
+            currentLetter = { sender: '', recipient: '', content: '' };
+            lockPageScroll();
+            pushFocus();
+            pushHistoryLayer('new');
+            setTimeout(() => {
+                try {
+                    const senderEl = document.getElementById('sender-name');
+                    if (senderEl && typeof senderEl.focus === 'function') senderEl.focus({ preventScroll: true });
+                } catch (e) {}
+            }, 0);
+        }
+        
+        // 关闭写新信第一步
+        function closeNewLetterModal(opts) {
+            newLetterModal.style.display = 'none';
+            unlockPageScroll();
+            popFocus();
+            if (!(opts && opts.fromPopstate)) backHistoryLayer();
+        }
+        
+        // 打开全屏写信页面
+        function openComposeScreen() {
+            // 设置信件格式
+            composeRecipientLine.textContent = `致${currentLetter.recipient}：`;
+            composeSenderName.textContent = currentLetter.sender;
+            composeDate.textContent = formatDate(new Date());
+            
+            pushFocus();
+            pushHistoryLayer('compose');
+            lockPageScroll();
+            composeFullscreen.style.display = 'flex';
+            composeBody.value = currentLetter.content || '';
+            composeBody.focus();
+        }
+        
+        // 关闭全屏写信页面
+        function closeComposeScreen(opts) {
+            composeFullscreen.style.display = 'none';
+            // 保存草稿内容
+            currentLetter.content = composeBody.value;
+            unlockPageScroll();
+            popFocus();
+            if (!(opts && (opts.fromPopstate || opts.skipHistory))) backHistoryLayer();
+        }
+        
+        function openConfirmModal(message, detailText, action, confirmBtnText = '确定投递') {
+            if (confirmTextEl) confirmTextEl.textContent = String(message || '');
+            if (confirmDetailEl) {
+                if (detailText) {
+                    confirmDetailEl.textContent = String(detailText);
+                    confirmDetailEl.style.display = 'block';
+                } else {
+                    confirmDetailEl.textContent = '';
+                    confirmDetailEl.style.display = 'none';
+                }
+            }
+            confirmSendBtn.textContent = confirmBtnText;
+            confirmAction = typeof action === 'function' ? action : null;
+            confirmModal.style.display = 'flex';
+            lockPageScroll();
+            pushFocus();
+            pushHistoryLayer('confirm');
+            setTimeout(() => {
+                try {
+                    if (confirmSendBtn && typeof confirmSendBtn.focus === 'function') confirmSendBtn.focus({ preventScroll: true });
+                } catch (e) {}
+            }, 0);
+        }
+        
+        // 关闭确认投递提示
+        function closeConfirmModal(opts) {
+            confirmModal.style.display = 'none';
+            confirmAction = null;
+            unlockPageScroll();
+            popFocus();
+            if (!(opts && (opts.fromPopstate || opts.skipHistory))) backHistoryLayer();
+        }
+        
+        // 保存信件到本地存储
+        function saveLetter() {
+            const newLetter = {
+                id: Date.now(),
+                sender: currentLetter.sender,
+                recipient: currentLetter.recipient,
+                content: currentLetter.content,
+                date: new Date().toISOString()
+            };
+            
+            letters.unshift(newLetter);
+            window.MailboxStorageDB.saveLetter(newLetter).catch((e) => { console.error(e); });
+            
+            // 重置当前信件
+            currentLetter = { sender: '', recipient: '', content: '' };
+            composeBody.value = '';
+            
+            // 更新界面
+            initLetters();
+            
+            // 关闭所有模态窗口
+            closeConfirmModal({ skipHistory: true });
+            closeComposeScreen({ skipHistory: true });
+            
+            // 显示成功提示
+            setTimeout(() => {
+                showToast('信件已成功投递到信箱！');
+            }, 300);
+        }
+        
+        // 事件监听器
+        if (fabComposeBtn) fabComposeBtn.addEventListener('click', openNewLetterModal);
+        if (openConfigBtn) openConfigBtn.addEventListener('click', openConfigScreen);
+        if (backFromConfigBtn) backFromConfigBtn.addEventListener('click', closeConfigScreen);
+        if (resetConfigBtn) {
+            resetConfigBtn.addEventListener('click', () => {
+                try {
+                    localStorage.removeItem(UI_CONFIG_KEY);
+                } catch (e) {}
+                uiConfig = {};
+                applyPreset('default');
+                showToast('已恢复默认');
+            });
+        }
+
+        if (cfgPreset) cfgPreset.addEventListener('change', () => applyPreset(cfgPreset.value));
+        if (cfgAccent) cfgAccent.addEventListener('input', () => updateVarConfig('--accent-color', cfgAccent.value));
+        if (cfgThemeText) cfgThemeText.addEventListener('input', () => updateVarConfig('--text-color', cfgThemeText.value));
+        if (cfgEnvelope) cfgEnvelope.addEventListener('input', () => updateVarConfig('--envelope-color', cfgEnvelope.value));
+        if (cfgPaper) cfgPaper.addEventListener('input', () => updateVarConfig('--paper-color', cfgPaper.value));
+
+        if (cfgThemeFontMode) cfgThemeFontMode.addEventListener('change', () => updateThemeFont({ mode: cfgThemeFontMode.value }));
+        if (cfgThemeFontUrl) cfgThemeFontUrl.addEventListener('change', () => updateThemeFont({ url: cfgThemeFontUrl.value }));
+
+        if (cfgPaperFontMode) cfgPaperFontMode.addEventListener('change', () => updatePaperFont({ mode: cfgPaperFontMode.value }));
+        if (cfgPaperFontUrl) cfgPaperFontUrl.addEventListener('change', () => updatePaperFont({ url: cfgPaperFontUrl.value }));
+        if (cfgPaperFontColor) cfgPaperFontColor.addEventListener('input', () => updatePaperFont({ color: cfgPaperFontColor.value }));
+        if (cfgPaperFontSize) cfgPaperFontSize.addEventListener('input', () => updatePaperFont({ size: Number(cfgPaperFontSize.value) }));
+
+        if (cfgEnvelopeTextFontMode) cfgEnvelopeTextFontMode.addEventListener('change', () => updateEnvelopeText({ mode: cfgEnvelopeTextFontMode.value }));
+        if (cfgEnvelopeTextFontUrl) cfgEnvelopeTextFontUrl.addEventListener('change', () => updateEnvelopeText({ url: cfgEnvelopeTextFontUrl.value }));
+        if (cfgEnvelopeTextColor) cfgEnvelopeTextColor.addEventListener('input', () => updateEnvelopeText({ color: cfgEnvelopeTextColor.value }));
+        if (cfgEnvelopeTextSize) cfgEnvelopeTextSize.addEventListener('input', () => updateEnvelopeText({ size: Number(cfgEnvelopeTextSize.value) }));
+
+        function handleFontFileUpload(file, targetUrlInput, updateFn) {
+            if (!file || !file.name.match(/\.(woff2|woff|ttf|otf)$/i)) {
+                showToast('请上传有效的字体文件（woff2/woff/ttf/otf）');
+                return;
+            }
+            const blobUrlService = getBlobUrlService();
+            if (!blobUrlService) throw new Error('BlobUrlService不可用');
+            const fontUrl = blobUrlService.createObjectUrl(file, { groupId: GROUP_ID + '-font' });
+            if (targetUrlInput) targetUrlInput.value = fontUrl;
+            updateFn({ url: fontUrl });
+            showToast('字体文件已加载');
+        }
+
+        const cfgThemeFontUploadBtn = document.getElementById('cfg-theme-font-upload');
+        const cfgThemeFontFileInput = document.getElementById('cfg-theme-font-file');
+        if (cfgThemeFontUploadBtn && cfgThemeFontFileInput) {
+            cfgThemeFontUploadBtn.addEventListener('click', () => cfgThemeFontFileInput.click());
+            cfgThemeFontFileInput.addEventListener('change', () => {
+                const file = cfgThemeFontFileInput.files[0];
+                if (file) handleFontFileUpload(file, cfgThemeFontUrl, updateThemeFont);
+            });
+        }
+
+        const cfgPaperFontUploadBtn = document.getElementById('cfg-paper-font-upload');
+        const cfgPaperFontFileInput = document.getElementById('cfg-paper-font-file');
+        if (cfgPaperFontUploadBtn && cfgPaperFontFileInput) {
+            cfgPaperFontUploadBtn.addEventListener('click', () => cfgPaperFontFileInput.click());
+            cfgPaperFontFileInput.addEventListener('change', () => {
+                const file = cfgPaperFontFileInput.files[0];
+                if (file) handleFontFileUpload(file, cfgPaperFontUrl, updatePaperFont);
+            });
+        }
+
+        const cfgEnvelopeTextFontUploadBtn = document.getElementById('cfg-envelope-text-font-upload');
+        const cfgEnvelopeTextFontFileInput = document.getElementById('cfg-envelope-text-font-file');
+        if (cfgEnvelopeTextFontUploadBtn && cfgEnvelopeTextFontFileInput) {
+            cfgEnvelopeTextFontUploadBtn.addEventListener('click', () => cfgEnvelopeTextFontFileInput.click());
+            cfgEnvelopeTextFontFileInput.addEventListener('change', () => {
+                const file = cfgEnvelopeTextFontFileInput.files[0];
+                if (file) handleFontFileUpload(file, cfgEnvelopeTextFontUrl, updateEnvelopeText);
+            });
+        }
+
+        if (cfgEnvelopeStyle) {
+            cfgEnvelopeStyle.addEventListener('change', () => {
+                const v = String(cfgEnvelopeStyle.value || '').trim();
+                if (v.indexOf('preset:') === 0) {
+                    applyEnvelopePreset(v.slice(7));
+                    return;
+                }
+                updateEnvelopeStyle({
+                    mode: v === 'plain' ? 'plain' : v === 'custom' ? 'custom' : 'diagonal',
+                    activePresetId: ''
+                });
+                syncEnvelopeStyleOptions();
+            });
+        }
+        if (cfgEnvelopeCss) cfgEnvelopeCss.addEventListener('input', () => updateEnvelopeStyle({ css: cfgEnvelopeCss.value }));
+        if (saveEnvelopePresetBtn) saveEnvelopePresetBtn.addEventListener('click', saveEnvelopePreset);
+        if (deleteEnvelopePresetBtn) deleteEnvelopePresetBtn.addEventListener('click', deleteEnvelopePreset);
+
+        bindPreviewFileClick(homeBgPreviewBtn, cfgHomeBgFile);
+        bindPreviewFileClick(topbarBgPreviewBtn, cfgTopbarBgFile);
+        bindPreviewFileClick(paperBgPreviewBtn, cfgPaperBgFile);
+
+        bindPreviewFileClick(previewIconComposeBtn, cfgIconCompose);
+        bindPreviewFileClick(previewIconConfigBtn, cfgIconConfig);
+        bindPreviewFileClick(previewIconBackBtn, cfgIconBack);
+        bindPreviewFileClick(previewIconDoneBtn, cfgIconDone);
+        bindPreviewFileClick(previewIconEditBtn, cfgIconEdit);
+        bindPreviewFileClick(previewIconDeleteBtn, cfgIconDelete);
+
+        if (cfgHomeBg) cfgHomeBg.addEventListener('change', () => updateConfig({ homeBg: normalizeBgValue(cfgHomeBg.value), preset: 'custom' }));
+        if (clearHomeBgBtn) {
+            clearHomeBgBtn.addEventListener('click', () => {
+                if (cfgHomeBg) cfgHomeBg.value = '';
+                updateConfig({ homeBg: '', preset: 'custom' });
+            });
+        }
+        if (cfgHomeBgFile) {
+            cfgHomeBgFile.addEventListener('change', () => {
+                const file = cfgHomeBgFile.files && cfgHomeBgFile.files[0];
+                if (!file) return;
+                cfgHomeBgFile.value = '';
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const raw = e && e.target ? e.target.result : '';
+                    const imgSrc = String(raw || '');
+                    openSharedCrop(imgSrc, { aspectRatio: getViewportAspectRatio(), shape: 'rect' }, (dataUrl) => {
+                        const bgValue = `url("${dataUrl}") center / cover no-repeat`;
+                        if (cfgHomeBg) cfgHomeBg.value = bgValue;
+                        updateConfig({ homeBg: bgValue, preset: 'custom' });
+                    });
+                };
+                reader.onerror = () => {
+                    showToast('图片读取失败');
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        if (cfgTopbarBg) cfgTopbarBg.addEventListener('change', () => updateConfig({ topbarBg: normalizeBgValue(cfgTopbarBg.value), preset: 'custom' }));
+        if (clearTopbarBgBtn) {
+            clearTopbarBgBtn.addEventListener('click', () => {
+                if (cfgTopbarBg) cfgTopbarBg.value = '';
+                updateConfig({ topbarBg: '', preset: 'custom' });
+            });
+        }
+        if (cfgTopbarBgFile) {
+            cfgTopbarBgFile.addEventListener('change', () => {
+                const file = cfgTopbarBgFile.files && cfgTopbarBgFile.files[0];
+                if (!file) return;
+                cfgTopbarBgFile.value = '';
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const raw = e && e.target ? e.target.result : '';
+                    const imgSrc = String(raw || '');
+                    openSharedCrop(imgSrc, { aspectRatio: 4, shape: 'rect' }, (dataUrl) => {
+                        const bgValue = `url("${dataUrl}") center / cover no-repeat`;
+                        if (cfgTopbarBg) cfgTopbarBg.value = bgValue;
+                        updateConfig({ topbarBg: bgValue, preset: 'custom' });
+                    });
+                };
+                reader.onerror = () => {
+                    showToast('图片读取失败');
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        if (cfgPaperBg) cfgPaperBg.addEventListener('change', () => updateConfig({ paperBg: normalizeBgValue(cfgPaperBg.value), preset: 'custom' }));
+        if (clearPaperBgBtn) {
+            clearPaperBgBtn.addEventListener('click', () => {
+                if (cfgPaperBg) cfgPaperBg.value = '';
+                updateConfig({ paperBg: '', preset: 'custom' });
+            });
+        }
+        if (cfgPaperBgFile) {
+            cfgPaperBgFile.addEventListener('change', () => {
+                const file = cfgPaperBgFile.files && cfgPaperBgFile.files[0];
+                if (!file) return;
+                cfgPaperBgFile.value = '';
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const raw = e && e.target ? e.target.result : '';
+                    const imgSrc = String(raw || '');
+                    openSharedCrop(imgSrc, { aspectRatio: getViewportAspectRatio(), shape: 'rect' }, (dataUrl) => {
+                        const bgValue = `url("${dataUrl}")`;
+                        if (cfgPaperBg) cfgPaperBg.value = bgValue;
+                        updateConfig({ paperBg: bgValue, preset: 'custom' });
+                    });
+                };
+                reader.onerror = () => {
+                    showToast('图片读取失败');
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function bindIconPicker(inputEl, key) {
+            if (!inputEl) return;
+            inputEl.addEventListener('change', () => {
+                const file = inputEl.files && inputEl.files[0];
+                if (!file) return;
+                inputEl.value = '';
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const raw = e && e.target ? e.target.result : '';
+                    const imgSrc = String(raw || '');
+                    openSharedCrop(imgSrc, { aspectRatio: 1, shape: 'rect' }, (dataUrl) => {
+                        setIconValue(key, dataUrl);
+                    });
+                };
+                reader.onerror = () => {
+                    showToast('图片读取失败');
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        bindIconPicker(cfgIconCompose, 'compose');
+        bindIconPicker(cfgIconConfig, 'config');
+        bindIconPicker(cfgIconBack, 'back');
+        bindIconPicker(cfgIconDone, 'done');
+        bindIconPicker(cfgIconEdit, 'edit');
+        bindIconPicker(cfgIconDelete, 'delete');
+
+        if (configFullscreen) {
+            configFullscreen.addEventListener('click', (e) => {
+                const target = e.target;
+                const clearKey = target && target.dataset ? target.dataset.iconClear : '';
+                if (!clearKey) return;
+                setIconValue(clearKey, null);
+            });
+        }
+
+        cancelFirstStepBtn.addEventListener('click', closeNewLetterModal);
+        backFromLetterBtn.addEventListener('click', closeLetterView);
+        backFromComposeBtn.addEventListener('click', closeComposeScreen);
+        cancelSendBtn.addEventListener('click', closeConfirmModal);
+        editLetterBtn.addEventListener('click', enterOpenLetterEditMode);
+        saveLetterBtn.addEventListener('click', saveOpenLetterEdits);
+        deleteLetterBtn.addEventListener('click', deleteOpenLetter);
+        
+        // 第一步表单提交
+        senderRecipientForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const sender = document.getElementById('sender-name').value.trim();
+            const recipient = document.getElementById('recipient-name').value.trim();
+            
+            if (!sender || !recipient) {
+                showToast('请填写寄件人和收件人');
+                return;
+            }
+            
+            currentLetter.sender = sender;
+            currentLetter.recipient = recipient;
+            
+            closeNewLetterModal();
+            setTimeout(() => {
+                openComposeScreen();
+            }, 300);
+        });
+        
+        // 完成写信按钮
+        completeLetterBtn.addEventListener('click', function() {
+            const content = composeBody.value.trim();
+
+            if (!content) {
+                showToast('请输入信件内容');
+                return;
+            }
+
+            currentLetter.content = content;
+            openConfirmModal(
+                '确定要投递这封信吗？',
+                `寄: ${currentLetter.sender}  致: ${currentLetter.recipient}`,
+                saveLetter
+            );
+        });
+        
+        confirmSendBtn.addEventListener('click', function() {
+            const action = confirmAction;
+            closeConfirmModal({ skipHistory: true });
+            if (typeof action !== 'function') return;
+            Promise.resolve()
+                .then(() => action())
+                .catch(() => {
+                    showToast('操作失败，请重试');
+                });
+        });
+        
+        // 点击模态窗口外部关闭
+        window.addEventListener('click', function(e) {
+            if (e.target === newLetterModal) {
+                closeNewLetterModal();
+            }
+            if (e.target === confirmModal) {
+                closeConfirmModal();
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (configFullscreen && configFullscreen.style.display === 'flex') {
+                closeConfigScreen();
+                return;
+            }
+            if (confirmModal.style.display === 'flex') {
+                closeConfirmModal();
+                return;
+            }
+            if (newLetterModal.style.display === 'flex') {
+                closeNewLetterModal();
+                return;
+            }
+            if (composeFullscreen.style.display === 'flex') {
+                closeComposeScreen();
+                return;
+            }
+            if (letterFullscreen.style.display === 'flex') {
+                closeLetterView();
+            }
+        });
+        
+        // 初始化应用
+        async function initApp() {
+            try {
+                await window.MailboxStorageDB.init();
+            } catch (e) {
+                showToast('存储初始化失败，将使用本地备份');
+            }
+
+            applyUiConfig(uiConfig);
+
+            if (isIframe) {
+                document.addEventListener('click', () => {
+                    try {
+                        const parent = window.parent;
+                        if (parent && parent !== window) {
+                            parent.postMessage({ type: 'iframe_click' }, _getPostTargetOrigin());
+                        }
+                    } catch (e) {}
+                }, true);
+            }
+
+            await loadLetters();
+            removePresetLetters();
+
+            if (isIframe) {
+                try {
+                    window.parent.postMessage({ type: 'app_ready', appId: 'xinxiang' }, _getPostTargetOrigin());
+                } catch (e) {
+                    console.error('Failed to send app_ready message:', e);
+                }
+            }
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

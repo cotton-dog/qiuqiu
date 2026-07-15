@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>线下模式</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" sizes="180x180">
+    <meta name="theme-color" content="#f1f3f4">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="线下模式">
+    <link rel="stylesheet" href="css/core-icons.min.css">
+    <link rel="stylesheet" href="css/core-ui.css">
+    <link rel="stylesheet" href="css/offline-mode.css">
+    <script src="js/core/PlatformLoader.js"></script>
+    <script src="js/core/DeviceAdapter.js"></script>
+    <script src="js/core/CapacityMonitor.js"></script>
+    <script src="js/core/PerformanceMonitor.js"></script>
+    <script src="js/core/StorageService.js"></script>
+</head>
+<body class="opera-mobile-compatible x-browser-compatible">
+    <div class="offline-page-bg" id="page-bg"></div>
+    
+    <div class="offline-page">
+        <div class="offline-header">
+            <button class="offline-header-back" id="back-btn" type="button" aria-label="返回">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="offline-header-title" id="header-title">线下模式</div>
+            <button class="offline-header-settings" id="settings-btn" type="button" aria-label="设置">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+
+        <div class="offline-messages" id="messages-container">
+            <div class="offline-messages-list" id="messages-list">
+                <div class="offline-welcome" id="welcome-view">
+                    <div class="offline-welcome-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <div class="offline-welcome-title">长叙事剧情模式</div>
+                    <div class="offline-welcome-desc">
+                        沉浸式对话体验，专注于剧情发展。<br>
+                        发送消息后AI将自动推进剧情。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="offline-input-area" id="input-area">
+            <div class="offline-input-wrapper">
+                <button class="offline-text-editor-btn" id="text-editor-btn" type="button" aria-label="大文本编辑">
+                    <i class="fas fa-file-alt"></i>
+                </button>
+                <div class="offline-input-box">
+                    <textarea class="offline-input" id="message-input" placeholder="输入消息..." rows="1"></textarea>
+                </div>
+                <button class="offline-send-btn" id="send-btn" type="button" aria-label="发送">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="offline-keyboard-spacer"></div>
+        </div>
+    </div>
+
+    <div class="offline-settings-page" id="settings-page" aria-hidden="true">
+        <div class="offline-settings-header">
+            <button class="offline-settings-back" id="settings-back" type="button" aria-label="返回">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="offline-settings-title">设置</div>
+        </div>
+        <div class="offline-settings-body">
+            <div class="offline-settings-section">
+                <div class="offline-settings-section-title">AI回复设置</div>
+                <div class="offline-settings-item">
+                    <label class="offline-settings-label">回复字数</label>
+                    <input type="number" id="ai-word-count" class="offline-settings-input" placeholder="默认500" min="50" max="2000" value="500">
+                    <span class="offline-settings-hint">字</span>
+                </div>
+                <div class="offline-settings-item offline-settings-item--column">
+                    <label class="offline-settings-label">文风</label>
+                    <textarea id="ai-style" class="offline-settings-textarea" placeholder="描述你想要的文风，如：温柔细腻、幽默风趣..." rows="2" maxlength="200"></textarea>
+                </div>
+                <div class="offline-settings-item">
+                    <label class="offline-settings-label">视角</label>
+                    <div class="offline-settings-radio-group">
+                        <label class="offline-radio-label">
+                            <input type="radio" name="viewpoint" value="first" checked>
+                            <span class="offline-radio-custom"></span>
+                            <span>第一人称</span>
+                        </label>
+                        <label class="offline-radio-label">
+                            <input type="radio" name="viewpoint" value="third">
+                            <span class="offline-radio-custom"></span>
+                            <span>第三人称</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="offline-settings-section">
+                <div class="offline-settings-section-title">页面美化</div>
+                <div class="offline-settings-item offline-settings-item--column">
+                    <label class="offline-settings-label">背景样式</label>
+                    <div class="offline-bg-preview-list" id="bg-preview-list">
+                        <div class="offline-bg-preview" data-bg="default" title="莫兰迪">
+                            <div class="offline-bg-preview-inner bg-preview-default"></div>
+                            <span>莫兰迪</span>
+                        </div>
+                        <div class="offline-bg-preview" data-bg="warm" title="暖阳">
+                            <div class="offline-bg-preview-inner bg-preview-warm"></div>
+                            <span>暖阳</span>
+                        </div>
+                        <div class="offline-bg-preview" data-bg="cool" title="清冷">
+                            <div class="offline-bg-preview-inner bg-preview-cool"></div>
+                            <span>清冷</span>
+                        </div>
+                        <div class="offline-bg-preview" data-bg="night" title="夜幕">
+                            <div class="offline-bg-preview-inner bg-preview-night"></div>
+                            <span>夜幕</span>
+                        </div>
+                        <div class="offline-bg-preview" data-bg="paper" title="纸张">
+                            <div class="offline-bg-preview-inner bg-preview-paper"></div>
+                            <span>纸张</span>
+                        </div>
+                        <div class="offline-bg-preview" data-bg="custom" title="自定义">
+                            <div class="offline-bg-preview-inner bg-preview-custom">
+                                <i class="fas fa-palette"></i>
+                            </div>
+                            <span>自定义</span>
+                        </div>
+                    </div>
+                    <select id="bg-style" class="offline-hidden">
+                        <option value="default">默认莫兰迪</option>
+                        <option value="warm">暖阳</option>
+                        <option value="cool">清冷</option>
+                        <option value="night">夜幕</option>
+                        <option value="paper">纸张</option>
+                        <option value="custom">自定义颜色</option>
+                    </select>
+                </div>
+                <div class="offline-settings-item" id="custom-bg-color-item" style="display:none;">
+                    <label class="offline-settings-label">自定义背景色</label>
+                    <input type="color" id="custom-bg-color" class="offline-settings-color" value="#f8f5f2">
+                </div>
+                <div class="offline-settings-item offline-settings-item--column">
+                    <label class="offline-settings-label">卡片样式</label>
+                    <div class="offline-card-preview-list" id="card-preview-list">
+                        <div class="offline-card-preview" data-card="rounded" title="圆角">
+                            <div class="offline-card-preview-inner card-preview-rounded"></div>
+                            <span>圆角</span>
+                        </div>
+                        <div class="offline-card-preview" data-card="sharp" title="直角">
+                            <div class="offline-card-preview-inner card-preview-sharp"></div>
+                            <span>直角</span>
+                        </div>
+                        <div class="offline-card-preview" data-card="soft" title="柔和">
+                            <div class="offline-card-preview-inner card-preview-soft"></div>
+                            <span>柔和</span>
+                        </div>
+                        <div class="offline-card-preview" data-card="minimal" title="极简">
+                            <div class="offline-card-preview-inner card-preview-minimal"></div>
+                            <span>极简</span>
+                        </div>
+                    </div>
+                    <select id="card-style" class="offline-hidden">
+                        <option value="rounded">圆角卡片</option>
+                        <option value="sharp">直角卡片</option>
+                        <option value="soft">柔和阴影</option>
+                        <option value="minimal">极简风格</option>
+                    </select>
+                </div>
+                <div class="offline-settings-item">
+                    <label class="offline-settings-label">卡片透明度</label>
+                    <input type="range" id="card-opacity" class="offline-settings-range" min="0.5" max="1" step="0.05" value="0.95">
+                    <span class="offline-settings-hint" id="opacity-value">95%</span>
+                </div>
+            </div>
+
+            <div class="offline-settings-section">
+                <div class="offline-settings-section-title">外观</div>
+                <div class="offline-settings-item offline-settings-item--toggle">
+                    <label class="offline-settings-label">深色模式</label>
+                    <button class="offline-toggle-btn" id="dark-mode-toggle" type="button" aria-pressed="false">
+                        <span class="offline-toggle-slider"></span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="offline-settings-section">
+                <div class="offline-settings-section-title">数据管理</div>
+                <div class="offline-settings-item">
+                    <button class="offline-settings-action-btn" id="export-btn" type="button">
+                        <i class="fas fa-download"></i>
+                        <span>导出对话记录</span>
+                    </button>
+                </div>
+                <div class="offline-settings-item">
+                    <button class="offline-settings-action-btn" id="import-btn" type="button">
+                        <i class="fas fa-upload"></i>
+                        <span>导入对话记录</span>
+                    </button>
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
+                </div>
+                <div class="offline-settings-item">
+                    <button class="offline-settings-action-btn offline-settings-action-btn--danger" id="clear-btn" type="button">
+                        <i class="fas fa-trash-alt"></i>
+                        <span>清空对话记录</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="offline-settings-section">
+                <div class="offline-settings-section-title">记忆同步</div>
+                <div class="offline-settings-item">
+                    <button class="offline-settings-action-btn" id="sync-to-main-btn" type="button">
+                        <i class="fas fa-sync"></i>
+                        <span>同步到普通对话</span>
+                    </button>
+                </div>
+                <div class="offline-settings-item offline-settings-item--toggle">
+                    <label class="offline-settings-label">退出时自动同步</label>
+                    <button class="offline-toggle-btn" id="auto-sync-toggle" type="button" aria-pressed="false">
+                        <span class="offline-toggle-slider"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="offline-text-editor-panel" id="text-editor-panel" aria-hidden="true">
+        <div class="offline-text-editor-header">
+            <button class="offline-text-editor-back" id="text-editor-back" type="button" aria-label="返回">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="offline-text-editor-title">大文本编辑</div>
+            <button class="offline-text-editor-insert" id="text-editor-insert" type="button">
+                <i class="fas fa-check"></i>
+                <span>插入</span>
+            </button>
+        </div>
+        <div class="offline-text-editor-body">
+            <textarea class="offline-text-editor-textarea" id="text-editor-textarea" placeholder="在此输入较长的文本内容..."></textarea>
+        </div>
+        <div class="offline-text-editor-footer">
+            <span class="offline-text-editor-count" id="text-editor-count">0 字</span>
+        </div>
+    </div>
+
+    <div class="offline-confirm-dialog" id="confirm-dialog" aria-hidden="true">
+        <div class="offline-confirm-mask" id="confirm-mask"></div>
+        <div class="offline-confirm-content" role="alertdialog" aria-modal="true">
+            <div class="offline-confirm-title" id="confirm-title">确认操作</div>
+            <div class="offline-confirm-message" id="confirm-message">确定要执行此操作吗？</div>
+            <div class="offline-confirm-actions">
+                <button class="offline-confirm-btn offline-confirm-btn--cancel" id="confirm-cancel" type="button">取消</button>
+                <button class="offline-confirm-btn offline-confirm-btn--confirm" id="confirm-ok" type="button">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="offline-toast" id="toast" aria-live="polite">
+        <span class="offline-toast-text" id="toast-text"></span>
+    </div>
+
+    <div class="offline-typing-indicator" id="typing-indicator" style="display:none;">
+        <div class="offline-typing-dots">
+            <span></span><span></span><span></span>
+        </div>
+        <span class="offline-typing-text">正在思考剧情...</span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            var retryCount = 0;
+            var maxRetries = 20;
+            
+            while ((!window.Core || !window.Core.StorageService) && retryCount < maxRetries) {
+                await new Promise(function(resolve) { setTimeout(resolve, 100); });
+                retryCount++;
+            }
+            
+            if (!window.Core || !window.Core.StorageService) {
+                console.error('[offline-mode] StorageService 加载超时，请刷新页面');
+                return;
+            }
+            
+            if (window.Core.StorageService._isSingleton !== true) {
+                console.error('[offline-mode] StorageService 格式错误，期望单例实例');
+                return;
+            }
+            
+            if (typeof window.Core.StorageService.openDB !== 'function') {
+                console.error('[offline-mode] StorageService 缺少 openDB 方法');
+                return;
+            }
+            
+            try {
+                await window.Core.StorageService.openDB('PhoneAppImages', 5);
+                console.log('[offline-mode] 存储服务初始化成功');
+            } catch (e) {
+                console.error('[offline-mode] 存储服务初始化失败:', e);
+            }
+            
+            if (window.Core && window.Core.DeviceAdapter) {
+                try {
+                    var deviceAdapter = new window.Core.DeviceAdapter();
+                    await deviceAdapter.init();
+                    window.Core.DeviceAdapterInstance = deviceAdapter;
+                } catch (e) {
+                    console.error('[offline-mode] 设备适配器初始化失败:', e);
+                }
+            }
+        });
+    </script>
+    <script src="js/offline-mode/main.js" defer></script>
+</body>
+</html>

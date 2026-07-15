@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" sizes="180x180">
+    <!-- iOS PWA 兼容 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="湫丘捕梦机">
+    <title>极简日历</title>
+    <link rel="stylesheet" href="css/core-icons.min.css">
+    <link rel="stylesheet" href="css/core-ui.css">
+    <link rel="stylesheet" href="css/local-icons.css"> <!-- FontAwesome fallback -->
+    <link rel="stylesheet" href="css/apps/calendar.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <button class="app-back-btn" id="appBackBtn" aria-label="退出">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="control-btn" id="todayBtn">今天</button>
+        </div>
+        <div class="header-title" id="monthTitle">
+            2023年 10月
+        </div>
+        <div class="header-controls">
+            <button class="control-icon-btn" id="periodSettingsBtn" style="color: var(--period-text);"><i class="fas fa-venus"></i></button>
+            <button class="control-icon-btn" id="searchBtn"><i class="fas fa-search"></i></button>
+            <button class="control-icon-btn" id="menuBtn"><i class="fas fa-bars"></i></button>
+        </div>
+    </header>
+
+    <div class="weekdays">
+        <span>日</span>
+        <span>一</span>
+        <span>二</span>
+        <span>三</span>
+        <span>四</span>
+        <span>五</span>
+        <span>六</span>
+    </div>
+
+    <div class="calendar-container">
+        <div class="month-view" id="calendarGrid">
+            <!-- Days will be injected here -->
+        </div>
+        
+        <div class="event-list scroll-y-hidebar flex-scroll" id="eventList">
+            <div class="event-list-header" id="selectedDateHeader">10月15日 周日</div>
+            <div id="eventsContainer">
+                <!-- Events will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="fab" id="addEventBtn">
+        <i class="fas fa-plus"></i>
+    </div>
+
+    <!-- Add Event Modal -->
+    <div class="modal-overlay" id="addEventModal">
+        <div class="modal-card">
+            <div class="modal-title">新建日程</div>
+            <div class="form-group">
+                <label class="form-label">标题</label>
+                <input type="text" class="form-input" id="eventTitle" placeholder="日程内容">
+            </div>
+            <div class="form-group">
+                <label class="form-label">时间</label>
+                <input type="time" class="form-input" id="eventTime" value="09:00">
+            </div>
+            <div class="form-group">
+                <label class="form-label">类型</label>
+                <select class="form-input" id="eventType">
+                    <option value="important">重要</option>
+                    <option value="work">工作</option>
+                    <option value="personal">个人</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" id="cancelEventBtn">取消</button>
+                <button class="btn btn-save" id="saveEventBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Period Settings Modal -->
+    <div class="modal-overlay" id="periodSettingsModal">
+        <div class="modal-card">
+            <div class="modal-title" style="color: var(--period-text);">经期设置</div>
+            <div class="form-group">
+                <label class="form-label">经期长度 (天)</label>
+                <input type="number" class="form-input" id="periodDurationInput" value="5" min="3" max="10">
+            </div>
+            <div class="form-group">
+                <label class="form-label">周期长度 (天)</label>
+                <input type="number" class="form-input" id="cycleLengthInput" value="28" min="20" max="45">
+            </div>
+            <div class="form-group">
+                <label class="form-label" style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="showPredictionsCheck" checked> 显示预测
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" id="cancelPeriodSettingsBtn">关闭</button>
+                <button class="btn" style="background:var(--period-bg); color:var(--period-text);" id="savePeriodSettingsBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/core/SafeArea.js"></script>
+    <script src="js/core/StorageService.js"></script>
+    <script src="js/core/MessageBus.js"></script>
+    <script>
+        function _getPostTargetOrigin() {
+            const origin = window.location.origin;
+            return origin && origin !== 'null' ? origin : '*';
+        }
+
+        function handleBack() {
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'closeApp', appId: 'rili' }, _getPostTargetOrigin());
+                    return;
+                }
+            } catch (err) { }
+            window.location.href = 'index.html';
+        }
+
+        const calendarGrid = document.getElementById('calendarGrid');
+        const monthTitle = document.getElementById('monthTitle');
+        const selectedDateHeader = document.getElementById('selectedDateHeader');
+        const eventsContainer = document.getElementById('eventsContainer');
+        const addEventModal = document.getElementById('addEventModal');
+        const addEventBtn = document.getElementById('addEventBtn');
+        const cancelEventBtn = document.getElementById('cancelEventBtn');
+        const saveEventBtn = document.getElementById('saveEventBtn');
+        const todayBtn = document.getElementById('todayBtn');
+        const appBackBtn = document.getElementById('appBackBtn');
+
+        if (appBackBtn) {
+            appBackBtn.addEventListener('click', handleBack);
+        }
+
+        let currentDate = new Date(); // The date being viewed (month)
+        let selectedDate = new Date(); // The specifically selected day
+        
+        // --- Period System Data ---
+        let periodSettings = {
+            duration: 5,
+            cycleLength: 28,
+            showPredictions: true
+        };
+        // List of start dates (YYYY-MM-DD strings)
+        let periodRecords = [];
+        
+        // Store events in memory for this session (synced with DB)
+        let events = {}; // Key: "YYYY-MM-DD", Value: Array of objects
+
+        // --- IndexedDB Logic ---
+        const DB_NAME = 'CalendarDB';
+        const DB_VERSION = 1;
+        let db = null;
+
+        async function initDB() {
+            try {
+                db = await Core.StorageService.openDB(DB_NAME, DB_VERSION, (database) => {
+                    if (!database.objectStoreNames.contains('events')) {
+                        const store = database.createObjectStore('events', { keyPath: 'id' });
+                        store.createIndex('date', 'date', { unique: false });
+                    }
+                    if (!database.objectStoreNames.contains('periodRecords')) {
+                        database.createObjectStore('periodRecords', { keyPath: 'dateStr' });
+                    }
+                });
+                await loadAllData();
+            } catch (err) {
+                console.error('Failed to init DB:', err);
+            }
+        }
+
+        async function loadAllData() {
+            if (!db) return;
+            
+            // Load Events
+            const tx = db.transaction(['events', 'periodRecords'], 'readonly');
+            
+            // Events
+            const eventStore = tx.objectStore('events');
+            const eventReq = eventStore.getAll();
+            
+            eventReq.onsuccess = () => {
+                const allEvents = eventReq.result;
+                events = {};
+                allEvents.forEach(evt => {
+                    // Extract YYYY-MM-DD from evt.date or evt.time (assuming we store date string)
+                    // We will store 'date' field in event object
+                    const dateKey = evt.date; 
+                    if (!events[dateKey]) events[dateKey] = [];
+                    events[dateKey].push(evt);
+                });
+                renderCalendar();
+                renderEventList();
+            };
+
+            // Period Records
+            const periodStore = tx.objectStore('periodRecords');
+            const periodReq = periodStore.getAll();
+            
+            periodReq.onsuccess = () => {
+                periodRecords = periodReq.result.map(item => item.dateStr);
+                renderCalendar();
+
+                try {
+                    window.parent.postMessage({ type: 'app_ready', appId: 'rili' }, _getPostTargetOrigin());
+                } catch (e) {
+                    console.error('Failed to send app_ready message:', e);
+                }
+            };
+        }
+
+        async function syncScheduleToChat() {
+            try {
+                const today = new Date();
+                const tomorrow = new Date(today);
+                tomorrow.setDate(today.getDate() + 1);
+                
+                const getEventsStr = (date) => {
+                    const dateKey = formatDateKey(date);
+                    const dayEvents = events[dateKey] || [];
+                    if (dayEvents.length === 0) return '无';
+                    return dayEvents.map(e => `${e.time} ${e.title}`).join('; ');
+                };
+                
+                const todayStr = `${today.getMonth()+1}月${today.getDate()}日`;
+                const tomorrowStr = `${tomorrow.getMonth()+1}月${tomorrow.getDate()}日`;
+                
+                const context = `[用户日程表]\n今天(${todayStr}): ${getEventsStr(today)}\n明天(${tomorrowStr}): ${getEventsStr(tomorrow)}`;
+                
+                // localStorage.setItem('chat20.scheduleContext', context);
+                
+                // Use IndexedDB (SharedContextDB)
+                const DB_NAME = 'SharedContextDB';
+                const STORE_NAME = 'contexts';
+                const DB_VERSION = 1;
+
+                await Core.StorageService.openDB(DB_NAME, DB_VERSION, (db) => {
+                     if (!db.objectStoreNames.contains(STORE_NAME)) {
+                         db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                     }
+                });
+                
+                await Core.StorageService.transaction(DB_NAME, [STORE_NAME], async (tx) => {
+                    const store = tx.objectStore(STORE_NAME);
+                    store.put({
+                        id: 'schedule',
+                        content: context,
+                        updatedAt: Date.now()
+                    });
+                });
+                
+                // console.log('Schedule synced to DB:', context);
+            } catch (e) {
+                console.error('Failed to sync schedule:', e);
+            }
+        }
+
+        async function saveEventToDB(event) {
+            if (!db) return;
+            const tx = db.transaction('events', 'readwrite');
+            const store = tx.objectStore('events');
+            store.put(event);
+            return new Promise((resolve) => {
+                tx.oncomplete = () => resolve();
+            });
+        }
+        
+        async function deleteEventFromDB(id) {
+            if (!db) return;
+            const tx = db.transaction('events', 'readwrite');
+            const store = tx.objectStore('events');
+            store.delete(id);
+            return new Promise((resolve) => {
+                tx.oncomplete = () => resolve();
+            });
+        }
+
+        async function savePeriodRecordToDB(dateStr, isAdd) {
+            if (!db) return;
+            const tx = db.transaction('periodRecords', 'readwrite');
+            const store = tx.objectStore('periodRecords');
+            if (isAdd) {
+                store.put({ dateStr });
+            } else {
+                store.delete(dateStr);
+            }
+        }
+
+        function formatDateKey(date) {
+            return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        // Returns { isPeriod: boolean, isPredicted: boolean, dayIndex: number (1-duration) }
+        function getPeriodStatus(date) {
+            const dateStr = formatDateKey(date);
+            const time = date.getTime();
+            
+            // Check actual records
+            for (let startStr of periodRecords) {
+                const start = new Date(startStr);
+                const diffTime = time - start.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays >= 0 && diffDays < periodSettings.duration) {
+                    return { isPeriod: true, isPredicted: false, dayIndex: diffDays + 1 };
+                }
+            }
+
+            // Check predictions
+            if (periodSettings.showPredictions && periodRecords.length > 0) {
+                // Find the latest record
+                // Sort records
+                const sorted = [...periodRecords].sort((a,b) => new Date(a) - new Date(b));
+                const lastStart = new Date(sorted[sorted.length - 1]);
+                
+                // Predict next 3 cycles
+                for (let i = 1; i <= 3; i++) {
+                    const nextStart = new Date(lastStart);
+                    nextStart.setDate(lastStart.getDate() + (periodSettings.cycleLength * i));
+                    
+                    const diffTime = time - nextStart.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays >= 0 && diffDays < periodSettings.duration) {
+                        return { isPeriod: false, isPredicted: true, dayIndex: diffDays + 1 };
+                    }
+                }
+            }
+            
+            return null;
+        }
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            // Update Header
+            monthTitle.innerHTML = `<span class="year">${year}年</span> ${month + 1}月`;
+
+            calendarGrid.innerHTML = '';
+            
+            // First day of the month
+            const firstDay = new Date(year, month, 1);
+            // Last day of the month
+            const lastDay = new Date(year, month + 1, 0);
+            
+            // Days in previous month to show
+            const startDayOfWeek = firstDay.getDay(); // 0 (Sun) to 6 (Sat)
+            
+            // Previous month days
+            const prevMonthLastDay = new Date(year, month, 0).getDate();
+            for (let i = startDayOfWeek - 1; i >= 0; i--) {
+                const d = prevMonthLastDay - i;
+                const cell = createDayCell(d, 'prev-month');
+                calendarGrid.appendChild(cell);
+            }
+
+            // Current month days
+            const today = new Date();
+            const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+
+            for (let d = 1; d <= lastDay.getDate(); d++) {
+                let className = 'current-month';
+                if (isCurrentMonth && d === today.getDate()) className += ' today';
+                
+                // Check period status
+                const currentDayDate = new Date(year, month, d);
+                const pStatus = getPeriodStatus(currentDayDate);
+                if (pStatus) {
+                    if (pStatus.isPeriod) className += ' period';
+                    if (pStatus.isPredicted) className += ' period-predicted';
+                }
+
+                // Check if selected
+                if (selectedDate.getFullYear() === year && 
+                    selectedDate.getMonth() === month && 
+                    selectedDate.getDate() === d) {
+                    className += ' selected';
+                }
+
+                const dateKey = `${year}-${String(month+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dayEvents = events[dateKey] || [];
+
+                const cell = createDayCell(d, className, dayEvents, pStatus);
+                cell.onclick = () => selectDate(new Date(year, month, d));
+                calendarGrid.appendChild(cell);
+            }
+
+            // Next month days to fill grid (6 rows * 7 cols = 42 cells total usually)
+            const totalCells = startDayOfWeek + lastDay.getDate();
+            const remainingCells = 42 - totalCells; // Use 42 for fixed height, or just fill row
+            
+            // Just fill the last row
+            const cellsToFill = (7 - (totalCells % 7)) % 7;
+            for (let d = 1; d <= cellsToFill; d++) {
+                const cell = createDayCell(d, 'next-month');
+                calendarGrid.appendChild(cell);
+            }
+        }
+
+        function createDayCell(day, className, dayEvents = [], pStatus = null) {
+            const el = document.createElement('div');
+            el.className = `day-cell ${className}`;
+            
+            let dotsHtml = '';
+            if (dayEvents.length > 0) {
+                dotsHtml = `<div class="day-events">
+                    ${dayEvents.slice(0, 3).map(e => `<div class="event-dot ${e.type}"></div>`).join('')}
+                </div>`;
+            }
+
+            // Simple Lunar Date mock
+            const lunarDay = (day % 30) === 0 ? 30 : (day % 30);
+            const lunarText = getLunarText(lunarDay);
+
+            let periodTag = '';
+            if (pStatus) {
+                // Only show label for start day or maybe all?
+                // Let's show a small dot or nothing, since background color changes
+                // Maybe "Start" text?
+                if (pStatus.dayIndex === 1) {
+                   // periodTag = `<div class="period-info-tag">Start</div>`;
+                }
+            }
+
+            el.innerHTML = `
+                <div class="day-number">${day}</div>
+                <div class="day-lunar">${lunarText}</div>
+                ${dotsHtml}
+                ${periodTag}
+            `;
+            return el;
+        }
+
+        function getLunarText(day) {
+            const map = {1: '初一', 15: '十五'};
+            if (map[day]) return map[day];
+            if (day <= 10) return `初${chineseNum(day)}`;
+            if (day < 20) return `十${chineseNum(day-10)}`;
+            if (day === 20) return '二十';
+            if (day < 30) return `廿${chineseNum(day-20)}`;
+            return '三十';
+        }
+        
+        function chineseNum(n) {
+            const nums = ['','一','二','三','四','五','六','七','八','九','十'];
+            return nums[n];
+        }
+
+        function selectDate(date) {
+            selectedDate = date;
+            renderCalendar(); // Re-render to update selection style
+            renderEventList();
+        }
+
+        function renderEventList() {
+            const year = selectedDate.getFullYear();
+            const month = selectedDate.getMonth();
+            const day = selectedDate.getDate();
+            const weekDay = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][selectedDate.getDay()];
+            
+            selectedDateHeader.innerHTML = `
+                <span>${month + 1}月${day}日 ${weekDay}</span>
+                <button class="period-toggle-btn" id="periodToggleBtn">
+                    <i class="fas fa-tint"></i> 记经期
+                </button>
+            `;
+            
+            // Bind toggle logic
+            const toggleBtn = document.getElementById('periodToggleBtn');
+            const dateStr = formatDateKey(selectedDate);
+            
+            // Check if this date is a start date
+            const isStart = periodRecords.includes(dateStr);
+            if (isStart) {
+                toggleBtn.classList.add('active');
+                toggleBtn.innerHTML = `<i class="fas fa-check"></i> 经期开始日`;
+            }
+            
+            toggleBtn.onclick = (e) => {
+                e.stopPropagation();
+                togglePeriodRecord(selectedDate);
+            };
+
+            const dateKey = `${year}-${String(month+1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const dayEvents = events[dateKey] || [];
+            
+            if (dayEvents.length === 0) {
+                eventsContainer.innerHTML = `<div style="text-align:center; color:var(--muted); padding:20px;">无日程</div>`;
+                return;
+            }
+            
+            eventsContainer.innerHTML = dayEvents.map(evt => `
+                <div class="event-item" onclick="openEditEvent('${evt.id}')">
+                    <div class="event-time">${evt.time}</div>
+                    <div class="event-marker" style="background-color: var(--${evt.type === 'important' ? 'accent' : (evt.type === 'work' ? 'primary' : 'success')})"></div>
+                    <div class="event-details">
+                        <div class="event-title">${evt.title}</div>
+                        <div class="event-desc">${getEventDesc(evt.type)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        let currentEditingId = null;
+
+        function openEditEvent(id) {
+            // Find event
+            let event = null;
+            // We know the selected date, so we can look in events[dateKey]
+            const year = selectedDate.getFullYear();
+            const month = selectedDate.getMonth();
+            const day = selectedDate.getDate();
+            const dateKey = `${year}-${String(month+1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            
+            if (events[dateKey]) {
+                event = events[dateKey].find(e => String(e.id) === String(id));
+            }
+            
+            if (!event) return;
+
+            currentEditingId = event.id;
+            document.getElementById('eventTitle').value = event.title;
+            document.getElementById('eventTime').value = event.time;
+            document.getElementById('eventType').value = event.type;
+            
+            document.querySelector('#addEventModal .modal-title').textContent = '编辑日程';
+            addEventModal.classList.add('active');
+        }
+
+        function getEventDesc(type) {
+            if (type === 'important') return '重要事项';
+            if (type === 'work') return '工作安排';
+            return '个人生活';
+        }
+
+        function togglePeriodRecord(date) {
+            const dateStr = formatDateKey(date);
+            const index = periodRecords.indexOf(dateStr);
+            
+            if (index >= 0) {
+                // Remove
+                periodRecords.splice(index, 1);
+                savePeriodRecordToDB(dateStr, false);
+            } else {
+                // Add
+                periodRecords.push(dateStr);
+                savePeriodRecordToDB(dateStr, true);
+            }
+            
+            renderCalendar();
+            renderEventList();
+        }
+
+        // --- Period Settings Logic ---
+        const periodSettingsBtn = document.getElementById('periodSettingsBtn');
+        const periodSettingsModal = document.getElementById('periodSettingsModal');
+        const savePeriodSettingsBtn = document.getElementById('savePeriodSettingsBtn');
+        const cancelPeriodSettingsBtn = document.getElementById('cancelPeriodSettingsBtn');
+        const periodDurationInput = document.getElementById('periodDurationInput');
+        const cycleLengthInput = document.getElementById('cycleLengthInput');
+        const showPredictionsCheck = document.getElementById('showPredictionsCheck');
+
+        periodSettingsBtn.onclick = () => {
+            periodDurationInput.value = periodSettings.duration;
+            cycleLengthInput.value = periodSettings.cycleLength;
+            showPredictionsCheck.checked = periodSettings.showPredictions;
+            periodSettingsModal.classList.add('active');
+        };
+
+        function closePeriodSettings() {
+            periodSettingsModal.classList.remove('active');
+        }
+
+        cancelPeriodSettingsBtn.onclick = closePeriodSettings;
+
+        savePeriodSettingsBtn.onclick = () => {
+            periodSettings.duration = parseInt(periodDurationInput.value) || 5;
+            periodSettings.cycleLength = parseInt(cycleLengthInput.value) || 28;
+            periodSettings.showPredictions = showPredictionsCheck.checked;
+            closePeriodSettings();
+            renderCalendar();
+        };
+
+        // --- Interaction ---
+
+        function handleBack() {
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'closeApp', appId: 'rili' }, _getPostTargetOrigin());
+                    return;
+                }
+            } catch (err) {}
+            window.location.href = 'index.html';
+        }
+
+        if (appBackBtn) {
+            appBackBtn.addEventListener('click', handleBack);
+        }
+
+        todayBtn.addEventListener('click', () => {
+            currentDate = new Date();
+            selectedDate = new Date();
+            renderCalendar();
+            renderEventList();
+        });
+
+        addEventBtn.addEventListener('click', () => {
+            currentEditingId = null;
+            document.querySelector('#addEventModal .modal-title').textContent = '新建日程';
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('eventTime').value = '09:00'; // Default time
+            addEventModal.classList.add('active');
+        });
+
+        cancelEventBtn.addEventListener('click', () => {
+            addEventModal.classList.remove('active');
+        });
+
+        saveEventBtn.addEventListener('click', async () => {
+            const title = document.getElementById('eventTitle').value.trim();
+            const time = document.getElementById('eventTime').value;
+            const type = document.getElementById('eventType').value;
+            
+            if (!title) return;
+
+            const year = selectedDate.getFullYear();
+            const month = selectedDate.getMonth();
+            const day = selectedDate.getDate();
+            const dateKey = `${year}-${String(month+1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            
+            if (!events[dateKey]) events[dateKey] = [];
+            
+            let eventToSave = {
+                id: currentEditingId || Date.now(),
+                title,
+                time,
+                type,
+                date: dateKey // Store date for indexing
+            };
+
+            if (currentEditingId) {
+                // Update in memory
+                const idx = events[dateKey].findIndex(e => e.id === currentEditingId);
+                if (idx !== -1) events[dateKey][idx] = eventToSave;
+            } else {
+                // Add new
+                events[dateKey].push(eventToSave);
+            }
+            
+            // Save to DB
+            await saveEventToDB(eventToSave);
+            
+            // Sort by time
+            events[dateKey].sort((a, b) => a.time.localeCompare(b.time));
+
+            addEventModal.classList.remove('active');
+            renderCalendar();
+            renderEventList();
+            syncScheduleToChat();
+        });
+
+        // Close modal on outside click
+        addEventModal.addEventListener('click', (e) => {
+            if (e.target === addEventModal) {
+                addEventModal.classList.remove('active');
+            }
+        });
+
+        // Initialize
+        initDB(); // This will load data and render
+        // renderCalendar(); // Moved to inside loadAllData
+        // renderEventList();
+        
+    </script>
+</body>
+</html>

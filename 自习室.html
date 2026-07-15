@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>个人自习室</title>
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" sizes="180x180">
+    <meta name="theme-color" content="#f1f3f4">
+    <!-- iOS PWA 兼容 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="湫丘捕梦机">
+    <link rel="stylesheet" href="css/core-icons.min.css">
+    <link rel="stylesheet" href="css/core-ui.css">
+    <link rel="stylesheet" href="css/apps/study_room.css">
+</head>
+<body>
+    <!-- 播放页作为主页面 -->
+    <div class="play-page scroll-y-hidebar flex-scroll" id="playPage">
+        <!-- 角色图片作为背景 -->
+        <img class="character-image" id="characterImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='600' viewBox='0 0 400 600'%3E%3Crect width='400' height='600' fill='%231a1a2e'/%3E%3C/svg%3E" alt="自习室背景">
+        
+        <!-- 渐变遮罩层 -->
+        <div class="character-gradient" id="characterGradient"></div>
+        
+        <!-- 顶部状态栏 -->
+        <div class="status-bar">
+            <div class="menu-button" id="mainBackBtn" style="margin-right: 10px; background: transparent; backdrop-filter: none; border: none; box-shadow: none;">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <!-- 时间显示已移除 -->
+            <div class="metrics-icons">
+                <div class="metric-icon">
+                    <i class="fas fa-clock"></i>
+                    <span id="today-time-value">0:00</span>
+                </div>
+                <div class="metric-icon">
+                    <i class="fas fa-check-circle"></i>
+                    <span id="tasks-completed-value">0</span>
+                </div>
+                <div class="metric-icon">
+                    <i class="fas fa-fire"></i>
+                    <span id="focus-streak-value">0</span>
+                </div>
+                <!-- 三点菜单按钮 -->
+                <div class="menu-button" id="menu-button">
+                    <i class="fas fa-ellipsis-v"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 左上角计时器 - 默认隐藏 -->
+        <div class="timer-container" id="timerContainer">
+            <div class="timer-circle">
+                <div class="timer-rail"></div>
+                <div class="timer-ring">
+                    <div class="timer-dot"></div>
+                </div>
+                <div class="timer-text" id="timerText">00:00</div>
+            </div>
+        </div>
+        
+        <!-- 计时器控制浮窗 -->
+        <div class="timer-control-overlay" id="timerControlOverlay"></div>
+        <div class="timer-control-panel" id="timerControlPanel">
+            <button class="timer-control-btn pause-btn" id="pause-timer-btn">
+                <i class="fas fa-pause"></i> 暂停
+            </button>
+            <button class="timer-control-btn stop-btn" id="stop-timer-btn">
+                <i class="fas fa-stop"></i> 结束
+            </button>
+            <button class="timer-control-btn cancel-btn" id="cancel-timer-btn">
+                <i class="fas fa-times"></i> 取消
+            </button>
+        </div>
+        
+        <!-- 话语条容器 -->
+        <div class="dialogue-container">
+            <div class="dialogue-item" id="dialogueItem">
+                <!-- 话语条将通过JS动态更新 -->
+            </div>
+        </div>
+        
+        <!-- 主容器 -->
+        <div class="container">
+            <!-- 专注页 -->
+            <div id="focus-page" class="page active">
+                <div class="focus-container">
+                    <div class="timer-mode" id="timer-mode">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span id="mode-text">正计时</span>
+                        <span id="mode-info">点击切换为倒计时</span>
+                    </div>
+                    
+                    <div class="circular-timer" id="circular-timer">
+                        <div class="timer-display" id="timer">00:00</div>
+                        <div class="timer-label" id="timer-label">专注时间</div>
+                    </div>
+                    
+                    <div class="timer-controls">
+                        <button class="btn btn-primary" id="start-timer">
+                            <i class="fas fa-play"></i> 开始专注
+                        </button>
+                        <button class="btn btn-secondary" id="pause-timer" style="display: none;">
+                            <i class="fas fa-pause"></i> 暂停
+                        </button>
+                        <button class="btn btn-secondary" id="reset-timer">
+                            <i class="fas fa-redo"></i> 重置
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 任务页 - 清空预设数据 -->
+            <div id="tasks-page" class="page">
+                <div class="tasks-container">
+                    <!-- 今日任务 -->
+                    <div class="task-category">
+                        <div class="category-header" data-category="today">
+                            <div class="category-title">
+                                <i class="fas fa-sun"></i> 今日任务
+                            </div>
+                            <div class="category-actions">
+                                <button class="add-task-toggle" data-category="today">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <div class="toggle-icon">
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <ul class="task-list" id="today-tasks">
+                            <!-- 空列表，将通过JS动态添加 -->
+                        </ul>
+                        <div class="add-task-form" id="today-task-form">
+                            <input type="text" class="task-input" placeholder="添加今日任务...">
+                            <button class="add-btn">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 本周任务 -->
+                    <div class="task-category">
+                        <div class="category-header" data-category="week">
+                            <div class="category-title">
+                                <i class="fas fa-calendar-week"></i> 本周任务
+                            </div>
+                            <div class="category-actions">
+                                <button class="add-task-toggle" data-category="week">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <div class="toggle-icon">
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <ul class="task-list collapsed" id="week-tasks">
+                            <!-- 空列表 -->
+                        </ul>
+                        <div class="add-task-form" id="week-task-form">
+                            <input type="text" class="task-input" placeholder="添加本周任务...">
+                            <button class="add-btn">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 本月任务 -->
+                    <div class="task-category">
+                        <div class="category-header" data-category="month">
+                            <div class="category-title">
+                                <i class="fas fa-calendar-alt"></i> 本月任务
+                            </div>
+                            <div class="category-actions">
+                                <button class="add-task-toggle" data-category="month">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <div class="toggle-icon">
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <ul class="task-list collapsed" id="month-tasks">
+                            <!-- 空列表 -->
+                        </ul>
+                        <div class="add-task-form" id="month-task-form">
+                            <input type="text" class="task-input" placeholder="添加本月任务...">
+                            <button class="add-btn">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 长期任务 -->
+                    <div class="task-category">
+                        <div class="category-header" data-category="longterm">
+                            <div class="category-title">
+                                <i class="fas fa-bullseye"></i> 长期任务
+                            </div>
+                            <div class="category-actions">
+                                <button class="add-task-toggle" data-category="longterm">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <div class="toggle-icon">
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <ul class="task-list collapsed" id="longterm-tasks">
+                            <!-- 空列表 -->
+                        </ul>
+                        <div class="add-task-form" id="longterm-task-form">
+                            <input type="text" class="task-input" placeholder="添加长期任务...">
+                            <button class="add-btn">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 已完成任务 -->
+                    <div class="task-category">
+                        <div class="category-header" data-category="completed">
+                            <div class="category-title">
+                                <i class="fas fa-check-circle"></i> 已完成
+                            </div>
+                            <div class="toggle-icon">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                        <ul class="task-list collapsed" id="completed-tasks">
+                            <!-- 空列表 -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 进度页 - 完整恢复 -->
+            <div id="progress-page" class="page">
+                <div class="progress-container">
+                    <div class="progress-view-switcher">
+                        <div class="view-switch active" data-view="heatmap">月度热力图</div>
+                        <div class="view-switch" data-view="records">专注记录</div>
+                    </div>
+
+                    <!-- 月度热力图视图 -->
+                    <div id="heatmap-view" class="progress-view active">
+                        <div class="heatmap-container">
+                            <div class="heatmap-header">
+                                <div class="heatmap-title" id="current-month">2023年12月</div>
+                            </div>
+                            <div class="heatmap">
+                                <div class="heatmap-days">
+                                    <div class="heatmap-day">一</div>
+                                    <div class="heatmap-day">二</div>
+                                    <div class="heatmap-day">三</div>
+                                    <div class="heatmap-day">四</div>
+                                    <div class="heatmap-day">五</div>
+                                    <div class="heatmap-day">六</div>
+                                    <div class="heatmap-day">日</div>
+                                </div>
+                                <div class="heatmap-content">
+                                    <div class="heatmap-weekdays">
+                                        <div class="heatmap-weekday"></div>
+                                        <div class="heatmap-weekday"></div>
+                                        <div class="heatmap-weekday"></div>
+                                        <div class="heatmap-weekday"></div>
+                                        <div class="heatmap-weekday"></div>
+                                        <div class="heatmap-weekday"></div>
+                                        <div class="heatmap-weekday"></div>
+                                    </div>
+                                    <div class="heatmap-weeks" id="heatmap-weeks">
+                                        <!-- 热力图将通过JavaScript生成 -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="heatmap-metrics">
+                                <div class="heatmap-metric">
+                                    <div class="heatmap-metric-value" id="month-total-time">0.0h</div>
+                                    <div class="heatmap-metric-label">本月专注总时长</div>
+                                </div>
+                                <div class="heatmap-metric">
+                                    <div class="heatmap-metric-value" id="month-avg-time">0.0h</div>
+                                    <div class="heatmap-metric-label">日均专注时长</div>
+                                </div>
+                            </div>
+                            <div class="heatmap-legend">
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: rgba(255, 255, 255, 0.1);"></div>
+                                    <span>无记录</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: rgba(248, 182, 208, 0.3);"></div>
+                                    <span>&lt;1h</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: rgba(248, 182, 208, 0.7);"></div>
+                                    <span>1-2h</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: rgba(248, 182, 208, 0.9);"></div>
+                                    <span>3+h</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 专注记录视图 -->
+                    <div id="records-view" class="progress-view">
+                        <div class="records-container">
+                            <div class="records-title">专注记录</div>
+                            <div class="timeline" id="focus-timeline">
+                                <!-- 专注记录将通过JavaScript生成 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 三点菜单弹出层 -->
+    <div class="menu-overlay" id="menu-overlay">
+        <div class="menu-panel">
+            <div class="menu-header">
+                <div class="menu-title">设置</div>
+                <button class="menu-close" id="menu-close">&times;</button>
+            </div>
+            
+            <!-- 主题切换 -->
+            <div class="menu-section" id="theme-section">
+                <div class="menu-section-header">
+                    <div class="menu-section-title">
+                        <i class="fas fa-palette"></i> 主题切换
+                    </div>
+                </div>
+                <div class="menu-section-content">
+                    <div class="theme-options">
+                        <div class="theme-option active" data-theme="dark">
+                            <i class="fas fa-moon"></i>
+                            <div class="theme-name">暗夜模式</div>
+                        </div>
+                        <div class="theme-option" data-theme="light">
+                            <i class="fas fa-sun"></i>
+                            <div class="theme-name">白昼模式</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 角色选择 - 添加折叠功能 -->
+            <div class="menu-section collapsed" id="character-section">
+                <div class="menu-section-header">
+                    <div class="menu-section-title">
+                        <i class="fas fa-user"></i> 角色选择
+                    </div>
+                    <i class="fas fa-chevron-down toggle-arrow"></i>
+                </div>
+                <div class="menu-section-content">
+                    <div class="character-grid" id="character-grid">
+                        <!-- 角色选项将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 白噪音 - 添加折叠功能 -->
+            <div class="menu-section collapsed" id="noise-section">
+                <div class="menu-section-header">
+                    <div class="menu-section-title">
+                        <i class="fas fa-volume-up"></i> 白噪音
+                    </div>
+                    <i class="fas fa-chevron-down toggle-arrow"></i>
+                </div>
+                <div class="menu-section-content">
+                    <div class="noise-grid" id="noise-grid">
+                        <div class="noise-option active" data-noise="none">
+                            <i class="fas fa-volume-mute noise-icon"></i>
+                            <div class="noise-name">无</div>
+                        </div>
+                        <!-- 白噪音选项将通过JavaScript动态生成 -->
+                    </div>
+                    <button class="custom-noise-btn" id="custom-noise-btn">
+                        <i class="fas fa-plus"></i> 自定义白噪音
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 自定义话语条 - 新增功能 -->
+            <div class="menu-section collapsed" id="dialogue-section">
+                <div class="menu-section-header">
+                    <div class="menu-section-title">
+                        <i class="fas fa-comment-dots"></i> 自定义话语条
+                    </div>
+                    <i class="fas fa-chevron-down toggle-arrow"></i>
+                </div>
+                <div class="menu-section-content" id="dialogue-section-content">
+                    <!-- 话语条文件夹将通过JavaScript动态生成 -->
+                    <button class="add-dialogue-btn" id="add-dialogue-btn">
+                        <i class="fas fa-plus"></i> 添加话语条
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主题切换确认浮窗 -->
+    <div class="theme-confirm-modal" id="theme-confirm-modal">
+        <div class="theme-confirm-box">
+            <div class="theme-confirm-title">切换主题</div>
+            <div class="theme-confirm-content">
+                确认切换到<span id="theme-to-switch">白昼模式</span>吗？
+            </div>
+            <div class="theme-confirm-actions">
+                <button class="theme-confirm-btn cancel" id="theme-confirm-cancel">取消</button>
+                <button class="theme-confirm-btn confirm" id="theme-confirm-ok">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自定义角色输入模态框 -->
+    <div class="custom-input-modal" id="custom-character-modal">
+        <div class="custom-input-box">
+            <div class="custom-input-title">自定义角色</div>
+            <div class="custom-input-tabs">
+                <div class="custom-input-tab active" data-tab="url">URL导入</div>
+                <div class="custom-input-tab" data-tab="file">本地导入</div>
+            </div>
+            
+            <div class="custom-input-tab-content active" id="character-url-tab">
+                <input type="text" class="custom-input" id="custom-character-input" placeholder="输入图片URL...">
+            </div>
+            
+            <div class="custom-input-tab-content" id="character-file-tab">
+                <label class="file-input-label" for="character-file-input">
+                    <i class="fas fa-upload"></i> 选择图片文件
+                </label>
+                <input type="file" class="file-input" id="character-file-input" accept="image/*">
+                <input type="text" class="custom-name-input" id="character-custom-name" placeholder="输入自定义名称...">
+            </div>
+            
+            <div class="custom-input-actions">
+                <button class="custom-input-btn cancel" id="custom-character-cancel">取消</button>
+                <button class="custom-input-btn confirm" id="custom-character-confirm">确认</button>
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- 自定义白噪音输入模态框 -->
+    <div class="custom-input-modal" id="custom-noise-modal">
+        <div class="custom-input-box">
+            <div class="custom-input-title">自定义白噪音</div>
+            <div class="custom-input-tabs">
+                <div class="custom-input-tab active" data-tab="url">URL导入</div>
+                <div class="custom-input-tab" data-tab="file">本地导入</div>
+            </div>
+            
+            <div class="custom-input-tab-content active" id="noise-url-tab">
+                <input type="text" class="custom-input" id="custom-noise-input" placeholder="输入音频URL...">
+            </div>
+            
+            <div class="custom-input-tab-content" id="noise-file-tab">
+                <label class="file-input-label" for="noise-file-input">
+                    <i class="fas fa-upload"></i> 选择音频文件
+                </label>
+                <input type="file" class="file-input" id="noise-file-input" accept="audio/*">
+                <input type="text" class="custom-name-input" id="noise-custom-name" placeholder="输入自定义名称...">
+            </div>
+            
+            <div class="custom-input-actions">
+                <button class="custom-input-btn cancel" id="custom-noise-cancel">取消</button>
+                <button class="custom-input-btn confirm" id="custom-noise-confirm">确认</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 自定义话语条输入模态框 -->
+    <div class="custom-input-modal" id="custom-dialogue-modal">
+        <div class="custom-input-box">
+            <div class="custom-input-title">添加话语条</div>
+            
+            <div class="custom-input-tabs">
+                <div class="custom-input-tab active" data-tab="global">全局应用</div>
+                <div class="custom-input-tab" data-tab="character">捆绑角色</div>
+            </div>
+            
+            <div class="custom-input-tab-content active" id="dialogue-global-tab">
+                <textarea class="custom-input" id="global-dialogue-input" placeholder="输入话语内容（每行一条）..." rows="4"></textarea>
+            </div>
+            
+            <div class="custom-input-tab-content" id="dialogue-character-tab">
+                <div class="character-selector" id="character-selector" style="margin-bottom: 15px;">
+                    <div class="selector-label" style="margin-bottom: 8px; color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">
+                        绑定角色:
+                    </div>
+                    <div class="selected-character" id="selected-character" 
+                         style="padding: 12px 15px; background: rgba(255, 255, 255, 0.1); border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                        <span id="current-character-name">请选择角色</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="character-dropdown" id="character-dropdown" 
+                         style="display: none; margin-top: 5px; max-height: 150px; overflow-y: auto; background: rgba(0, 0, 0, 0.8); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <!-- 角色选项将通过JS动态生成 -->
+                    </div>
+                </div>
+                <textarea class="custom-input" id="character-dialogue-input" placeholder="输入话语内容（每行一条）..." rows="4"></textarea>
+            </div>
+            
+            <div class="custom-input-actions">
+                <button class="custom-input-btn cancel" id="custom-dialogue-cancel">取消</button>
+                <button class="custom-input-btn confirm" id="custom-dialogue-confirm">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 倒计时设置模态框 -->
+    <div class="modal-overlay" id="countdown-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">设置专注时长</div>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="time-inputs">
+                <div class="time-input-group">
+                    <label>小时</label>
+                    <input type="number" id="modal-hours" class="modal-time-input" min="0" max="5" value="0">
+                </div>
+                <div class="time-input-group">
+                    <label>分钟</label>
+                    <input type="number" id="modal-minutes" class="modal-time-input" min="1" max="59" value="25">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" id="modal-cancel">取消</button>
+                <button class="modal-btn modal-btn-confirm" id="modal-confirm">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item active" data-page="focus">
+            <i class="fas fa-clock nav-icon"></i>
+            <span class="nav-text">专注</span>
+        </div>
+        <div class="nav-item" data-page="tasks">
+            <i class="fas fa-tasks nav-icon"></i>
+            <span class="nav-text">任务</span>
+        </div>
+        <div class="nav-item" data-page="progress">
+            <i class="fas fa-chart-line nav-icon"></i>
+            <span class="nav-text">进度</span>
+        </div>
+    </div>
+
+    <!-- 编辑角色浮窗 (复用 custom-input-modal 样式) -->
+    <div class="custom-input-modal" id="editCharacterModal">
+        <div class="custom-input-box">
+            <div class="custom-input-title">编辑角色</div>
+            
+            <div class="input-group">
+                <label style="display:block; margin-bottom:8px; color:rgba(255,255,255,0.7); font-size:0.9rem;">角色名称</label>
+                <input type="text" id="editCharacterNameInput" class="custom-name-input" placeholder="输入角色名称">
+            </div>
+            
+            <div class="input-group" style="margin-bottom:20px;">
+                <label style="display:block; margin-bottom:8px; color:rgba(255,255,255,0.7); font-size:0.9rem;">角色背景</label>
+                <button id="openBgSelectBtn" class="custom-noise-btn">
+                    <i class="fas fa-image"></i> 更换背景
+                </button>
+            </div>
+
+            <div class="custom-input-actions">
+                <button class="custom-input-btn cancel" id="cancelEditCharacter">取消</button>
+                <button class="custom-input-btn confirm" id="saveEditCharacter">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑语音条浮窗 -->
+    <div class="custom-input-modal" id="editDialogueModal">
+        <div class="custom-input-box">
+            <div class="custom-input-title">编辑语音条</div>
+            <textarea class="dialogue-textarea" id="editDialogueInput" placeholder="请输入语音条内容..." style="width: 100%; height: 100px; margin-bottom: 20px; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: inherit; resize: none;"></textarea>
+            <div class="custom-input-actions">
+                <button class="custom-input-btn cancel" id="cancelEditDialogue">取消</button>
+                <button class="custom-input-btn confirm" id="confirmEditDialogue">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 背景选择滑动卡片 -->
+    <div class="sliding-card" id="bgSelectCard">
+        <div class="card-header">
+            <button class="card-back-btn" id="closeBgCard">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="card-title">选择背景</div>
+            <button class="card-add-btn" id="addBgFromPhone">
+                <i class="fas fa-plus"></i>
+            </button>
+            <input type="file" id="bgFileInput" accept="image/*" style="display: none;">
+        </div>
+        <div class="card-content">
+            <div class="bg-grid" id="bgGrid">
+                <!-- 图片将通过JS动态添加 -->
+            </div>
+            <div class="empty-tip" id="bgEmptyTip" style="display: none;">
+                <i class="fas fa-images"></i>
+                <p>暂无相册图片</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/core/SafeArea.js" defer></script>
+    <script src="js/apps/study_room/main.js" defer></script>
+</body>
+</html>

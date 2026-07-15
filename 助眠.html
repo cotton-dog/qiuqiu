@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <title>乙游助眠陪伴播放器</title>       
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" sizes="180x180">
+    <meta name="theme-color" content="#f1f3f4">
+    <!-- iOS PWA 兼容 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="湫丘捕梦机">
+    <link rel="stylesheet" href="css/core-icons.min.css">
+    <link rel="stylesheet" href="css/core-ui.css">
+    <script src="js/core/StorageService.js"></script>
+
+    <script src="js/core/AuthService.js" defer></script>
+    <script src="js/core/MessageBus.js" defer></script>
+    <script src="js/core/ImageService.js" defer></script>
+    <script src="js/ImageStorageDB.js" defer></script>
+    <link rel="stylesheet" href="css/apps/sleep_aid.css">
+</head>
+<body>
+    <!-- 播放页 -->
+    <div class="play-page" id="playPage">
+        <!-- 角色图片 -->
+        <img class="character-image" id="characterImage" src="" alt="角色">
+        
+        <!-- 渐变遮罩层 -->
+        <div class="character-gradient" id="characterGradient"></div>
+        
+        <!-- 顶部控制栏 -->
+        <div class="top-controls">
+            <button class="home-btn" id="homeBtn" aria-label="返回主页">
+                <i class="fas fa-home"></i>
+            </button>
+            <div class="character-name" id="characterName"></div>
+            <button class="settings-btn" id="settingsBtn" aria-label="设置">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+        </div>
+        
+        <!-- 话语条容器 -->
+        <div class="dialogue-container">
+            <div class="dialogue-item" id="dialogueItem">
+                <!-- 话语条将通过JS动态更新 -->
+            </div>
+        </div>
+        
+        <!-- 计时器 -->
+        <div class="timer-container">
+            <div class="timer-circle">
+                <div class="timer-rail"></div>
+                <div class="timer-ring">
+                    <div class="timer-dot"></div>
+                </div>
+                <div class="timer-text" id="timerText">00:00:00</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 设置页 -->
+    <div class="settings-page scroll-y-hidebar flex-scroll" id="settingsPage">
+        <div class="settings-header">
+            <div class="settings-title">设置</div>
+            <button class="close-settings" id="closeSettings">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="settings-content">
+            <!-- 角色列表 -->
+            <div class="settings-section">
+                <div class="section-header" id="characterHeader">
+                    <div class="section-title">
+                        <i class="fas fa-chevron-down"></i>
+                        <span>角色列表</span>
+                    </div>
+                    <!-- addCharacterBtn removed -->
+                </div>
+                <div class="character-list" id="characterList">
+                    <!-- 角色将通过JS动态添加 -->
+                </div>
+            </div>
+
+            <!-- 语音条 -->
+            <div class="settings-section">
+                <div class="section-header" id="dialogueHeader">
+                    <div class="section-title">
+                        <i class="fas fa-chevron-down"></i>
+                        <span>语音条</span>
+                    </div>
+                    <button class="add-btn" id="addDialogueBtn">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="dialogue-folder-list" id="dialogueFolderList"></div>
+            </div>
+            
+            <!-- 白噪音列表 -->
+            <div class="settings-section">
+                <div class="section-header" id="whiteNoiseHeader">
+                    <div class="section-title">
+                        <i class="fas fa-chevron-down"></i>
+                        <span>白噪音</span>
+                    </div>
+                    <button class="add-btn" data-upload-type="whiteNoise">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="audio-list" id="whiteNoiseList">
+                    <!-- 白噪音将通过JS动态添加 -->
+                </div>
+            </div>
+            
+            <!-- 助眠音频列表 -->
+            <div class="settings-section">
+                <div class="section-header" id="sleepAudioHeader">
+                    <div class="section-title">
+                        <i class="fas fa-chevron-down"></i>
+                        <span>助眠音频</span>
+                    </div>
+                    <button class="add-btn" data-upload-type="sleepAudio">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="audio-list" id="sleepAudioList">
+                    <!-- 助眠音频将通过JS动态添加 -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 上传浮窗 -->
+    <div class="upload-modal" id="uploadModal">
+        <div class="upload-content">
+            <div class="upload-header">
+                <div class="upload-title" id="uploadTitle">上传文件</div>
+                <button class="close-upload" id="closeUpload">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="upload-area" id="uploadDropArea">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>点击或拖拽文件到此处</p>
+                <small>支持图片或音频文件</small>
+                <input type="file" class="upload-input" id="uploadInput" accept="">
+            </div>
+
+            <div class="upload-url" id="uploadUrlSection">
+                <div class="upload-url-title">或输入音频URL</div>
+                <input type="text" class="upload-url-input" id="uploadUrlInput" placeholder="https://example.com/audio.mp3">
+            </div>
+            
+            <div class="upload-buttons">
+                <button class="cancel-btn" id="cancelUpload">取消</button>
+                <button class="upload-btn" id="confirmUpload">上传</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 角色设置浮窗 -->
+    <div class="character-modal" id="characterModal">
+        <div class="character-content">
+            <div class="character-header">
+                <div class="character-title" id="characterModalTitle">角色设置</div>
+                <button class="close-character" id="closeCharacter">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="character-tabs">
+                <button class="character-tab active" data-tab="gallery">角色图库</button>
+                <button class="character-tab" data-tab="settings">图片设置</button>
+            </div>
+            
+            <!-- 角色图库 -->
+            <div class="character-tab-content active" id="galleryTab">
+                <div class="character-gallery" id="characterGallery">
+                    <!-- 角色图片将通过JS动态添加 -->
+                </div>
+                <div class="upload-area" id="characterGalleryUpload">
+                    <i class="fas fa-plus"></i>
+                    <p>上传新角色图片</p>
+                    <small>支持JPG、PNG格式</small>
+                    <input type="file" class="upload-input" id="characterGalleryInput" accept="image/*">
+                </div>
+                
+                <div class="character-buttons">
+                    <button class="cancel-btn" id="cancelGallery">取消</button>
+                    <button class="character-btn" id="applyGallery">应用</button>
+                </div>
+            </div>
+            
+            <!-- 图片设置 -->
+            <div class="character-tab-content" id="settingsTab">
+                <div class="image-settings">
+                    <div class="setting-item">
+                        <div>
+                            <div class="setting-label">渐变显示</div>
+                            <div class="setting-desc">角色图片下半部分渐变透明，使话语条更清晰</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="gradientToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="character-buttons">
+                    <button class="cancel-btn" id="cancelSettings">取消</button>
+                    <button class="character-btn" id="applySettings">应用</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 背景选择滑动卡片 -->
+    <div class="sliding-card" id="bgSelectCard">
+        <div class="card-header">
+            <button class="card-back-btn" id="closeBgCard">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="card-title">选择背景</div>
+            <button class="card-add-btn" id="addBgFromPhone">
+                <i class="fas fa-plus"></i>
+            </button>
+            <input type="file" id="bgFileInput" accept="image/*" style="display: none;">
+        </div>
+        <div class="card-content">
+            <div class="bg-grid" id="bgGrid">
+                <!-- 图片将通过JS动态添加 -->
+            </div>
+            <div class="empty-tip" id="bgEmptyTip" style="display: none;">
+                <i class="fas fa-images"></i>
+                <p>暂无相册图片</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑名字浮窗 -->
+    <div class="edit-modal" id="editModal">
+        <div class="edit-content">
+            <div class="edit-header">
+                <div class="edit-title" id="editTitle">编辑角色名字</div>
+                <button class="close-edit" id="closeEdit">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <input type="text" class="edit-input" id="editInput" placeholder="请输入角色名字" maxlength="20">
+            
+            <div class="edit-buttons">
+                <div style="display: flex; gap: 8px; margin-right: auto;">
+                <button class="danger-btn" id="deleteCharacterBtn" style="display: none;">删除</button>
+                <button class="glass-btn" id="editChangeBgBtn">背景</button>
+            </div>
+                <button class="cancel-btn" id="cancelEdit">取消</button>
+                <button class="edit-btn" id="confirmEdit">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 语音条浮窗 -->
+    <div class="upload-modal" id="dialogueModal">
+        <div class="upload-content">
+            <div class="upload-header">
+                <div class="upload-title" id="dialogueModalTitle">添加语音条</div>
+                <button class="close-upload" id="closeDialogue">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="dialogue-tabs">
+                <button class="dialogue-tab active" data-tab="global">全局使用</button>
+                <button class="dialogue-tab" data-tab="character">绑定角色</button>
+            </div>
+
+            <div class="dialogue-tab-content active" id="dialogueGlobalTab">
+                <textarea class="dialogue-textarea" id="globalDialogueInput" placeholder="输入语音条内容（每行一条）..."></textarea>
+            </div>
+
+            <div class="dialogue-tab-content" id="dialogueCharacterTab">
+                <div class="dialogue-bind-row">
+                    <select class="dialogue-select" id="dialogueCharacterSelect"></select>
+                </div>
+                <textarea class="dialogue-textarea" id="characterDialogueInput" placeholder="输入语音条内容（每行一条）..."></textarea>
+            </div>
+
+            <div class="upload-buttons">
+                <button class="cancel-btn" id="cancelDialogue">取消</button>
+                <button class="upload-btn" id="confirmDialogue">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="edit-modal" id="confirmModal">
+        <div class="edit-content">
+            <div class="edit-header">
+                <div class="edit-title" id="confirmTitle">确认</div>
+                <button class="close-edit" id="closeConfirm">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="confirm-text" id="confirmText"></div>
+
+            <div class="edit-buttons">
+                <button class="cancel-btn" id="cancelConfirm">取消</button>
+                <button class="danger-btn" id="okConfirm">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="edit-modal" id="characterSelectModal">
+        <div class="edit-content">
+            <div class="edit-header">
+                <div class="edit-title">选择角色</div>
+            </div>
+
+            <div class="character-select-list" id="characterSelectList"></div>
+
+            <div class="edit-buttons">
+                <button class="cancel-btn" id="cancelCharacterSelect">返回</button>
+                <button class="edit-btn" id="confirmCharacterSelect">进入</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="edit-modal" id="editDialogueModal">
+        <div class="edit-content">
+            <div class="edit-header">
+                <div class="edit-title" id="editDialogueTitle">编辑语音条</div>
+                <button class="close-edit" id="closeEditDialogue">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <textarea class="dialogue-textarea" id="editDialogueInput" placeholder="请输入语音条内容..."></textarea>
+
+            <div class="edit-buttons">
+                <button class="cancel-btn" id="cancelEditDialogue">取消</button>
+                <button class="edit-btn" id="confirmEditDialogue">确定</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 新增角色浮窗 -->
+    <div class="upload-modal" id="addCharacterModal">
+        <div class="upload-content">
+            <div class="upload-header">
+                <div class="upload-title">添加新角色</div>
+                <button class="close-upload" id="closeAddCharacter">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="upload-area" id="addCharacterUploadArea">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>上传角色图片</p>
+                <small>支持JPG、PNG格式</small>
+                <input type="file" class="upload-input" id="addCharacterInput" accept="image/*">
+            </div>
+            
+            <div class="upload-buttons">
+                <button class="cancel-btn" id="cancelAddCharacter">取消</button>
+                <button class="upload-btn" id="confirmAddCharacter">下一步</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 顶部透明遮罩（降低光刺激） -->
+    <div id="night-overlay" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.15); pointer-events: none; z-index: var(--z-overlay, 2000);"></div>
+
+    <script src="js/core/SafeArea.js" defer></script>
+    <script src="js/apps/sleep_aid/main.js" defer></script>
+</body>
+</html>

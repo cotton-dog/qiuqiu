@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>纪念日</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" sizes="180x180">
+    <meta name="theme-color" content="#f5f1ec">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="湫丘捕梦机">
+    <link rel="stylesheet" href="css/core-icons.min.css">
+    <link rel="stylesheet" href="css/core-ui.css">
+    <script src="js/core/OperaKeyboardFix.js"></script>
+    <style>
+        :root {
+            --safe-inset-top: env(safe-area-inset-top, 0px);
+            --safe-inset-bottom: env(safe-area-inset-bottom, 0px);
+            --ink: #111111;
+            --muted: #6f6a65;
+            --line: #1d1b19;
+            --soft-line: rgba(0, 0, 0, 0.08);
+            --paper: #f5f1ec;
+            --cream: #fbf8f4;
+            --accent: #b88d74;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: var(--paper);
+            overflow: hidden;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: var(--ink);
+        }
+
+        .anniv-shell {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: calc(14px + var(--safe-inset-top)) 20px calc(16px + var(--safe-inset-bottom));
+            box-sizing: border-box;
+            background:
+                radial-gradient(circle at 12% 18%, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+                radial-gradient(circle at 72% 64%, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+                var(--paper);
+            background-size: 32px 32px, 28px 28px, 16px 16px, auto;
+            overflow: hidden;
+        }
+
+        .topbar {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--soft-line);
+            padding-bottom: 12px;
+            position: relative;
+        }
+
+        .topbar-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: -0.4px;
+        }
+
+        .topbar-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--ink);
+            border-radius: 12px;
+        }
+
+        .topbar-btn:active {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .content {
+            flex: 1;
+            padding-top: 22px;
+            min-height: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero {
+            background: var(--cream);
+            border: 1px solid var(--soft-line);
+            border-radius: 18px;
+            padding: 22px 20px;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.04);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            right: -40px;
+            top: -40px;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .hero-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .hero-title {
+            margin: 16px 0 6px;
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .hero-sub {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+        }
+
+        .hero-line {
+            height: 1px;
+            background: var(--line);
+            position: relative;
+            margin-bottom: 18px;
+        }
+
+        .hero-line::before,
+        .hero-line::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--line);
+            top: -2.5px;
+        }
+
+        .hero-line::before {
+            left: 0;
+        }
+
+        .hero-line::after {
+            right: 0;
+        }
+
+        .hero-metrics {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .metric {
+            text-align: center;
+            flex: 1;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .metric-value {
+            font-size: 26px;
+            font-weight: 600;
+            margin: 6px 0 2px;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        .metric-unit {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .metric-divider {
+            width: 1px;
+            height: 46px;
+            background: var(--soft-line);
+        }
+
+        .pair-avatars {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        .pair-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 1px solid var(--line);
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--ink);
+            overflow: hidden;
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .pair-avatar.primary {
+            z-index: 1;
+        }
+
+        .pair-avatar.secondary {
+            margin-left: -24px;
+            background: var(--cream);
+            z-index: 2;
+        }
+
+        .panel {
+            margin-top: 18px;
+            background: #ffffff;
+            border: 1px solid var(--soft-line);
+            border-radius: 16px;
+            padding: 18px 18px 20px;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .panel-sub {
+            font-size: 12px;
+            color: var(--muted);
+            letter-spacing: 1px;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: relative;
+            padding-left: 12px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 4px;
+            bottom: 4px;
+            width: 1px;
+            background: var(--soft-line);
+        }
+
+        .timeline-item {
+            display: grid;
+            grid-template-columns: 12px 1fr;
+            gap: 12px;
+            align-items: start;
+        }
+
+        .timeline-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 1.5px solid var(--line);
+            background: var(--cream);
+            margin-top: 4px;
+        }
+
+        .timeline-card {
+            background: var(--cream);
+            border: 1px solid var(--soft-line);
+            border-radius: 12px;
+            padding: 12px 14px;
+        }
+
+        .timeline-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .timeline-date {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .memory-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .memory-card {
+            border: 1px solid var(--soft-line);
+            border-radius: 14px;
+            padding: 12px 12px 14px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(245, 241, 236, 0.9));
+            position: relative;
+            overflow: hidden;
+            flex: 1 1 calc(50% - 6px);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .memory-card:active {
+            transform: translateY(1px);
+        }
+
+        .memory-card::after {
+            content: '';
+            position: absolute;
+            right: -12px;
+            bottom: -12px;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .memory-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--line);
+            margin-bottom: 10px;
+        }
+
+        .memory-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .memory-content {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .note {
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 18px;
+            margin-top: 18px;
+            position: relative;
+        }
+
+        .note-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .note-text {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .note-line {
+            height: 1px;
+            background: var(--line);
+            margin: 16px 0 12px;
+        }
+
+        .note-sign {
+            font-size: 13px;
+            letter-spacing: 2px;
+        }
+
+        .note-add {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: #000000;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .note-add:active {
+            background: #222222;
+        }
+
+        .form-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .keyboard-spacer {
+            flex: 0 0 auto;
+            height: 0;
+            min-height: 0;
+            max-height: 0;
+            will-change: auto;
+            transition: height 0.3s ease;
+        }
+
+        html.ua-android-opera .keyboard-spacer {
+            will-change: auto !important;
+            transition: none !important;
+        }
+
+        .form-grid.keyboard-open .keyboard-spacer {
+            flex: 0 0 300px;
+        }
+
+        .dialog-card.keyboard-open .keyboard-spacer {
+            flex: 0 0 300px;
+        }
+
+        .field-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field-label {
+            font-size: 12px;
+            color: var(--muted);
+            letter-spacing: 1px;
+        }
+
+        .field-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--soft-line);
+            border-radius: 12px;
+            font-size: 14px;
+            background: #ffffff;
+            color: var(--ink);
+            box-sizing: border-box;
+        }
+
+        .field-input.area {
+            min-height: 84px;
+            resize: none;
+        }
+
+        .field-input:focus {
+            outline: none;
+            border-color: var(--line);
+        }
+
+        .timeline-input-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .timeline-input-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .action-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: var(--line);
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .action-btn:active {
+            background: #333333;
+        }
+
+        .ghost-btn {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--soft-line);
+            background: #ffffff;
+            color: var(--ink);
+            font-size: 12px;
+        }
+
+        .ghost-btn:active {
+            background: #f2eee9;
+        }
+
+        .memory-input-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .memory-input-grid .field-row {
+            flex: 1 1 calc(50% - 6px);
+        }
+
+        .timeline-empty {
+            font-size: 12px;
+            color: var(--muted);
+            padding-left: 12px;
+        }
+
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            z-index: 1000;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .dialog-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .dialog-card {
+            width: 100%;
+            max-width: 360px;
+            background: #ffffff;
+            border-radius: 18px;
+            border: 1px solid var(--soft-line);
+            padding: 18px;
+            max-height: 80vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+            touch-action: pan-y;
+        }
+
+        .dialog-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .dialog-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .dialog-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            border: 1px solid var(--soft-line);
+            background: #ffffff;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dialog-close:active {
+            background: #f2eee9;
+        }
+
+        @supports (display: grid) {
+            .hero-metrics {
+                display: grid;
+                grid-template-columns: 1fr auto 1fr;
+                align-items: center;
+            }
+
+            .metric {
+                flex: initial;
+            }
+
+            .memory-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .memory-card {
+                flex: initial;
+            }
+
+            .timeline-input-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr auto;
+            }
+
+            .memory-input-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .memory-input-grid .field-row {
+                flex: initial;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="anniv-shell">
+        <header class="topbar">
+            <button class="topbar-btn" id="backBtn"><i class="fas fa-chevron-left"></i></button>
+            <h1 class="topbar-title">纪念日</h1>
+            <div style="width:44px;height:44px;"></div>
+        </header>
+        <main class="content scroll-y-hidebar flex-scroll">
+            <section class="hero">
+                <div class="pair-avatars">
+                    <div class="pair-avatar primary" id="userAvatarMini">我</div>
+                    <div class="pair-avatar secondary" id="partnerAvatarMini">?</div>
+                </div>
+                <div class="hero-tag">亲密纪念</div>
+                <div class="hero-title">我们的日子</div>
+                <div class="hero-sub">把时间写成温柔的线</div>
+                <div class="hero-line"></div>
+                <div class="hero-metrics">
+                    <div class="metric">
+                        <div class="metric-label">在一起</div>
+                        <div class="metric-value" id="annivDays">--</div>
+                        <div class="metric-unit">天</div>
+                    </div>
+                    <div class="metric-divider"></div>
+                    <div class="metric">
+                        <div class="metric-label">下一个纪念日</div>
+                        <div class="metric-value" id="nextAnniv">--</div>
+                        <div class="metric-unit">天后</div>
+                    </div>
+                </div>
+            </section>
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">时光轴</div>
+                    <div class="panel-sub">点 · 线 · 面</div>
+                </div>
+                <div class="timeline" id="timelineList"></div>
+            </section>
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">温柔收藏</div>
+                    <div class="panel-sub">简约高级的纪念清单</div>
+                </div>
+                <div class="memory-grid">
+                    <div class="memory-card" data-key="memoryA">
+                        <div class="memory-dot"></div>
+                        <div class="memory-title">点击修改</div>
+                        <div class="memory-content">未填写</div>
+                    </div>
+                    <div class="memory-card" data-key="memoryB">
+                        <div class="memory-dot"></div>
+                        <div class="memory-title">点击修改</div>
+                        <div class="memory-content">未填写</div>
+                    </div>
+                    <div class="memory-card" data-key="memoryC">
+                        <div class="memory-dot"></div>
+                        <div class="memory-title">点击修改</div>
+                        <div class="memory-content">未填写</div>
+                    </div>
+                    <div class="memory-card" data-key="memoryD">
+                        <div class="memory-dot"></div>
+                        <div class="memory-title">点击修改</div>
+                        <div class="memory-content">未填写</div>
+                    </div>
+                </div>
+            </section>
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">纪念日管理</div>
+                    <div class="panel-sub">填写在一起日期与时光轴</div>
+                </div>
+                <div class="action-row">
+                    <button class="action-btn" id="openMemorialBtn" type="button">添加纪念日</button>
+                </div>
+            </section>
+            <section class="note">
+                <button class="note-add" id="noteAddBtn" type="button">+</button>
+                <div class="note-title">给彼此的小约定</div>
+                <div class="note-text">把每个纪念日写成一行温柔的句子，让生活在点线之间有了暖意。</div>
+                <div class="note-line"></div>
+                <div class="note-sign">一起走到很远</div>
+            </section>
+        </main>
+    </div>
+    <div class="dialog-overlay" id="memorialOverlay">
+        <div class="dialog-card">
+            <div class="dialog-head">
+                <div class="dialog-title">填写纪念日</div>
+                <button class="dialog-close" id="closeMemorialBtn" type="button">×</button>
+            </div>
+            <div class="form-grid">
+                <div class="keyboard-spacer"></div>
+                <div class="field-row">
+                    <div class="field-label">在一起日期</div>
+                    <input class="field-input" id="startDateInput" type="date">
+                </div>
+                <div class="field-row">
+                    <div class="field-label">时光轴</div>
+                    <div class="timeline-input-list" id="timelineInputList"></div>
+                    <div class="action-row">
+                        <button class="ghost-btn" id="appendTimelineBtn" type="button">新增一条</button>
+                    </div>
+                </div>
+                <div class="action-row">
+                    <button class="action-btn" id="saveMemorialBtn" type="button">保存纪念</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="dialog-overlay" id="memoryOverlay">
+        <div class="dialog-card">
+            <div class="dialog-head">
+                <div class="dialog-title">修改收藏</div>
+                <button class="dialog-close" id="closeMemoryBtn" type="button">×</button>
+            </div>
+            <div class="form-grid">
+                <div class="keyboard-spacer"></div>
+                <div class="field-row">
+                    <div class="field-label">标题</div>
+                    <input class="field-input" id="memoryTitleInput" type="text" placeholder="请输入标题">
+                </div>
+                <div class="field-row">
+                    <div class="field-label">内容</div>
+                    <textarea class="field-input area" id="memoryContentInput" placeholder="写下内容"></textarea>
+                </div>
+                <div class="action-row">
+                    <button class="action-btn" id="saveMemoryBtn" type="button">保存修改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/core/SafeArea.js"></script>
+    <script src="js/core/StorageService.js"></script>
+    <script>
+
+        const MEMORY_KEY = 'coupleSpace_memorial';
+
+        window.ChatStorageDB = {
+            dbName: 'PhoneAppImages',
+            version: 5,
+
+            _req(request) {
+                return new Promise((resolve, reject) => {
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            },
+
+            async get(id) {
+                if (!window.parent.Core || !window.parent.Core.StorageService) return null;
+                return window.parent.Core.StorageService.transaction(this.dbName, ['images'], async (tx) => {
+                    const store = tx.objectStore('images');
+                    const result = await this._req(store.get(id));
+                    return result ? result.data : null;
+                });
+            },
+
+            async getAppData(key) {
+                if (!window.parent.Core || !window.parent.Core.StorageService) return null;
+                return window.parent.Core.StorageService.transaction(this.dbName, ['appData'], async (tx) => {
+                    const store = tx.objectStore('appData');
+                    const result = await this._req(store.get(key));
+                    return result ? result.value : null;
+                });
+            }
+        };
+
+        window.ImageStorageDB = window.ChatStorageDB;
+
+        const GROUP_ID = 'memorial';
+
+        function getBlobUrlService() {
+            if (window.parent && window.parent.Core && window.parent.Core.BlobUrlService) return window.parent.Core.BlobUrlService;
+            if (window.Core && window.Core.BlobUrlService) return window.Core.BlobUrlService;
+            return null;
+        }
+
+        async function setElementImageFromStore(element, storedValue, fallbackText = '') {
+            if (!element) return;
+            const normalized = String(storedValue || '').trim();
+            const prevUrl = element.dataset ? element.dataset.tempObjectUrl : '';
+            if (prevUrl) {
+                const blobUrlService = getBlobUrlService();
+                if (blobUrlService) blobUrlService.revokeObjectUrl(prevUrl);
+            }
+            if (element.dataset) delete element.dataset.tempObjectUrl;
+
+            if (!normalized) {
+                element.style.backgroundImage = '';
+                element.textContent = fallbackText;
+                return;
+            }
+
+            const setBgImage = (src, isTemp) => {
+                element.style.backgroundImage = `url("${src}")`;
+                element.style.backgroundSize = '100% 100%';
+                element.style.backgroundPosition = 'center';
+                element.style.backgroundRepeat = 'no-repeat';
+                element.textContent = '';
+                if (isTemp && element.dataset) element.dataset.tempObjectUrl = src;
+            };
+
+            if (normalized.startsWith('idb:')) {
+                const idbId = normalized.slice(4).trim();
+                try {
+                    const data = await window.ImageStorageDB.get(idbId);
+                    if (!data) {
+                        element.textContent = fallbackText;
+                        return;
+                    }
+                    if (typeof data === 'string') {
+                        setBgImage(data, false);
+                    } else {
+                        const blobUrlService = getBlobUrlService();
+                        if (!blobUrlService) throw new Error('BlobUrlService不可用');
+                        const src = await blobUrlService.toDisplayUrl(data, { preferDataUrlInFileProtocol: true, groupId: GROUP_ID + '-avatar' });
+                        if (!src) {
+                            element.textContent = fallbackText;
+                            return;
+                        }
+                        setBgImage(src, src.indexOf('blob:') === 0);
+                    }
+                } catch (e) {
+                    element.textContent = fallbackText;
+                }
+            } else {
+                setBgImage(normalized, false);
+            }
+        }
+
+        function formatDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}.${m}.${d}`;
+        }
+
+        function toInputDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function parseInputDate(value) {
+            if (!value) return null;
+            const date = new Date(value);
+            return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        function daysBetween(a, b) {
+            const start = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+            const end = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+            const diff = end - start;
+            return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+        }
+
+        function readMemorial() {
+            const raw = localStorage.getItem(MEMORY_KEY);
+            if (!raw) return null;
+            try {
+                return JSON.parse(raw);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function writeMemorial(payload) {
+            localStorage.setItem(MEMORY_KEY, JSON.stringify(payload));
+        }
+
+        function getPartnerStartValue() {
+            const raw = localStorage.getItem('coupleSpace_partner');
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && parsed.startDate) {
+                        const date = new Date(parsed.startDate);
+                        if (!Number.isNaN(date.getTime())) return toInputDate(date);
+                    }
+                } catch (e) {}
+            }
+            return '';
+        }
+
+        function getNextAnniversary(startDate, now) {
+            const month = startDate.getMonth();
+            const day = startDate.getDate();
+            let year = now.getFullYear();
+            let next = new Date(year, month, day);
+            if (next < now) next = new Date(year + 1, month, day);
+            return next;
+        }
+
+        function renderTimeline(list) {
+            const container = document.getElementById('timelineList');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!list || list.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'timeline-empty';
+                empty.textContent = '暂无纪念记录';
+                container.appendChild(empty);
+                return;
+            }
+            list.forEach(item => {
+                if (!item || !item.title || !item.date) return;
+                const date = new Date(item.date);
+                if (Number.isNaN(date.getTime())) return;
+                const row = document.createElement('div');
+                row.className = 'timeline-item';
+                row.innerHTML = `
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-card">
+                        <div class="timeline-title">${item.title}</div>
+                        <div class="timeline-date">${formatDate(date)}</div>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function renderMemories(memoryItems) {
+            const cards = document.querySelectorAll('.memory-card');
+            const data = memoryItems || {};
+            cards.forEach(card => {
+                const key = card.dataset.key;
+                const titleEl = card.querySelector('.memory-title');
+                const contentEl = card.querySelector('.memory-content');
+                const item = key && data[key] ? data[key] : {};
+                const title = item.title ? item.title : '点击修改';
+                const content = item.content ? item.content : '未填写';
+                if (titleEl) titleEl.textContent = title;
+                if (contentEl) contentEl.textContent = content;
+            });
+        }
+
+        function renderMetrics(startValue) {
+            const annivDays = document.getElementById('annivDays');
+            const nextAnniv = document.getElementById('nextAnniv');
+            if (!startValue) {
+                if (annivDays) annivDays.textContent = '--';
+                if (nextAnniv) nextAnniv.textContent = '--';
+                return;
+            }
+            const startDate = parseInputDate(startValue);
+            if (!startDate) {
+                if (annivDays) annivDays.textContent = '--';
+                if (nextAnniv) nextAnniv.textContent = '--';
+                return;
+            }
+            const now = new Date();
+            const days = daysBetween(startDate, now) + 1;
+            const nextDay = getNextAnniversary(startDate, now);
+            const daysToNext = daysBetween(now, nextDay);
+            if (annivDays) annivDays.textContent = String(days);
+            if (nextAnniv) nextAnniv.textContent = String(daysToNext);
+        }
+
+        function createTimelineRow(titleValue, dateValue) {
+            const row = document.createElement('div');
+            row.className = 'timeline-input-row';
+            const titleInput = document.createElement('input');
+            titleInput.className = 'field-input';
+            titleInput.type = 'text';
+            titleInput.placeholder = '纪念名称';
+            titleInput.value = titleValue || '';
+            const dateInput = document.createElement('input');
+            dateInput.className = 'field-input';
+            dateInput.type = 'date';
+            dateInput.value = dateValue || '';
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'ghost-btn';
+            removeBtn.type = 'button';
+            removeBtn.textContent = '移除';
+            removeBtn.addEventListener('click', () => row.remove());
+            row.appendChild(titleInput);
+            row.appendChild(dateInput);
+            row.appendChild(removeBtn);
+            return row;
+        }
+
+        function fillTimelineInputs(list) {
+            const container = document.getElementById('timelineInputList');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!list || list.length === 0) {
+                container.appendChild(createTimelineRow('', ''));
+                return;
+            }
+            list.forEach(item => {
+                container.appendChild(createTimelineRow(item.title || '', item.date || ''));
+            });
+        }
+
+        function collectTimelineInputs() {
+            const container = document.getElementById('timelineInputList');
+            if (!container) return [];
+            const rows = container.querySelectorAll('.timeline-input-row');
+            const list = [];
+            rows.forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                const title = inputs[0] ? inputs[0].value.trim() : '';
+                const date = inputs[1] ? inputs[1].value : '';
+                if (title || date) list.push({ title, date });
+            });
+            return list;
+        }
+
+        async function loadPairAvatars() {
+            const partnerNode = document.getElementById('partnerAvatarMini');
+            const userNode = document.getElementById('userAvatarMini');
+            let partnerInfo = null;
+            const rawPartner = localStorage.getItem('coupleSpace_partner');
+            if (rawPartner) {
+                try { partnerInfo = JSON.parse(rawPartner); } catch (e) {}
+            }
+
+            let appData = null;
+            try {
+                const raw = localStorage.getItem('wechatAppData');
+                if (raw) appData = JSON.parse(raw);
+            } catch (e) {}
+
+            let contact = null;
+            if (appData && Array.isArray(appData.contacts) && partnerInfo && partnerInfo.id) {
+                contact = appData.contacts.find(c => String(c.id) === String(partnerInfo.id)) || null;
+            }
+
+            const partnerName = contact && contact.name ? String(contact.name) : (partnerInfo && partnerInfo.name ? String(partnerInfo.name) : '');
+            const partnerFallback = partnerName ? partnerName.charAt(0).toUpperCase() : '?';
+            if (partnerNode) {
+                if (contact && contact.hasCustomAvatar) {
+                    const avatarKey = `avatar_${contact.id}`;
+                    const avatarData = localStorage.getItem(avatarKey);
+                    if (avatarData) {
+                        setElementImageFromStore(partnerNode, avatarData, partnerFallback);
+                    } else {
+                        partnerNode.textContent = partnerFallback;
+                    }
+                } else {
+                    partnerNode.textContent = partnerFallback;
+                }
+            }
+
+            let personaAvatar = '';
+            let personaName = '';
+            let personaLibrary = null;
+            let friendMyPersonaSettings = null;
+
+            try {
+                if (window.ImageStorageDB && typeof window.ImageStorageDB.getAppData === 'function') {
+                    personaLibrary = await window.ImageStorageDB.getAppData('personaLibrary');
+                    friendMyPersonaSettings = await window.ImageStorageDB.getAppData('friendMyPersonaSettings');
+                }
+            } catch (e) {}
+
+            if (!personaLibrary) {
+                const rawList = localStorage.getItem('chat20.personaLibrary');
+                const rawDefaultId = localStorage.getItem('chat20.personaDefaultId') || '';
+                if (rawList) {
+                    try {
+                        const list = JSON.parse(rawList);
+                        personaLibrary = { list, defaultId: rawDefaultId };
+                    } catch (e) {}
+                }
+            }
+
+            if (!friendMyPersonaSettings) {
+                const rawMyPersona = localStorage.getItem('friendMyPersonaSettings');
+                if (rawMyPersona) {
+                    try { friendMyPersonaSettings = JSON.parse(rawMyPersona); } catch (e) {}
+                }
+            }
+
+            const partnerId = partnerInfo && partnerInfo.id ? partnerInfo.id : '';
+            const selectedPersonaId = friendMyPersonaSettings && partnerId ? (friendMyPersonaSettings[partnerId] || '') : '';
+            const defaultPersonaId = personaLibrary && personaLibrary.defaultId ? personaLibrary.defaultId : '';
+            const personaId = selectedPersonaId || defaultPersonaId;
+
+            if (personaId && personaLibrary && Array.isArray(personaLibrary.list)) {
+                const persona = personaLibrary.list.find(p => String(p.id) === String(personaId));
+                if (persona) {
+                    personaAvatar = persona.avatar || '';
+                    personaName = persona.name || '';
+                }
+            }
+
+            if (userNode) {
+                if (personaAvatar) {
+                    setElementImageFromStore(userNode, personaAvatar, personaName ? personaName.charAt(0).toUpperCase() : '我');
+                } else if (appData && appData.currentUser && appData.currentUser.hasCustomAvatar) {
+                    const meAvatarKey = 'user_avatar';
+                    const meAvatarData = localStorage.getItem(meAvatarKey);
+                    if (meAvatarData) {
+                        setElementImageFromStore(userNode, meAvatarData, '我');
+                    } else {
+                        userNode.textContent = '我';
+                    }
+                } else {
+                    userNode.textContent = '我';
+                }
+            }
+        }
+
+        async function init() {
+            const backBtn = document.getElementById('backBtn');
+            if (backBtn) backBtn.addEventListener('click', () => {
+                window.location.href = '情侣空间.html';
+            });
+
+            const memorial = readMemorial();
+            const startInput = document.getElementById('startDateInput');
+            const partnerStartValue = getPartnerStartValue();
+            const hasStoredStart = memorial && Object.prototype.hasOwnProperty.call(memorial, 'startDate');
+            const startValue = hasStoredStart ? (memorial.startDate || '') : partnerStartValue;
+            if (startInput) startInput.value = startValue;
+
+            fillTimelineInputs(memorial && memorial.timeline ? memorial.timeline : []);
+            renderMetrics(startValue);
+            renderTimeline(memorial && memorial.timeline ? memorial.timeline : []);
+            renderMemories(memorial && memorial.memoryItems ? memorial.memoryItems : null);
+
+            const openMemorialBtn = document.getElementById('openMemorialBtn');
+            const memorialOverlay = document.getElementById('memorialOverlay');
+            const closeMemorialBtn = document.getElementById('closeMemorialBtn');
+            const appendTimelineBtn = document.getElementById('appendTimelineBtn');
+            const saveMemorialBtn = document.getElementById('saveMemorialBtn');
+            const memoryOverlay = document.getElementById('memoryOverlay');
+            const closeMemoryBtn = document.getElementById('closeMemoryBtn');
+            const saveMemoryBtn = document.getElementById('saveMemoryBtn');
+            const memoryTitleInput = document.getElementById('memoryTitleInput');
+            const memoryContentInput = document.getElementById('memoryContentInput');
+            let activeMemoryKey = '';
+
+            if (openMemorialBtn && memorialOverlay) {
+                openMemorialBtn.addEventListener('click', () => {
+                    memorialOverlay.classList.add('active');
+                });
+            }
+
+            if (closeMemorialBtn && memorialOverlay) {
+                closeMemorialBtn.addEventListener('click', () => {
+                    memorialOverlay.classList.remove('active');
+                });
+            }
+
+            if (memorialOverlay) {
+                memorialOverlay.addEventListener('click', (event) => {
+                    if (event.target === memorialOverlay) memorialOverlay.classList.remove('active');
+                });
+            }
+
+            if (memoryOverlay) {
+                memoryOverlay.addEventListener('click', (event) => {
+                    if (event.target === memoryOverlay) memoryOverlay.classList.remove('active');
+                });
+            }
+
+            if (appendTimelineBtn) {
+                appendTimelineBtn.addEventListener('click', () => {
+                    const container = document.getElementById('timelineInputList');
+                    if (!container) return;
+                    container.appendChild(createTimelineRow('', ''));
+                });
+            }
+
+            if (saveMemorialBtn) {
+                saveMemorialBtn.addEventListener('click', () => {
+                    const nextStart = startInput ? startInput.value : '';
+                    const timeline = collectTimelineInputs();
+                    const latest = readMemorial();
+                    const payload = {
+                        startDate: nextStart,
+                        timeline,
+                        memoryItems: latest && latest.memoryItems ? latest.memoryItems : {}
+                    };
+                    writeMemorial(payload);
+                    renderMetrics(nextStart);
+                    renderTimeline(timeline);
+                    if (memorialOverlay) memorialOverlay.classList.remove('active');
+                });
+            }
+
+            const cards = document.querySelectorAll('.memory-card');
+            cards.forEach(card => {
+                card.addEventListener('click', () => {
+                    activeMemoryKey = card.dataset.key || '';
+                    const latest = readMemorial();
+                    const memoryItems = latest && latest.memoryItems ? latest.memoryItems : {};
+                    const item = activeMemoryKey && memoryItems[activeMemoryKey] ? memoryItems[activeMemoryKey] : {};
+                    if (memoryTitleInput) memoryTitleInput.value = item.title || '';
+                    if (memoryContentInput) memoryContentInput.value = item.content || '';
+                    if (memoryOverlay) memoryOverlay.classList.add('active');
+                });
+            });
+
+            if (closeMemoryBtn && memoryOverlay) {
+                closeMemoryBtn.addEventListener('click', () => {
+                    memoryOverlay.classList.remove('active');
+                });
+            }
+
+            if (saveMemoryBtn) {
+                saveMemoryBtn.addEventListener('click', () => {
+                    const latest = readMemorial();
+                    const memoryItems = latest && latest.memoryItems ? latest.memoryItems : {};
+                    if (activeMemoryKey) {
+                        memoryItems[activeMemoryKey] = {
+                            title: memoryTitleInput ? memoryTitleInput.value.trim() : '',
+                            content: memoryContentInput ? memoryContentInput.value.trim() : ''
+                        };
+                    }
+                    const payload = {
+                        startDate: latest && latest.startDate ? latest.startDate : (startInput ? startInput.value : ''),
+                        timeline: latest && latest.timeline ? latest.timeline : collectTimelineInputs(),
+                        memoryItems
+                    };
+                    writeMemorial(payload);
+                    renderMemories(memoryItems);
+                    if (memoryOverlay) memoryOverlay.classList.remove('active');
+                });
+            }
+
+            await loadPairAvatars();
+
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

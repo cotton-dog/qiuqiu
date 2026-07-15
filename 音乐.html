@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>湫丘捕梦机</title>
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" sizes="180x180">
+    <meta name="theme-color" content="#f1f3f4">
+    <!-- iOS PWA 兼容 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="湫丘捕梦机">
+    <link rel="stylesheet" href="css/core-icons.min.css">
+    <link rel="stylesheet" href="css/core-ui.css">
+    <link rel="stylesheet" href="css/music.css">
+</head>
+<body>
+    <div class="app-container">
+        <img id="customBgImage" alt="Custom Background">
+        <!-- 页面容器 -->
+        <div class="pages-container" id="pagesContainer">
+            <!-- 播放页面 -->
+            <div class="page player-page scroll-y-hidebar flex-scroll" id="playerPage">
+                <div class="player-header">
+                    <div class="control-btn" id="mainBackBtn" style="margin-right: 15px;" role="button" tabindex="0" aria-label="返回">
+                        <i class="fas fa-chevron-left"></i>
+                    </div>
+                    <div class="player-title">正在播放</div>
+                    <div class="player-header-controls">
+                        <!-- 日夜模式切换按钮 -->
+                        <div class="theme-toggle-btn" id="themeToggleBtn" role="button" tabindex="0" aria-label="切换主题">
+                            <i class="fas fa-moon"></i>
+                            <i class="fas fa-sun"></i>
+                        </div>
+                        <!-- 三点按钮 -->
+                        <div class="control-btn" id="moreOptionsBtn" role="button" tabindex="0" aria-label="更多选项">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="player-bottom-area">
+                    <div class="bg-turntable" id="bgTurntable">
+                        <div class="bg-disc" id="bgDisc" title="点击更换贴图">
+                            <div class="bg-disc-texture" id="bgDiscTexture"></div>
+                            <div class="bg-disc-center"></div>
+                        </div>
+                        <div class="bg-tonearm" id="bgTonearm">
+                            <div class="bg-tonearm-pivot"></div>
+                            <div class="bg-tonearm-arm">
+                                <svg class="bg-tonearm-svg" viewBox="0 0 170 28" preserveAspectRatio="none">
+                                    <path class="bg-tonearm-path" d="M164 14 L70 14 L24 8"></path>
+                                </svg>
+                                <div class="bg-tonearm-head"></div>
+                            </div>
+                        </div>
+                        <input class="hidden" type="file" id="bgDiscInput" accept="image/*">
+                    </div>
+
+                    <div class="together-container" id="togetherContainer">
+                        <div class="avatar left-avatar" id="leftAvatar" role="button" tabindex="0" aria-label="我的头像">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="together-line-container">
+                            <svg class="together-line" id="togetherLine" viewBox="0 0 100 30">
+                                <line x1="0" y1="15" x2="100" y2="15" class="base-line" />
+                                <path d="M 0 15 L 50 15 C 40 5, 45 -2, 50 5 C 55 -2, 60 5, 50 15 L 100 15" class="pulse-path" />
+                            </svg>
+                        </div>
+                        <div class="avatar right-avatar" id="rightAvatar" role="button" tabindex="0" aria-label="选择一起听的好友">
+                            <i class="fas fa-user-friends"></i>
+                        </div>
+                    </div>
+
+                    <div class="song-info">
+                        <div class="song-title" id="songTitle">等待播放音乐</div>
+                    </div>
+                    
+                    <div class="progress-area">
+                        <div class="progress-bar" id="progressBar">
+                            <div class="progress" id="progress"></div>
+                        </div>
+                        <div class="time">
+                            <span id="currentTime">00:00</span>
+                            <span id="duration">00:00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="player-controls">
+                        <button class="control-btn" id="prevBtn" aria-label="上一曲">
+                            <i class="fas fa-step-backward"></i>
+                        </button>
+                        <button class="control-btn play-pause-btn" id="playPauseBtn" aria-label="播放/暂停">
+                            <i class="fas fa-play" id="playPauseIcon"></i>
+                        </button>
+                        <button class="control-btn" id="nextBtn" aria-label="下一曲">
+                            <i class="fas fa-step-forward"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 歌单页面 -->
+            <div class="page playlist-page scroll-y-hidebar flex-scroll" id="playlistPage">
+                <div class="playlist-header">
+                    <div class="page-title">我的歌单</div>
+                    <div class="playlist-header-actions">
+                        <button class="edit-btn" id="editBtn" aria-label="编辑歌单">
+                            <i class="fas fa-edit" aria-hidden="true"></i>
+                        </button>
+                        <button class="add-btn" id="addBtn" aria-label="添加内容">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="playlist-tabs">
+                    <div class="tab active" data-tab="default">默认</div>
+                    <div class="tab" data-tab="collections">合集</div>
+                </div>
+                
+                <div class="bulk-actions" id="bulkActions">
+                    <button class="bulk-btn" id="bulkMoveBtn">移动到合集</button>
+                    <button class="bulk-btn danger" id="bulkDeleteBtn">批量删除</button>
+                </div>
+                
+                <div class="playlist-content active" id="defaultTab">
+                    <!-- 默认标签页显示所有歌曲 -->
+                    <!-- 歌曲项将通过JavaScript动态生成 -->
+                    <div class="empty-state" id="defaultEmpty">
+                        <i class="fas fa-music"></i>
+                        <p>暂无歌曲，请添加音乐</p>
+                    </div>
+                </div>
+                
+                <div class="playlist-content" id="collectionsTab">
+                    <!-- 合集标签页 -->
+                    <!-- 合集项将通过JavaScript动态生成 -->
+                    <div class="empty-state" id="collectionsEmpty">
+                        <i class="fas fa-folder-open"></i>
+                        <p>暂无合集，点击右上角添加</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 添加菜单浮窗 -->
+        <div class="add-menu" id="addMenu">
+            <div class="add-menu-content">
+                <div class="add-menu-header">
+                    <div class="add-menu-title">添加内容</div>
+                    <div class="add-menu-desc">选择要添加的内容类型</div>
+                </div>
+                
+                <div class="add-menu-options">
+                    <div class="add-menu-option" id="addSongsOption">
+                        <i class="fas fa-music"></i>
+                        <div class="add-menu-option-text">
+                            <div class="add-menu-option-title">添加歌曲</div>
+                            <div class="add-menu-option-desc">添加本地或在线音乐到默认歌单</div>
+                        </div>
+                    </div>
+                    
+                    <div class="add-menu-option" id="addCollectionOption">
+                        <i class="fas fa-folder-plus"></i>
+                        <div class="add-menu-option-text">
+                            <div class="add-menu-option-title">添加合集</div>
+                            <div class="add-menu-option-desc">创建新的音乐合集</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="add-menu-close" id="closeAddMenu">取消</button>
+            </div>
+        </div>
+        
+        <!-- 添加歌曲页面 -->
+        <div class="add-songs-page" id="addSongsPage">
+            <div class="add-songs-header">
+                <button class="back-btn" id="backFromAddSongs" aria-label="返回">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="add-songs-title">添加歌曲</div>
+            </div>
+            
+            <div class="add-songs-content">
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>点击选择或拖拽音频文件到此处</p>
+                    <p><span>支持批量导入MP3, WAV, OGG等格式</span></p>
+                </div>
+                <input type="file" id="fileInput" class="hidden" accept="audio/*" multiple>
+                
+                <div class="url-input-section">
+                    <input type="text" class="url-input" id="urlInput" placeholder="请输入音频文件的URL (例如: https://example.com/audio.mp3)">
+                    <button class="action-btn" id="loadUrlBtn">添加URL音频</button>
+                </div>
+
+                <div class="collection-select-section">
+                    <div class="section-title">添加到合集</div>
+                    <div class="collection-select-list" id="collectionSelectList"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 合集详情浮窗 -->
+        <div class="collection-detail-modal" id="collectionDetailModal">
+            <div class="collection-detail-content">
+                <div class="collection-detail-header">
+                    <div class="collection-detail-title" id="collectionDetailTitle">合集详情</div>
+                    <button class="collection-detail-close" id="collectionDetailClose" aria-label="关闭合集详情">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="collection-detail-songs" id="collectionDetailSongs">
+                    <!-- 合集中的歌曲将通过JavaScript动态生成 -->
+                    <div class="empty-state">
+                        <i class="fas fa-music"></i>
+                        <p>此合集暂无歌曲</p>
+                    </div>
+                </div>
+                <div class="collection-detail-actions">
+                    <button class="action-btn" id="playCollectionBtn">播放合集</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 新增合集模态框 -->
+        <div class="add-collection-modal" id="addCollectionModal">
+            <div class="add-collection-content">
+                <div class="add-collection-title">创建新合集</div>
+                <input type="text" class="collection-name-input" id="collectionNameInput" placeholder="请输入合集名称">
+                <div class="modal-buttons">
+                    <button class="modal-btn cancel" id="cancelAddCollection">取消</button>
+                    <button class="modal-btn confirm" id="confirmAddCollection">创建</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 好友选择弹窗 -->
+        <div class="friend-modal" id="friendModal">
+            <div class="friend-modal-content">
+                <div class="friend-modal-header">
+                    <div class="friend-modal-title">选择一起听的好友</div>
+                    <button class="close-friend-modal" id="closeFriendModal" aria-label="关闭好友选择">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="friend-list" id="friendList">
+                    <!-- 好友列表将由 JS 动态生成 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部导航栏 -->
+        <div class="bottom-nav">
+            <div class="nav-item active" data-page="0" role="button" tabindex="0" aria-label="切换到播放页">
+                <div class="nav-icon">
+                    <i class="fas fa-play-circle"></i>
+                </div>
+                <div class="nav-text">播放</div>
+            </div>
+            <div class="nav-item" data-page="1" role="button" tabindex="0" aria-label="切换到歌单页">
+                <div class="nav-icon">
+                    <i class="fas fa-list"></i>
+                </div>
+                <div class="nav-text">歌单</div>
+            </div>
+        </div>
+        
+        <!-- 提示框 - 现在在右上角 -->
+        <div class="toast" id="toast"></div>
+    </div>
+
+    <!-- 歌曲长按编辑菜单 -->
+    <div class="edit-menu" id="editMenu">
+        <div class="edit-menu-content">
+            <div class="edit-menu-item" id="moveOption">移动</div>
+            <div class="edit-menu-item delete" id="deleteOption">删除</div>
+            <div class="edit-menu-item" id="cancelEdit">取消</div>
+        </div>
+    </div>
+
+    <!-- 移动到合集弹窗 -->
+    <div class="move-modal" id="moveModal">
+        <div class="move-modal-content">
+            <div class="move-modal-header">
+                <div class="move-modal-title">移动到合集</div>
+            </div>
+            <div class="move-collection-list" id="moveCollectionList">
+                <!-- 合集项将通过 JS 动态渲染 -->
+            </div>
+            <div class="move-modal-close" id="closeMoveModal">取消</div>
+        </div>
+    </div>
+
+    <!-- 更多选项菜单 -->
+    <div class="more-options-menu" id="moreOptionsMenu">
+        <div class="more-options-item" id="customBgOption">
+            <i class="fas fa-image"></i>
+            <span>自定义背景</span>
+        </div>
+        <div class="more-options-item" id="playbackSettingsOption">
+            <i class="fas fa-sliders-h"></i>
+            <span>播放设置</span>
+        </div>
+        <div class="more-options-item" id="floatingPlayerOption">
+            <i class="fas fa-window-restore"></i>
+            <span>悬浮播放器</span>
+            <div class="toggle-switch">
+                <input type="checkbox" id="floatingPlayerCheckbox" checked>
+                <span class="slider round"></span>
+            </div>
+        </div>
+        <div class="more-options-item" id="storageOption">
+            <i class="fas fa-database"></i>
+            <span>储备空间</span>
+        </div>
+    </div>
+    
+    <!-- 隐藏的背景图片输入框 -->
+    <input type="file" id="customBgInput" class="hidden" accept="image/*">
+    <!-- 全局背景图片元素 (插入到 body 中 app-container 内) -->
+    
+    <!-- 播放设置弹窗 -->
+    <div class="playback-modal" id="playbackModal">
+        <div class="playback-content">
+            <div class="playback-title">播放设置</div>
+            <div class="playback-options">
+                <div class="playback-option" data-mode="sequence" id="modeSequence">
+                    <i class="fas fa-list-ol"></i>
+                    <span>顺序播放</span>
+                </div>
+                <div class="playback-option" data-mode="loop" id="modeLoop">
+                    <i class="fas fa-redo"></i>
+                    <span>单曲循环</span>
+                </div>
+                <div class="playback-option" data-mode="shuffle" id="modeShuffle">
+                    <i class="fas fa-random"></i>
+                    <span>随机播放</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 背景设置弹窗 -->
+    <div class="bg-settings-modal" id="bgSettingsModal">
+        <div class="bg-settings-content">
+            <div class="bg-settings-title">背景设置</div>
+            
+            <div class="bg-preview-container" id="bgPreviewContainer">
+                <img id="bgPreviewImage" class="bg-preview-image" src="" style="display:none;">
+                <div class="empty-state" id="bgPreviewEmpty" style="padding: 40px 0;">
+                    <i class="fas fa-image" style="font-size: 24px; margin-bottom: 10px;"></i>
+                    <p style="font-size: 12px;">暂无图片</p>
+                </div>
+            </div>
+
+            <button class="action-btn" id="selectBgBtn">
+                <i class="fas fa-upload"></i> 选择图片
+            </button>
+
+            <div class="bg-control-group">
+                <div class="bg-control-label">
+                    <span>模糊度</span>
+                    <span id="blurValue">10%</span>
+                </div>
+                <input type="range" min="0" max="100" value="10" class="bg-slider" id="blurSlider">
+            </div>
+
+            <div class="bg-btn-group">
+                <button class="modal-btn cancel" id="cancelBgSettings">取消</button>
+                <button class="modal-btn confirm" id="saveBgSettings">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 合集编辑菜单 -->
+    <div class="collection-edit-menu" id="collectionEditMenu">
+        <div class="collection-edit-content">
+            <div class="collection-edit-item" id="renameCollectionOption">重命名</div>
+            <div class="collection-edit-item delete" id="deleteCollectionOption">删除合集</div>
+            <div class="collection-edit-item" id="cancelCollectionEdit">取消</div>
+        </div>
+    </div>
+
+    <!-- 存储空间浮窗 -->
+    <div class="storage-modal" id="storageModal">
+        <div class="storage-content">
+            <div class="storage-icon">
+                <i class="fas fa-hdd"></i>
+            </div>
+            <div class="storage-title">已用储备空间</div>
+            <div class="storage-size" id="storageSizeDisplay">0.00 MB</div>
+            <div class="storage-desc">
+                音乐文件安全存储在浏览器的 IndexedDB 中，即使关闭浏览器也不会丢失。
+            </div>
+            <button class="storage-close-btn" id="closeStorageModal">我知道了</button>
+        </div>
+    </div>
+
+    <script src="js/core/StorageService.js"></script>
+    <script src="js/core/SafeArea.js"></script>
+    <script src="js/music.js"></script>
+    <!-- 图片裁剪弹窗 -->
+    <div class="crop-modal" id="cropModal">
+        <div class="crop-info">单指拖动，双指缩放</div>
+        <div class="crop-container">
+            <div class="crop-canvas-wrapper" id="cropWrapper">
+                <canvas id="cropCanvas"></canvas>
+            </div>
+            <div class="crop-overlay"></div>
+        </div>
+        <div class="crop-controls">
+            <button class="crop-btn cancel" id="cropCancelBtn">取消</button>
+            <button class="crop-btn confirm" id="cropConfirmBtn">应用</button>
+        </div>
+    </div>
+    <!-- 自定义背景预览弹窗 -->
+    <div class="crop-modal" id="bgPreviewModal" style="background: rgba(0,0,0,0.9);">
+        <div class="crop-info" style="top: 20px;">预览背景效果</div>
+        <div class="crop-container" style="flex-direction: column; gap: 20px;">
+            <div style="width: 200px; height: 350px; border-radius: 20px; overflow: hidden; position: relative; border: 2px solid rgba(255,255,255,0.2);">
+                <!-- 模拟手机屏幕 -->
+                <img id="bgPreviewImageMock" src="" style="width: 100%; height: 100%; object-fit: cover;">
+                <!-- 模拟UI遮罩 -->
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); pointer-events: none;"></div>
+                <div style="position: absolute; bottom: 20px; left: 20px; width: 60%; height: 10px; background: rgba(255,255,255,0.5); border-radius: 5px;"></div>
+            </div>
+            
+            <div style="width: 80%; max-width: 300px; color: white;">
+                <div style="margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>模糊度</span>
+                        <span id="bgPreviewBlurValue">0px</span>
+                    </div>
+                    <input type="range" id="bgBlurSlider" min="0" max="20" value="0" style="width: 100%;">
+                </div>
+                
+                <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>清晰度(透明度)</span>
+                        <span id="opacityValue">100%</span>
+                    </div>
+                    <input type="range" id="bgOpacitySlider" min="20" max="100" value="100" style="width: 100%;">
+                </div>
+            </div>
+        </div>
+        <div class="crop-controls">
+            <button class="crop-btn cancel" id="bgPreviewCancel">取消</button>
+            <button class="crop-btn confirm" id="bgPreviewConfirm">应用</button>
+        </div>
+    </div>
+</body>
+</html>

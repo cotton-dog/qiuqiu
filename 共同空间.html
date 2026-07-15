@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>共同空间</title>
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" sizes="180x180">
+    <meta name="theme-color" content="#f1f3f4">
+    <!-- iOS PWA 兼容 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="湫丘捕梦机">
+    <link rel="stylesheet" href="css/core-icons.min.css">
+    <link rel="stylesheet" href="css/core-ui.css">
+    <script src="js/core/StorageService.js"></script>
+    <script src="js/core/SafeArea.js"></script>
+    <script src="js/ImageStorageDB.js"></script>
+    <style>
+        :root {
+            --safe-inset-top: env(safe-area-inset-top, 0px);
+            --safe-inset-bottom: env(safe-area-inset-bottom, 0px);
+            --line: #000000;
+            --border: #e0e0e0;
+            --soft: #f5f5f5;
+            --muted: #6b6b6b;
+            --bg: #ffffff;
+            --bg-image: none;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: #ffffff;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: #000000;
+        }
+
+        .space-shell {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: calc(14px + var(--safe-inset-top)) 20px calc(16px + var(--safe-inset-bottom));
+            background-color: var(--bg);
+            background-image: var(--bg-image);
+            background-size: cover;
+            background-position: center;
+            box-sizing: border-box;
+        }
+
+        .space-shell.bg-plain {
+            --bg: #ffffff;
+            --bg-image: none;
+        }
+
+        .space-shell.bg-grid {
+            --bg: #ffffff;
+            --bg-image: linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px), linear-gradient(0deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        .space-shell.bg-soft {
+            --bg: #ffffff;
+            --bg-image: radial-gradient(circle at 30% 20%, rgba(0, 0, 0, 0.04), transparent 55%), radial-gradient(circle at 70% 80%, rgba(0, 0, 0, 0.05), transparent 50%);
+        }
+
+        .space-shell.has-custom {
+            --bg-image: none;
+        }
+
+        .topbar {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+            position: relative;
+        }
+
+        .topbar-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .topbar-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 10px;
+        }
+
+        .topbar-btn:active {
+            background: var(--soft);
+        }
+
+        .space-scroll {
+            flex: 1;
+            padding-top: 22px;
+            min-height: 0;
+            /* iOS Safari 滚动优化 */
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+            touch-action: pan-y;
+        }
+
+        .bond-hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0 24px;
+        }
+
+        .pair-stack {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pair-avatar {
+            width: 76px;
+            height: 76px;
+            border: 2px solid var(--line);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 600;
+            background: #ffffff;
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+        }
+
+        .pair-avatar.has-image {
+            color: transparent;
+        }
+
+        .pair-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pair-link-line {
+            width: 26px;
+            height: 1px;
+            background: var(--line);
+        }
+
+        .pair-heart {
+            width: 26px;
+            height: 26px;
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .pair-names {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .pair-note {
+            font-size: 12px;
+            color: var(--muted);
+            letter-spacing: 0.5px;
+        }
+
+        .zone-grid {
+            display: grid;
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .zone-card {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.86);
+            backdrop-filter: blur(4px);
+            /* iOS 长按防护 */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: pan-y;
+        }
+
+        .zone-card:active {
+            background: #f5f5f5;
+        }
+
+        .zone-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .zone-mark {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #000000;
+            display: inline-block;
+        }
+
+        .zone-desc {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+
+        .zone-btn {
+            align-self: flex-start;
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--line);
+            background: #000000;
+            color: #ffffff;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .zone-btn:active {
+            background: #333333;
+        }
+
+        .style-panel {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #ffffff;
+            border-top: 1px solid var(--border);
+            border-radius: 16px 16px 0 0;
+            padding: 18px 20px calc(18px + var(--safe-bottom));
+            transform: translateY(100%);
+            transition: transform 0.25s ease;
+            z-index: 20;
+        }
+
+        .style-panel.active {
+            transform: translateY(0%);
+        }
+
+        .style-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .style-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .style-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: var(--soft);
+            cursor: pointer;
+        }
+
+        .style-options {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .style-option {
+            /* iOS 长按防护 */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: pan-y;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 8px;
+            text-align: center;
+            font-size: 12px;
+            cursor: pointer;
+            background: #ffffff;
+        }
+
+        .style-option.active {
+            border-color: #000000;
+            background: #f6f6f6;
+        }
+
+        .style-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .style-action {
+            flex: 1;
+            padding: 12px 0;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            background: #ffffff;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .style-action.primary {
+            background: #000000;
+            color: #ffffff;
+        }
+
+        .style-action:active {
+            background: #f3f3f3;
+        }
+
+        .style-action.primary:active {
+            background: #333333;
+        }
+
+        .mask {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.25);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            z-index: 10;
+        }
+
+        .mask.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="space-shell bg-plain" id="spaceShell">
+        <div class="topbar">
+            <button class="topbar-btn" id="backBtn" type="button" aria-label="返回">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <h1 class="topbar-title">共同空间</h1>
+            <button class="topbar-btn" id="themeBtn" type="button" aria-label="背景设置">
+                <i class="fas fa-adjust"></i>
+            </button>
+        </div>
+
+        <div class="space-scroll scroll-y-hidebar flex-scroll">
+            <section class="bond-hero">
+                <div class="pair-stack">
+                    <div class="pair-avatar" id="userAvatar">我</div>
+                    <div class="pair-link">
+                        <div class="pair-link-line"></div>
+                        <div class="pair-heart"><i class="fas fa-heart"></i></div>
+                        <div class="pair-link-line"></div>
+                    </div>
+                    <div class="pair-avatar" id="partnerAvatar">TA</div>
+                </div>
+                <div class="pair-names">
+                    <span id="userName">我</span>
+                    <span>×</span>
+                    <span id="partnerName">TA</span>
+                </div>
+                <div class="pair-note">静静靠近的日常</div>
+            </section>
+
+            <section class="zone-grid">
+                <div class="zone-card" id="miniZone">
+                    <div class="zone-title"><span class="zone-mark"></span>小游戏</div>
+                    <div class="zone-desc">一起挑战的小互动，简单但有趣。</div>
+                    <button class="zone-btn" type="button">进入</button>
+                </div>
+                <div class="zone-card" id="stayZone">
+                    <div class="zone-title"><span class="zone-mark"></span>陪伴</div>
+                    <div class="zone-desc">共享轻声时刻，保持同步的节奏。</div>
+                    <button class="zone-btn" type="button">进入</button>
+                </div>
+                <div class="zone-card" id="whisperZone">
+                    <div class="zone-title"><span class="zone-mark"></span>悄悄话</div>
+                    <div class="zone-desc">只给你看的私语，留在这一角。</div>
+                    <button class="zone-btn" type="button">进入</button>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div class="mask" id="panelMask"></div>
+    <div class="style-panel" id="stylePanel">
+        <div class="style-head">
+            <div class="style-title">背景风格</div>
+            <button class="style-close" id="closePanel" type="button">×</button>
+        </div>
+        <div class="style-options">
+            <div class="style-option" data-mode="plain">素白</div>
+            <div class="style-option" data-mode="grid">细纹</div>
+            <div class="style-option" data-mode="soft">柔光</div>
+        </div>
+        <div class="style-actions">
+            <button class="style-action" id="pickBg" type="button">选择图片</button>
+            <button class="style-action" id="clearBg" type="button">清除图片</button>
+            <button class="style-action primary" id="confirmBg" type="button">完成</button>
+        </div>
+        <input type="file" id="bgFile" accept="image/*" style="display:none;">
+    </div>
+
+    <script>
+        const spaceShell = document.getElementById('spaceShell');
+        const backBtn = document.getElementById('backBtn');
+        const themeBtn = document.getElementById('themeBtn');
+        const stylePanel = document.getElementById('stylePanel');
+        const panelMask = document.getElementById('panelMask');
+        const closePanel = document.getElementById('closePanel');
+        const pickBg = document.getElementById('pickBg');
+        const clearBg = document.getElementById('clearBg');
+        const confirmBg = document.getElementById('confirmBg');
+        const bgFile = document.getElementById('bgFile');
+        const userAvatar = document.getElementById('userAvatar');
+        const partnerAvatar = document.getElementById('partnerAvatar');
+        const userName = document.getElementById('userName');
+        const partnerName = document.getElementById('partnerName');
+
+        const modeKey = 'couple_space_bg_mode';
+        const srcKey = 'couple_space_bg_src';
+        const spaceDb = 'PhoneAppImages';
+        let tempBgUrl = '';
+
+        const GROUP_ID = 'couple_space';
+
+        function getBlobUrlService() {
+            if (window.Core && window.Core.BlobUrlService) return window.Core.BlobUrlService;
+            if (window.parent && window.parent.Core && window.parent.Core.BlobUrlService) return window.parent.Core.BlobUrlService;
+            return null;
+        }
+
+        function getStorageService() {
+            if (window.Core && window.Core.StorageService) return window.Core.StorageService;
+            if (window.parent && window.parent.Core && window.parent.Core.StorageService) return window.parent.Core.StorageService;
+            return null;
+        }
+
+        function reqPromise(request) {
+            return new Promise((resolve, reject) => {
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function getDbImage(id) {
+            const service = getStorageService();
+            if (!service) return null;
+            try {
+                return await service.transaction(spaceDb, ['images'], async (tx) => {
+                    const store = tx.objectStore('images');
+                    const res = await reqPromise(store.get(id));
+                    return res ? res.data : null;
+                });
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function saveDbImage(blob, type) {
+            const service = getStorageService();
+            if (!service) return '';
+            const id = 'couple_space_bg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+            try {
+                await service.transaction(spaceDb, ['images'], async (tx) => {
+                    const store = tx.objectStore('images');
+                    await reqPromise(store.put({ id, data: blob, type, timestamp: Date.now() }));
+                });
+                return id;
+            } catch (e) {
+                return '';
+            }
+        }
+
+        async function getDbData(key) {
+            const service = getStorageService();
+            if (!service) return null;
+            try {
+                return await service.transaction(spaceDb, ['appData'], async (tx) => {
+                    const store = tx.objectStore('appData');
+                    const res = await reqPromise(store.get(key));
+                    return res ? res.value : null;
+                });
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function applyMode(mode) {
+            spaceShell.classList.remove('bg-plain', 'bg-grid', 'bg-soft');
+            const next = mode === 'grid' ? 'bg-grid' : mode === 'soft' ? 'bg-soft' : 'bg-plain';
+            spaceShell.classList.add(next);
+            localStorage.setItem(modeKey, mode);
+            document.querySelectorAll('.style-option').forEach(option => {
+                option.classList.toggle('active', option.dataset.mode === mode);
+            });
+        }
+
+        function setCustomBg(url) {
+            if (tempBgUrl && tempBgUrl.startsWith('blob:')) {
+                const blobUrlService = getBlobUrlService();
+                if (blobUrlService) blobUrlService.revokeObjectUrl(tempBgUrl);
+            }
+            tempBgUrl = url || '';
+            if (tempBgUrl) {
+                spaceShell.classList.add('has-custom');
+                spaceShell.style.backgroundImage = `url("${tempBgUrl}")`;
+            } else {
+                spaceShell.classList.remove('has-custom');
+                spaceShell.style.backgroundImage = '';
+            }
+        }
+
+        function pickIdbId(value) {
+            if (!value) return '';
+            if (typeof value !== 'string') return '';
+            const v = value.trim();
+            if (v.startsWith('idb:')) return v.replace(/^idb:/, '');
+            return '';
+        }
+
+        async function restoreBg() {
+            const mode = localStorage.getItem(modeKey) || 'plain';
+            applyMode(mode);
+            const stored = localStorage.getItem(srcKey) || '';
+            if (!stored) return;
+            const id = pickIdbId(stored);
+            if (id) {
+                const blob = await getDbImage(id);
+                if (blob) {
+                    const blobUrlService = getBlobUrlService();
+                    if (!blobUrlService) throw new Error('BlobUrlService不可用');
+                    const url = blobUrlService.createObjectUrl(blob, { groupId: GROUP_ID + '-bg' });
+                    setCustomBg(url);
+                }
+                return;
+            }
+            if (stored.startsWith('data:image') || stored.startsWith('http') || stored.startsWith('blob:')) {
+                setCustomBg(stored);
+            }
+        }
+
+        function showPanel() {
+            stylePanel.classList.add('active');
+            panelMask.classList.add('active');
+        }
+
+        function hidePanel() {
+            stylePanel.classList.remove('active');
+            panelMask.classList.remove('active');
+        }
+
+        function setAvatar(el, src, text) {
+            if (!el) return;
+            if (el.dataset && el.dataset.tempUrl) {
+                const blobUrlService = getBlobUrlService();
+                if (blobUrlService) blobUrlService.revokeObjectUrl(el.dataset.tempUrl);
+                el.dataset.tempUrl = '';
+            }
+            if (src) {
+                el.classList.add('has-image');
+                el.style.backgroundImage = `url("${src}")`;
+                el.textContent = '';
+            } else {
+                el.classList.remove('has-image');
+                el.style.backgroundImage = '';
+                el.textContent = text || '';
+            }
+        }
+
+        async function setAvatarFromStore(el, value, fallbackText) {
+            try {
+                console.log('[space-avatar] start', {
+                    key: el && el.id ? el.id : '',
+                    valueType: typeof value,
+                    valueHead: typeof value === 'string' ? value.slice(0, 24) : ''
+                });
+            } catch (e) {}
+            if (!value) {
+                try { console.log('[space-avatar] empty', { key: el && el.id ? el.id : '' }); } catch (e) {}
+                setAvatar(el, '', fallbackText);
+                return;
+            }
+            const id = pickIdbId(value);
+            if (id) {
+                try { console.log('[space-avatar] idb ref', { key: el && el.id ? el.id : '', id }); } catch (e) {}
+                const stored = await getDbImage(id);
+                try {
+                    console.log('[space-avatar] idb result', {
+                        key: el && el.id ? el.id : '',
+                        storedType: typeof stored,
+                        storedHead: typeof stored === 'string' ? stored.slice(0, 24) : ''
+                    });
+                } catch (e) {}
+                if (stored) {
+                    if (typeof stored === 'string') {
+                        const nestedId = pickIdbId(stored);
+                        if (nestedId && nestedId !== id) {
+                            try { console.log('[space-avatar] nested idb', { key: el && el.id ? el.id : '', nestedId }); } catch (e) {}
+                            const nested = await getDbImage(nestedId);
+                            try {
+                                console.log('[space-avatar] nested result', {
+                                    key: el && el.id ? el.id : '',
+                                    nestedType: typeof nested,
+                                    nestedHead: typeof nested === 'string' ? nested.slice(0, 24) : ''
+                                });
+                            } catch (e) {}
+                            if (nested) {
+                                if (typeof nested === 'string') {
+                                    try { console.log('[space-avatar] apply nested string', { key: el && el.id ? el.id : '' }); } catch (e) {}
+                                    setAvatar(el, nested, fallbackText);
+                                    return;
+                                }
+                                const blobUrlService = getBlobUrlService();
+                                if (!blobUrlService) throw new Error('BlobUrlService不可用');
+                                const nestedUrl = await blobUrlService.toDisplayUrl(nested, { preferDataUrlInFileProtocol: true, groupId: GROUP_ID + '-avatar' });
+                                try { console.log('[space-avatar] apply nested blob', { key: el && el.id ? el.id : '' }); } catch (e) {}
+                                setAvatar(el, nestedUrl, fallbackText);
+                                if (el.dataset) el.dataset.tempUrl = nestedUrl;
+                                return;
+                            }
+                            try { console.log('[space-avatar] nested missing', { key: el && el.id ? el.id : '' }); } catch (e) {}
+                            setAvatar(el, '', fallbackText);
+                            return;
+                        }
+                        if (!stored.startsWith('idb:')) {
+                            try { console.log('[space-avatar] apply string', { key: el && el.id ? el.id : '' }); } catch (e) {}
+                            setAvatar(el, stored, fallbackText);
+                            return;
+                        }
+                    } else {
+                        const blobUrlService = getBlobUrlService();
+                        if (!blobUrlService) throw new Error('BlobUrlService不可用');
+                        const url = await blobUrlService.toDisplayUrl(stored, { preferDataUrlInFileProtocol: true, groupId: GROUP_ID + '-avatar' });
+                        try { console.log('[space-avatar] apply blob', { key: el && el.id ? el.id : '' }); } catch (e) {}
+                        setAvatar(el, url, fallbackText);
+                        if (el.dataset) el.dataset.tempUrl = url;
+                        return;
+                    }
+                }
+                try { console.log('[space-avatar] fallback empty', { key: el && el.id ? el.id : '' }); } catch (e) {}
+                setAvatar(el, '', fallbackText);
+                return;
+            }
+            try { console.log('[space-avatar] apply direct', { key: el && el.id ? el.id : '' }); } catch (e) {}
+            setAvatar(el, value, fallbackText);
+        }
+
+        async function loadPartner() {
+            const raw = localStorage.getItem('coupleSpace_partner');
+            if (!raw) return null;
+            try {
+                const parsed = JSON.parse(raw);
+                try { console.log('[space-avatar] partner', parsed); } catch (e) {}
+                return parsed;
+            } catch (e) {
+                try { console.log('[space-avatar] partner parse failed'); } catch (e) {}
+                return null;
+            }
+        }
+
+        async function resolvePersona(partnerId) {
+            let personaLibrary = await getDbData('personaLibrary');
+            let friendMyPersonaSettings = await getDbData('friendMyPersonaSettings');
+
+            if (!personaLibrary) {
+                const rawList = localStorage.getItem('chat20.personaLibrary');
+                const rawDefaultId = localStorage.getItem('chat20.personaDefaultId') || '';
+                if (rawList) {
+                    try {
+                        const list = JSON.parse(rawList);
+                        personaLibrary = { list, defaultId: rawDefaultId };
+                    } catch (e) {}
+                }
+            }
+
+            if (!friendMyPersonaSettings) {
+                const rawSettings = localStorage.getItem('friendMyPersonaSettings');
+                if (rawSettings) {
+                    try { friendMyPersonaSettings = JSON.parse(rawSettings); } catch (e) {}
+                }
+            }
+
+            const selectedPersonaId = friendMyPersonaSettings && partnerId ? (friendMyPersonaSettings[partnerId] || '') : '';
+            const defaultPersonaId = personaLibrary && personaLibrary.defaultId ? personaLibrary.defaultId : '';
+            const personaId = selectedPersonaId || defaultPersonaId;
+
+            if (personaId && personaLibrary && Array.isArray(personaLibrary.list)) {
+                const persona = personaLibrary.list.find(p => String(p.id) === String(personaId));
+                if (persona) {
+                    return { avatar: persona.avatar || '', name: persona.name || '' };
+                }
+            }
+            return { avatar: '', name: '' };
+        }
+
+        async function renderAvatars() {
+            const partner = await loadPartner();
+            if (partner) {
+                partnerName.textContent = partner.name || 'TA';
+                const avatarKey = `avatar_${partner.id}`;
+                const stored = localStorage.getItem(avatarKey) || '';
+                try {
+                    console.log('[space-avatar] partner storage', {
+                        avatarKey,
+                        storedHead: typeof stored === 'string' ? stored.slice(0, 24) : ''
+                    });
+                } catch (e) {}
+                await setAvatarFromStore(partnerAvatar, stored, partner.name ? partner.name.charAt(0).toUpperCase() : 'TA');
+            } else {
+                try { console.log('[space-avatar] partner missing'); } catch (e) {}
+                partnerName.textContent = 'TA';
+                setAvatar(partnerAvatar, '', 'TA');
+            }
+
+            const persona = await resolvePersona(partner && partner.id ? String(partner.id) : '');
+            if (persona.avatar) {
+                try {
+                    console.log('[space-avatar] persona avatar', {
+                        avatarHead: typeof persona.avatar === 'string' ? persona.avatar.slice(0, 24) : ''
+                    });
+                } catch (e) {}
+                await setAvatarFromStore(userAvatar, persona.avatar, persona.name ? persona.name.charAt(0).toUpperCase() : '我');
+                userName.textContent = persona.name || '我';
+            } else {
+                const meStored = localStorage.getItem('user_avatar') || '';
+                try {
+                    console.log('[space-avatar] user storage', {
+                        storedHead: typeof meStored === 'string' ? meStored.slice(0, 24) : ''
+                    });
+                } catch (e) {}
+                await setAvatarFromStore(userAvatar, meStored, '我');
+                userName.textContent = '我';
+            }
+        }
+
+        themeBtn.addEventListener('click', showPanel);
+        closePanel.addEventListener('click', hidePanel);
+        panelMask.addEventListener('click', hidePanel);
+        confirmBg.addEventListener('click', hidePanel);
+
+        backBtn.addEventListener('click', () => {
+            window.location.href = '情侣空间.html';
+        });
+
+        document.querySelectorAll('.style-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const mode = option.dataset.mode || 'plain';
+                applyMode(mode);
+            });
+        });
+
+        pickBg.addEventListener('click', () => {
+            bgFile.value = '';
+            bgFile.click();
+        });
+
+        clearBg.addEventListener('click', () => {
+            localStorage.removeItem(srcKey);
+            setCustomBg('');
+        });
+
+        bgFile.addEventListener('change', async (event) => {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const blob = file;
+            const dbId = await saveDbImage(blob, 'space-bg');
+            if (dbId) {
+                localStorage.setItem(srcKey, 'idb:' + dbId);
+                const blobUrlService = getBlobUrlService();
+                if (!blobUrlService) throw new Error('BlobUrlService不可用');
+                const url = blobUrlService.createObjectUrl(blob, { groupId: GROUP_ID + '-bg' });
+                setCustomBg(url);
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+                const result = reader.result || '';
+                if (typeof result === 'string' && result) {
+                    localStorage.setItem(srcKey, result);
+                    setCustomBg(result);
+                }
+            };
+            reader.readAsDataURL(blob);
+        });
+
+        async function initPage() {
+            await restoreBg();
+            await renderAvatars();
+        }
+
+        document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+</body>
+</html>

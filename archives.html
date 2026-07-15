@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>档案应用</title>
+    <link rel="stylesheet" href="css/core-icons.min.css">
+    <link rel="stylesheet" href="css/core-ui.css">
+    <link rel="stylesheet" href="css/apps/archives.css">
+    <style>
+        /* === 独立版容器适配 (PC端居中显示) === */
+        body {
+            background-color: #f1f3f4;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .phone-container {
+            width: 360px;
+            height: 640px;
+            background-color: #f1f3f4;
+            border-radius: 36px;
+            box-shadow: 0 0 0 12px #333, 0 20px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (max-width: 768px) {
+            .phone-container {
+                width: 100%;
+                height: 100svh;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+        
+        /* 档案应用特定覆盖 */
+        .phone-app-header {
+            /* 强制覆盖内联样式中的默认背景，使用 CSS 变量或特定颜色 */
+            background-color: #dcd3c1 !important; 
+            color: #6a6a6a !important;
+            border-bottom: 1px solid #c8bcab;
+        }
+        
+        .phone-app-title {
+            font-family: 'Courier New', Courier, monospace; 
+            font-weight: 700; 
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-container">
+        <!-- 档案应用容器 -->
+        <div class="phone-app-container" id="archivesAppContainer">
+            <div class="phone-app-header">
+                <div class="phone-app-header-left">
+                    <button class="phone-app-back-btn" onclick="if(window.mainApp) window.mainApp.closeCurrentApp()" title="返回主页">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="phone-app-title">PERSONNEL FILES</div>
+                </div>
+                <div class="phone-app-header-right">
+                    <button class="phone-app-settings-btn" onclick="if(window.mainApp && window.mainApp.archivesAppModule) window.mainApp.archivesAppModule.openSettings()" title="档案设置" style="background: rgba(0,0,0,0.05);">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="archives-app-content scroll-y-hidebar flex-scroll" id="archivesAppContent">
+                <div class="archives-app-empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>正在加载档案...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="phone-app-toast" id="appToast">
+        操作成功！
+    </div>
+
+    <!-- Core Services -->
+    <script src="js/core/MessageBus.js"></script>
+    <script src="js/core/SafeArea.js"></script>
+    <script src="js/core/StorageService.js"></script>
+    <script src="js/core/BlobUrlService.js"></script>
+    <script src="js/ImageStorageDB.js"></script>
+
+    <!-- App Logic（html2canvas 由 archives.js 在截图时按需加载） -->
+    <script src="js/apps/archives.js"></script>
+</body>
+</html>

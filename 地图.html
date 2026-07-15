@@ -1,0 +1,2760 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0f1115">  
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" sizes="180x180">
+    <!-- iOS PWA 兼容 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="湫丘捕梦机">
+    <title>地图</title>
+    <link rel="stylesheet" href="css/core-ui.css">
+    <script src="js/core/OperaKeyboardFix.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        :root {
+            --bg: #0f1115;
+            --panel: rgba(255, 255, 255, 0.06);
+            --panel-2: rgba(255, 255, 255, 0.08);
+            --line: rgba(255, 255, 255, 0.12);
+            --text: rgba(255, 255, 255, 0.92);
+            --muted: rgba(255, 255, 255, 0.66);
+            --soft: rgba(255, 255, 255, 0.10);
+            --accent: #c7a7ff;
+            --accent-2: #87d7ff;
+            --danger: #ff6b6b;
+            --radius: 18px;
+        }
+
+        body[data-theme="light"] {
+            --bg: #f6f7fb;
+            --panel: rgba(15, 17, 21, 0.06);
+            --panel-2: rgba(15, 17, 21, 0.08);
+            --line: rgba(15, 17, 21, 0.14);
+            --text: rgba(15, 17, 21, 0.92);
+            --muted: rgba(15, 17, 21, 0.62);
+            --soft: rgba(15, 17, 21, 0.10);
+            --accent: #7a5cff;
+            --accent-2: #0ea5ff;
+            --danger: #e84b4b;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: radial-gradient(1200px 600px at 20% -10%, rgba(199, 167, 255, 0.18), transparent 60%),
+                        radial-gradient(900px 520px at 90% 10%, rgba(135, 215, 255, 0.16), transparent 55%),
+                        linear-gradient(180deg, #0c0e12 0%, #0f1115 40%, #0c0e12 100%);
+            color: var(--text);
+            overflow: hidden;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        body[data-theme="light"] {
+            background: radial-gradient(1200px 600px at 18% -10%, rgba(122, 92, 255, 0.14), transparent 60%),
+                        radial-gradient(900px 520px at 92% 8%, rgba(14, 165, 255, 0.12), transparent 55%),
+                        linear-gradient(180deg, #ffffff 0%, #f6f7fb 42%, #ffffff 100%);
+        }
+
+        button,
+        input,
+        textarea {
+            font: inherit;
+            color: inherit;
+            touch-action: pan-y;
+        }
+
+        :focus-visible {
+            outline: 3px solid rgba(199, 167, 255, 0.45);
+            outline-offset: 2px;
+            border-radius: 10px;
+        }
+
+        .app-shell {
+            height: var(--app-height, 100svh);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            padding: calc(14px + var(--safe-inset-top, env(safe-area-inset-top))) calc(16px + env(safe-area-inset-right)) 12px calc(16px + env(safe-area-inset-left));
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            background: linear-gradient(180deg, rgba(15, 17, 21, 0.92), rgba(15, 17, 21, 0.72));
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .topbar-mid {
+            position: absolute;
+            left: 50%;
+            top: calc(14px + var(--safe-inset-top, env(safe-area-inset-top)) + 2px);
+            width: 44px;
+            height: 44px;
+            margin-left: -22px;
+            pointer-events: none;
+        }
+
+        .topbar-mid .peer-face {
+            width: 100%;
+            height: 100%;
+        }
+
+        .peer-face {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 750;
+            font-size: 0.92rem;
+            letter-spacing: 0.2px;
+            color: rgba(255, 255, 255, 0.88);
+            background-size: cover !important;
+            background-position: center;
+            background-repeat: no-repeat;
+            flex: 0 0 auto;
+        }
+
+        body[data-theme="light"] .peer-face {
+            border-color: rgba(15, 17, 21, 0.14);
+            background: rgba(15, 17, 21, 0.04);
+            color: rgba(15, 17, 21, 0.86);
+        }
+
+        body[data-theme="light"] .topbar {
+            background: linear-gradient(180deg, rgba(246, 247, 251, 0.92), rgba(246, 247, 251, 0.72));
+            border-bottom-color: rgba(15, 17, 21, 0.08);
+        }
+
+        .icon-btn {
+            width: 44px;
+            height: 44px;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        body[data-theme="light"] .icon-btn {
+            border-color: rgba(15, 17, 21, 0.12);
+            background: rgba(15, 17, 21, 0.04);
+        }
+
+        .icon-btn.is-on {
+            border-color: rgba(199, 167, 255, 0.42);
+            background: rgba(199, 167, 255, 0.12);
+            box-shadow: 0 0 0 4px rgba(199, 167, 255, 0.10);
+        }
+
+        body[data-theme="light"] .icon-btn.is-on {
+            border-color: rgba(122, 92, 255, 0.42);
+            background: rgba(122, 92, 255, 0.12);
+            box-shadow: none;
+        }
+
+        .icon-btn.pressed {
+            transform: translateY(1px) scale(0.98);
+            filter: brightness(1.05);
+        }
+
+        .mode-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .icon-btn:active {
+            transform: translateY(1px);
+        }
+
+        .title-wrap {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .title {
+            font-size: 1.05rem;
+            letter-spacing: 0.2px;
+            font-weight: 650;
+            line-height: 1.1;
+        }
+
+        .sub {
+            margin-top: 4px;
+            font-size: 0.85rem;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chip-row {
+            padding: 12px calc(16px + env(safe-area-inset-right)) 12px calc(16px + env(safe-area-inset-left));
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chip {
+            min-height: 44px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            background: rgba(255, 255, 255, 0.04);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        body[data-theme="light"] .chip {
+            border-color: rgba(15, 17, 21, 0.12);
+            background: rgba(15, 17, 21, 0.04);
+        }
+
+        .chip strong {
+            font-weight: 650;
+        }
+
+        .chip.is-on {
+            border-color: rgba(199, 167, 255, 0.42);
+            background: rgba(199, 167, 255, 0.12);
+        }
+
+        body[data-theme="light"] .chip.is-on {
+            border-color: rgba(122, 92, 255, 0.36);
+            background: rgba(122, 92, 255, 0.12);
+        }
+
+        .main {
+            flex: 1;
+            min-height: 0;
+            padding: 6px calc(16px + env(safe-area-inset-right)) calc(92px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+            /* iOS 滚动优化（改为 contain 保留回弹感） */
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
+            overflow-y: auto;
+            touch-action: pan-y;
+        }
+
+        .panel {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        body[data-theme="light"] .panel {
+            border-color: rgba(15, 17, 21, 0.10);
+            background: rgba(255, 255, 255, 0.62);
+        }
+
+        .timeline {
+            padding: 14px 12px;
+        }
+
+        .day {
+            display: flex;
+            gap: 12px;
+            padding: 8px 6px;
+        }
+
+        .rail {
+            width: 22px;
+            flex: 0 0 22px;
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            position: relative;
+        }
+
+        .rail::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg, rgba(199, 167, 255, 0.0), rgba(199, 167, 255, 0.42), rgba(135, 215, 255, 0.36), rgba(199, 167, 255, 0.0));
+            opacity: 0.9;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(199, 167, 255, 0.85);
+            box-shadow: 0 0 0 6px rgba(199, 167, 255, 0.10);
+            margin-top: 6px;
+        }
+
+        .day-body {
+            flex: 1;
+            min-width: 0;
+            padding-bottom: 8px;
+        }
+
+        .day-title {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            padding: 2px 2px 10px;
+        }
+
+        .day-title h3 {
+            font-size: 0.98rem;
+            font-weight: 700;
+        }
+
+        .day-title span {
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+
+        .entry-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .entry {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            padding: 12px 12px;
+            display: flex;
+            gap: 12px;
+            position: relative;
+            padding-bottom: 48px;
+            cursor: pointer;
+            touch-action: pan-y;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+        }
+
+        .entry-foot {
+            position: absolute;
+            left: 76px;
+            right: 12px;
+            bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .entry-foot .badge-row {
+            display: none;
+        }
+
+        .entry-peers {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-x: contain;
+            touch-action: pan-x;
+            scrollbar-width: none;
+            max-width: 100%;
+            padding-bottom: 2px;
+        }
+
+        .entry-peers::-webkit-scrollbar {
+            display: none;
+        }
+
+        .entry-peers .peer-face {
+            width: 34px;
+            height: 34px;
+            font-size: 0.85rem;
+            border-color: rgba(255, 255, 255, 0.16);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+            flex: 0 0 auto;
+        }
+
+        body[data-theme="light"] .entry-peers .peer-face {
+            border-color: rgba(15, 17, 21, 0.16);
+            box-shadow: 0 10px 24px rgba(15,17,21,0.10);
+        }
+
+        .entry-tags {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-x: contain;
+            touch-action: pan-x;
+            gap: 8px;
+            scrollbar-width: none;
+            padding-right: 12px;
+        }
+        
+        .entry-tags::-webkit-scrollbar {
+            display: none;
+        }
+
+        .entry-tags .badge {
+            flex: 0 0 auto;
+        }
+
+        body[data-theme="light"] .entry {
+            border-color: rgba(15, 17, 21, 0.10);
+            background: rgba(255, 255, 255, 0.68);
+        }
+
+        .entry-time {
+            width: 52px;
+            flex: 0 0 52px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.68);
+            letter-spacing: 0.2px;
+            padding-top: 2px;
+        }
+
+        body[data-theme="light"] .entry-time {
+            color: rgba(15, 17, 21, 0.58);
+        }
+
+        .entry-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .entry-place {
+            font-weight: 680;
+            letter-spacing: 0.2px;
+            line-height: 1.25;
+            word-break: break-word;
+        }
+
+        .entry-note {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .badge-row {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .badge {
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            background: rgba(255, 255, 255, 0.03);
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.76);
+        }
+
+        body[data-theme="light"] .badge {
+            border-color: rgba(15, 17, 21, 0.12);
+            background: rgba(15, 17, 21, 0.04);
+            color: rgba(15, 17, 21, 0.68);
+        }
+
+        .empty {
+            padding: 22px 12px;
+            color: var(--muted);
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .fab {
+            position: fixed;
+            right: calc(16px + env(safe-area-inset-right));
+            bottom: calc(18px + env(safe-area-inset-bottom));
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            background: linear-gradient(135deg, rgba(199, 167, 255, 0.92), rgba(135, 215, 255, 0.92));
+            color: #0c0e12;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.42);
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .fab:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .sheet-mask {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.58);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 0;
+            z-index: 2000;
+        }
+
+        .sheet {
+            width: 100%;
+            max-width: 520px;
+            border-top-left-radius: 22px;
+            border-top-right-radius: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            background: rgba(15, 17, 21, 0.92);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            overflow: hidden;
+        }
+
+        .menu-mask {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.46);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 0 16px calc(12px + env(safe-area-inset-bottom));
+            z-index: 2050;
+            pointer-events: auto;
+        }
+
+        .menu-panel {
+            width: 100%;
+            max-width: 520px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            background: rgba(15, 17, 21, 0.92);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            overflow: hidden;
+            pointer-events: auto;
+        }
+
+        .menu-title {
+            padding: 14px 16px;
+            text-align: center;
+            font-weight: 720;
+            color: rgba(255, 255, 255, 0.88);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .menu-item {
+            width: 100%;
+            min-height: 52px;
+            border: 0;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 1rem;
+            letter-spacing: 0.2px;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .menu-item + .menu-item {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .menu-item.danger {
+            color: var(--danger);
+        }
+
+        body[data-theme="light"] .menu-panel {
+            background: rgba(246, 247, 251, 0.96);
+            border-color: rgba(15, 17, 21, 0.10);
+        }
+
+        body[data-theme="light"] .menu-title {
+            color: rgba(15, 17, 21, 0.86);
+            border-bottom-color: rgba(15, 17, 21, 0.10);
+        }
+
+        body[data-theme="light"] .menu-item {
+            color: rgba(15, 17, 21, 0.90);
+        }
+
+        body[data-theme="light"] .menu-item + .menu-item {
+            border-top-color: rgba(15, 17, 21, 0.10);
+        }
+
+        body.is-typing .topbar,
+        body.is-typing .sheet {
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        :root[data-surface-style="glass"] .panel {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.10);
+        }
+
+        :root[data-surface-style="glass"] body[data-theme="light"] .panel {
+            background: rgba(255, 255, 255, 0.62);
+            border-color: rgba(15, 17, 21, 0.12);
+        }
+
+        :root[data-surface-style="glass"] .sheet {
+            background: rgba(15, 17, 21, 0.76);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        :root[data-surface-style="glass"] .menu-panel {
+            background: rgba(15, 17, 21, 0.76);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        :root[data-surface-style="glass"] body[data-theme="light"] .menu-panel {
+            background: rgba(255, 255, 255, 0.76);
+            border-color: rgba(15, 17, 21, 0.12);
+        }
+
+        :root[data-surface-style="glass"] body[data-theme="light"] .sheet {
+            background: rgba(246, 247, 251, 0.74);
+            border-color: rgba(15, 17, 21, 0.14);
+        }
+
+        body[data-theme="light"] .sheet {
+            background: rgba(246, 247, 251, 0.94);
+            border-color: rgba(15, 17, 21, 0.12);
+        }
+
+        body[data-theme="light"] .sheet-top {
+            border-bottom-color: rgba(15, 17, 21, 0.10);
+        }
+
+        .sheet-top {
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .grab {
+            width: 42px;
+            height: 4px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.18);
+            margin: 0 auto;
+        }
+
+        .sheet-title {
+            font-weight: 720;
+            letter-spacing: 0.2px;
+        }
+
+        .sheet-body {
+            padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .editor-sheet {
+            max-height: 50vh;
+            max-height: min(50vh, 420px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-sheet .sheet-body {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+            touch-action: pan-y;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .row label {
+            width: 72px;
+            flex: 0 0 72px;
+            color: rgba(255, 255, 255, 0.76);
+            font-size: 0.9rem;
+        }
+
+        body[data-theme="light"] .row label {
+            color: rgba(15, 17, 21, 0.64);
+        }
+
+        .field {
+            flex: 1;
+            min-width: 0;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 14px;
+            padding: 12px 12px;
+        }
+
+        body[data-theme="light"] .field {
+            border-color: rgba(15, 17, 21, 0.12);
+            background: rgba(15, 17, 21, 0.04);
+        }
+
+        .form-container {
+            padding: 10px 4px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .keyboard-spacer {
+            flex: 0 0 auto;
+            height: 0;
+            min-height: 0;
+            max-height: 0;
+            will-change: auto;
+            transition: height 0.3s ease;
+        }
+
+        html.ua-android-opera .keyboard-spacer {
+            will-change: auto !important;
+            transition: none !important;
+        }
+
+        .form-container.keyboard-open .keyboard-spacer {
+            flex: 0 0 300px;
+        }
+
+        .form-block {
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(15, 17, 21, 0.76);
+            padding: 10px 10px 12px;
+        }
+
+        body[data-theme="light"] .form-block {
+            border-color: rgba(15, 17, 21, 0.08);
+            background: rgba(246, 247, 251, 0.9);
+        }
+
+        .form-block + .form-block {
+            margin-top: 4px;
+        }
+
+        .form-block-title {
+            font-size: 0.9rem;
+            font-weight: 650;
+            letter-spacing: 0.2px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .form-block .row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        .form-block .row label {
+            width: auto;
+            flex: 0 0 auto;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+            color: var(--muted);
+        }
+
+        .time-input-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .time-plain {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .time-part {
+            width: 40px;
+            height: 44px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            background: rgba(255, 255, 255, 0.03);
+            color: rgba(255, 255, 255, 0.92);
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .time-part.year { width: 56px; }
+        .time-part.month,
+        .time-part.day,
+        .time-part.hour,
+        .time-part.minute { width: 44px; }
+
+        .time-part::placeholder {
+            color: rgba(255, 255, 255, 0.26);
+        }
+
+        body[data-theme="light"] .time-part {
+            border-color: rgba(15, 17, 21, 0.12);
+            background: rgba(15, 17, 21, 0.03);
+            color: rgba(15, 17, 21, 0.90);
+        }
+
+        body[data-theme="light"] .time-part::placeholder {
+            color: rgba(15, 17, 21, 0.32);
+        }
+
+        .time-sep {
+            color: rgba(255, 255, 255, 0.28);
+            font-size: 0.92rem;
+            user-select: none;
+        }
+
+        body[data-theme="light"] .time-sep {
+            color: rgba(15, 17, 21, 0.32);
+        }
+
+        .select-wrap {
+            position: relative;
+        }
+
+        .select-wrap select {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 44px;
+            padding: 0 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        body[data-theme="light"] .select-wrap select {
+            border-color: rgba(15, 17, 21, 0.14);
+            background: rgba(15, 17, 21, 0.04);
+        }
+
+        .field input,
+        .field textarea,
+        .field select {
+            width: 100%;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: var(--text);
+        }
+
+        .field textarea {
+            min-height: 84px;
+            resize: none;
+            line-height: 1.45;
+        }
+
+        .pillset {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            min-height: 40px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            background: rgba(255, 255, 255, 0.04);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        body[data-theme="light"] .pill {
+            border-color: rgba(15, 17, 21, 0.12);
+            background: rgba(15, 17, 21, 0.04);
+        }
+
+        .pill.is-on {
+            border-color: rgba(135, 215, 255, 0.42);
+            background: rgba(135, 215, 255, 0.12);
+        }
+
+        .pill:active {
+            transform: translateY(1px);
+        }
+
+        body[data-theme="light"] .pill.is-on {
+            border-color: rgba(122, 92, 255, 0.40);
+            background: rgba(122, 92, 255, 0.12);
+            box-shadow: inset 0 0 0 1px rgba(122, 92, 255, 0.18);
+        }
+
+
+
+        .action-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            min-height: 44px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        body[data-theme="light"] .btn {
+            border-color: rgba(15, 17, 21, 0.12);
+            background: rgba(15, 17, 21, 0.04);
+            color: rgba(15, 17, 21, 0.92);
+        }
+
+        .btn.primary {
+            background: rgba(199, 167, 255, 0.16);
+            border-color: rgba(199, 167, 255, 0.42);
+        }
+
+        body[data-theme="light"] .btn.primary {
+            background: rgba(122, 92, 255, 0.12);
+            border-color: rgba(122, 92, 255, 0.32);
+        }
+
+        .btn.danger {
+            background: rgba(255, 107, 107, 0.12);
+            border-color: rgba(255, 107, 107, 0.35);
+        }
+
+        body[data-theme="light"] .btn.danger {
+            background: rgba(232, 75, 75, 0.10);
+            border-color: rgba(232, 75, 75, 0.26);
+        }
+
+        .top-hint {
+            position: fixed;
+            left: calc(12px + env(safe-area-inset-left));
+            right: calc(12px + env(safe-area-inset-right));
+            top: calc(10px + var(--safe-inset-top, env(safe-area-inset-top)));
+            padding: 12px 14px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(15, 17, 21, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: rgba(255, 255, 255, 0.92);
+            font-weight: 650;
+            letter-spacing: 0.2px;
+            box-shadow: 0 18px 48px rgba(0, 0, 0, 0.46);
+            transform: translateY(-10px);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 6000;
+            transition: opacity 180ms ease, transform 180ms ease;
+        }
+
+        body[data-theme="light"] .top-hint {
+            border-color: rgba(15, 17, 21, 0.10);
+            background: rgba(255, 255, 255, 0.92);
+            color: rgba(15, 17, 21, 0.90);
+            box-shadow: 0 18px 48px rgba(15, 17, 21, 0.12);
+        }
+
+        .top-hint.is-on {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .view-page {
+            display: none;
+            height: var(--app-height, 100svh);
+            flex-direction: column;
+            width: 100%;
+            background: inherit;
+        }
+
+        .view-page.active {
+            display: flex;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="view-page active" id="view-home">
+        <div class="topbar">
+            <button class="icon-btn" id="backBtn" type="button" aria-label="返回">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="topbar-mid" aria-hidden="true">
+                <div class="peer-face" id="peerFace"></div>
+            </div>
+            <div class="title-wrap">
+                <div class="title">地图</div>
+                <div class="sub" id="subLine">今天 · 我</div>
+            </div>
+            <button class="icon-btn mode-btn" id="modeBtn" type="button" aria-label="切换模式">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 2a8.5 8.5 0 1 0 8.5 8.5A6.5 6.5 0 0 1 12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <button class="icon-btn" id="whoBtn" type="button" aria-label="选择视角">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm7 10a7 7 0 0 0-14 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="chip-row">
+            <button class="chip is-on" id="todayOnlyBtn" type="button"><strong>今天</strong><span id="todayLabel"></span></button>
+            <button class="chip" id="allDaysBtn" type="button">全部日期</button>
+        </div>
+
+        <div class="main scroll-y-hidebar flex-scroll">
+            <div class="panel">
+                <div class="timeline" id="timelineRoot"></div>
+            </div>
+        </div>
+
+        <button class="fab" id="newEntryBtn" type="button" aria-label="记录">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" stroke="#0c0e12" stroke-width="2.4" stroke-linecap="round"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="sheet-mask" id="editorMask" role="dialog" aria-modal="true" aria-label="记录地点">
+        <div class="sheet editor-sheet">
+            <div class="sheet-top" style="flex-direction:column;gap:6px;">
+                <div class="grab" aria-hidden="true"></div>
+                <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;width:100%;">
+                    <button class="btn" id="editorCancelBtn" type="button" style="justify-self:start;min-width:64px;min-height:36px;">取消</button>
+                    <div class="sheet-title" id="editorTitle">记录地点</div>
+                    <button class="btn primary" id="saveBtn" type="button" style="justify-self:end;min-width:64px;min-height:36px;">保存</button>
+                </div>
+            </div>
+            <div class="sheet-body">
+                <div class="form-container">
+                    <div class="keyboard-spacer"></div>
+                    <div class="form-block">
+                        <div class="form-block-title">记录对象</div>
+                        <div class="row">
+                            <label>归属</label>
+                            <div class="pillset" id="modePills">
+                                <div class="pill is-on" data-mode="me">我</div>
+                                <div class="pill" data-mode="role">角色</div>
+                            </div>
+                        </div>
+
+                        <div class="row" id="rolePickRow" style="display:none">
+                            <label>角色</label>
+                            <div class="field">
+                                <select id="rolePick"></select>
+                            </div>
+                        </div>
+
+                        <div class="row" id="roleLinkRow">
+                            <label>关联</label>
+                            <div class="pillset" id="roleLinkPills"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-block">
+                        <div class="form-block-title">时间</div>
+                        <div class="row">
+                            <div class="time-plain">
+                                <div class="time-input-row" id="timeRow">
+                                    <input id="yearPick" type="number" inputmode="numeric" class="time-part year" placeholder="年"/>
+                                    <span class="time-sep">-</span>
+                                    <input id="monthPick" type="number" inputmode="numeric" class="time-part month" placeholder="月"/>
+                                    <span class="time-sep">-</span>
+                                    <input id="dayPick" type="number" inputmode="numeric" class="time-part day" placeholder="日"/>
+                                    <input id="hourPick" type="number" inputmode="numeric" class="time-part hour" placeholder="时"/>
+                                    <span class="time-sep">:</span>
+                                    <input id="minutePick" type="number" inputmode="numeric" class="time-part minute" placeholder="分"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-block">
+                        <div class="form-block-title">地点</div>
+                        <div class="row">
+                            <div class="field"><input id="placePick" type="text" inputmode="text" autocomplete="off" placeholder="例如：咖啡店 / 公园"/></div>
+                        </div>
+                    </div>
+
+                    <div class="form-block">
+                        <div class="form-block-title">备注</div>
+                        <div class="row">
+                            <div class="field"><textarea id="notePick" placeholder="可选"></textarea></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="menu-mask" id="entryMenuMask" role="dialog" aria-modal="true" aria-label="地点操作">
+        <div class="menu-panel">
+            <div class="menu-title" id="entryMenuTitle">地点操作</div>
+            <button class="menu-item" id="entryMenuEdit" type="button">编辑</button>
+            <button class="menu-item danger" id="entryMenuDelete" type="button">删除</button>
+            <button class="menu-item" id="entryMenuCancel" type="button">取消</button>
+        </div>
+    </div>
+
+    <div class="sheet-mask" id="whoMask" role="dialog" aria-modal="true" aria-label="选择视角">
+        <div class="sheet">
+            <div class="sheet-top">
+                <div class="grab" aria-hidden="true"></div>
+            </div>
+            <div class="sheet-body">
+                <div style="font-weight:720;letter-spacing:0.2px">视角</div>
+                <div class="pillset" id="whoPills"></div>
+                <div class="action-row">
+                    <button class="btn primary" id="whoCloseBtn" type="button">完成</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/core/SafeArea.js"></script>
+    <script src="js/core/StorageService.js"></script>
+    <script>
+        function _getPostTargetOrigin() {
+            const origin = window.location.origin;
+            return origin && origin !== 'null' ? origin : '*';
+        }
+
+        function _isAllowedMessageOrigin(origin) {
+            const expected = window.location.origin;
+            if (!expected || expected === 'null') return true;
+            return origin === expected;
+        }
+
+        window.addEventListener('message', (event) => {
+            if (!_isAllowedMessageOrigin(event.origin)) return;
+            if (event.data && event.data.type === 'themeChanged') {
+                applyTheme(event.data && event.data.theme);
+                return;
+            }
+            if (event.data && event.data.type === 'surfaceStyle') {
+                const payload = (event.data && event.data.payload) ? event.data.payload : {};
+                const mode = String((payload && payload.mode) || '').trim();
+                if (mode === 'glass') {
+                    document.documentElement.setAttribute('data-surface-style', 'glass');
+                } else {
+                    document.documentElement.removeAttribute('data-surface-style');
+                }
+                return;
+            }
+            if (event.data && event.data.type === 'wechatAppDataChanged') {
+                const payload = (event.data && event.data.payload) ? event.data.payload : {};
+                const deletedIds = Array.isArray(payload.deletedIds) ? payload.deletedIds : [];
+                (async () => {
+                    if (deletedIds.length) {
+                        await cleanupDeletedRoleRefs(deletedIds);
+                    }
+                    await syncRoles();
+                    renderTimeline();
+                })();
+                return;
+            }
+        });
+
+        (function () {
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'requestSurfaceStyle' }, _getPostTargetOrigin());
+                }
+            } catch (e) {}
+        })();
+
+        (function () {
+            let typingTimer = null;
+
+            const isTypingTarget = (el) => {
+                if (!el) return false;
+                const tag = String(el.tagName || '').toLowerCase();
+                if (tag === 'textarea') return true;
+                if (tag === 'input') {
+                    const type = String(el.getAttribute('type') || 'text').toLowerCase();
+                    return !['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'file', 'color', 'hidden'].includes(type);
+                }
+                return false;
+            };
+
+            const refresh = () => {
+                if (typingTimer) {
+                    clearTimeout(typingTimer);
+                    typingTimer = null;
+                }
+                typingTimer = setTimeout(() => {
+                    typingTimer = null;
+                    const active = document.activeElement;
+                    if (isTypingTarget(active)) document.body.classList.add('is-typing');
+                    else document.body.classList.remove('is-typing');
+                }, 30);
+            };
+
+            document.addEventListener('focusin', (e) => {
+                if (isTypingTarget(e && e.target)) document.body.classList.add('is-typing');
+            }, true);
+
+            document.addEventListener('focusout', refresh, true);
+        })();
+
+        const cfg = {
+            viewRole: '__me__',
+            showAllDays: false,
+            mode: 'me',
+            linkRoleIds: new Set(),
+            jumpToLatestDay: false
+        };
+
+        const roleList = [];
+        let wechatBox = null;
+        let appBox = { v: 1, entries: [] };
+        let editingEntryId = null;
+        let menuEntry = null;
+        let lastPeerRoleId = null;
+        let lastTimeWarnAt = 0;
+        let topHintTimer = null;
+        let menuPointerAt = 0;
+
+        async function cleanupDeletedRoleRefs(deletedIds) {
+            const ids = Array.isArray(deletedIds) ? deletedIds.map(x => String(x || '').trim()).filter(Boolean) : [];
+            if (!ids.length) return;
+            const del = new Set(ids);
+
+            if (del.has(String(cfg.viewRole || ''))) {
+                cfg.viewRole = '__me__';
+            }
+
+            if (cfg.linkRoleIds && typeof cfg.linkRoleIds.delete === 'function') {
+                del.forEach((id) => {
+                    try { cfg.linkRoleIds.delete(id); } catch (e) {}
+                });
+            }
+
+            const list = Array.isArray(appBox && appBox.entries) ? appBox.entries : [];
+            let touched = false;
+            const nextEntries = list.map((it) => {
+                if (!it || typeof it !== 'object') return it;
+                const roleIds = Array.isArray(it.roleIds) ? it.roleIds.map(x => String(x || '').trim()).filter(Boolean) : [];
+                if (!roleIds.length) return it;
+                const seen = new Set();
+                const kept = [];
+                roleIds.forEach((rid) => {
+                    if (!rid || del.has(rid)) return;
+                    if (seen.has(rid)) return;
+                    seen.add(rid);
+                    kept.push(rid);
+                });
+                const changed = kept.length !== roleIds.length;
+                if (!changed) return it;
+                touched = true;
+                return { ...it, roleIds: kept };
+            });
+
+            if (touched) {
+                await putBox({
+                    v: appBox && appBox.v ? appBox.v : 1,
+                    entries: nextEntries
+                });
+            }
+        }
+
+        function showTopHint(text) {
+            const el = document.getElementById('topHint');
+            if (!el) return false;
+            const msg = String(text || '').trim();
+            if (!msg) return false;
+            el.textContent = msg;
+            el.classList.add('is-on');
+            if (topHintTimer) {
+                clearTimeout(topHintTimer);
+                topHintTimer = null;
+            }
+            topHintTimer = setTimeout(() => {
+                topHintTimer = null;
+                el.classList.remove('is-on');
+                el.textContent = '';
+            }, 1800);
+            return true;
+        }
+
+        function showTimeWarn(text) {
+            const msg = String(text || '').trim();
+            if (!msg) return;
+            const now = Date.now();
+            if (now - lastTimeWarnAt < 800) return;
+            lastTimeWarnAt = now;
+            if (showTopHint(msg)) return;
+            try { window.alert(msg); } catch (e) {}
+        }
+
+        function setEditorTitle(text) {
+            const el = document.getElementById('editorTitle');
+            if (!el) return;
+            const t = String(text || '').trim();
+            el.textContent = t || '记录地点';
+        }
+
+        function openEditor() {
+            closeEntryMenu();
+            const p = nowParts();
+            const y = document.getElementById('yearPick');
+            const m = document.getElementById('monthPick');
+            const d = document.getElementById('dayPick');
+            const hh = document.getElementById('hourPick');
+            const mm = document.getElementById('minutePick');
+            let entry = arguments && arguments.length ? arguments[0] : null;
+            const isEventLike = entry && typeof entry === 'object' && typeof entry.type === 'string' && entry.target;
+            if (isEventLike) entry = null;
+            const isEdit = !!(entry && typeof entry === 'object' && (entry.id != null || entry.dateKey != null || entry.place != null));
+            const dateKey = isEdit ? String(entry.dateKey || '') : String(p.dateKey || '');
+
+            const dm = dateKey.match(/^(\d{4})-(\d{2})(?:-(\d{2}))?$/);
+            const yy = dm ? dm[1] : String(p.y);
+            const mo = dm ? String(Number(dm[2])) : String(Number(p.m));
+            const da = dm && dm[3] ? String(Number(dm[3])) : '';
+
+            if (y) y.value = String(yy);
+            if (m) m.value = String(mo);
+            if (d) d.value = String(da);
+
+            if (!isEdit) {
+                if (y) y.value = String(p.y);
+                if (m) m.value = String(Number(p.m));
+                if (d) d.value = String(Number(p.day));
+                if (hh) hh.value = String(Number(p.hh));
+                if (mm) mm.value = String(Number(p.mm));
+            } else {
+                const tkey = String(entry.timeKey || '');
+                const tm = tkey.match(/^(\d{2}):(\d{2})$/);
+                const hasTime = !!tm;
+                if (hh) hh.value = hasTime ? String(Number(tm[1])) : '';
+                if (mm) mm.value = hasTime ? String(Number(tm[2])) : '';
+            }
+
+            document.getElementById('placePick').value = isEdit ? String(entry.place || '') : '';
+            document.getElementById('notePick').value = isEdit ? String(entry.note || '') : '';
+
+            editingEntryId = isEdit ? String(entry.id || '') : null;
+            setEditorTitle(isEdit ? '编辑地点' : '记录地点');
+
+            if (isEdit) {
+                const origin = String(entry.origin || 'me');
+                if (origin === 'role') {
+                    cfg.mode = 'role';
+                    cfg.linkRoleIds = new Set();
+                    syncModePills();
+                    syncModeRows();
+                    fillRoleLinkPills();
+                    const rid = Array.isArray(entry.roleIds) && entry.roleIds.length ? String(entry.roleIds[0]) : '';
+                    const sel = document.getElementById('rolePick');
+                    if (sel && rid) sel.value = rid;
+                } else {
+                    cfg.mode = 'me';
+                    const ids = Array.isArray(entry.roleIds) ? entry.roleIds.map(String).filter(Boolean) : [];
+                    cfg.linkRoleIds = new Set(ids);
+                    syncModePills();
+                    syncModeRows();
+                    fillRoleLinkPills();
+                }
+            } else {
+                cfg.mode = 'me';
+                cfg.linkRoleIds = new Set();
+                syncModePills();
+                syncModeRows();
+                fillRoleLinkPills();
+            }
+
+            const mask = document.getElementById('editorMask');
+            if (mask) mask.style.display = 'flex';
+
+            requestAnimationFrame(() => {
+                const f = document.getElementById('placePick');
+                if (f) f.focus();
+            });
+        }
+
+        function closeEditor() {
+            const mask = document.getElementById('editorMask');
+            if (mask) mask.style.display = 'none';
+            editingEntryId = null;
+            setEditorTitle('');
+            document.getElementById('placePick').value = '';
+            document.getElementById('notePick').value = '';
+        }
+
+        function ensureImageStorageDB() {
+            function _req(request) {
+                return new Promise((resolve, reject) => {
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            // Helper proxy to Core Services
+            return {
+                init: async () => {
+                     if (window.parent.Core && window.parent.Core.StorageService) {
+                        return window.parent.Core.StorageService.openDB('PhoneAppImages', 5);
+                     }
+                },
+                get: async (id) => {
+                     const k = String(id || '').trim();
+                     if (!k) return null;
+                     return window.parent.Core.StorageService.transaction('PhoneAppImages', ['images'], async (tx) => {
+                        const store = tx.objectStore('images');
+                        const res = await _req(store.get(k));
+                        return res ? (res.data ?? res.value ?? null) : null;
+                    });
+                },
+                saveAppData: async (key, val) => {
+                     const k = String(key || '').trim();
+                     if (!k) return;
+                     return window.parent.Core.StorageService.transaction('PhoneAppImages', ['appData'], async (tx) => {
+                        const store = tx.objectStore('appData');
+                        await _req(store.put({ key: k, id: k, value: val, data: val, timestamp: Date.now(), t: Date.now() }));
+                    });
+                },
+                 getAppData: async (key) => {
+                     const k = String(key || '').trim();
+                     if (!k) return null;
+                     return window.parent.Core.StorageService.transaction('PhoneAppImages', ['appData'], async (tx) => {
+                        const store = tx.objectStore('appData');
+                        const res = await _req(store.get(k));
+                        return res ? (res.value ?? res.data ?? null) : null;
+                    });
+                }
+            };
+        }
+
+        // 使用BlobUrlService统一管理Blob URL
+        const GROUP_ID = 'map'; // 地图页面的分组ID
+
+        // 获取BlobUrlService实例（支持iframe嵌套）
+        function getBlobUrlService() {
+            if (window.parent && window.parent.Core && window.parent.Core.BlobUrlService) {
+                return window.parent.Core.BlobUrlService;
+            }
+            if (window.Core && window.Core.BlobUrlService) {
+                return window.Core.BlobUrlService;
+            }
+            return null;
+        }
+
+        // 注册自动清理（在页面隐藏/卸载时自动清理所有Blob URL）
+        (function() {
+            const blobUrlService = getBlobUrlService();
+            if (blobUrlService && typeof blobUrlService.enableAutoCleanup === 'function') {
+                blobUrlService.enableAutoCleanup(GROUP_ID);
+            }
+        })();
+
+        async function resolveIdbSrc(src) {
+            if (!src || typeof src !== 'string' || !src.startsWith('idb:')) return src;
+            const id = src.slice(4);
+            if (!id) return '';
+
+            try {
+                const db = ensureImageStorageDB();
+                const data = await db.get(id);
+                if (!data) return '';
+                
+                const blobUrlService = getBlobUrlService();
+                
+                if (data && typeof data === 'object' && typeof data.arrayBuffer === 'function') {
+                    // 使用BlobUrlService统一管理Blob URL
+                    if (blobUrlService && typeof blobUrlService.toDisplayUrl === 'function') {
+                        const url = await blobUrlService.toDisplayUrl(data, { 
+                            preferDataUrlInFileProtocol: true,
+                            groupId: GROUP_ID 
+                        });
+                        return url;
+                    }
+                    
+                    // 降级：直接创建URL（不使用BlobUrlService）
+                    const url = URL.createObjectURL(data);
+                    return url;
+                }
+                
+                return data;
+            } catch (e) {
+                return '';
+            }
+        }
+
+        async function getBox() {
+            const k = 'mapAppData';
+            let got = null;
+            try {
+                const db = ensureImageStorageDB();
+                got = await db.getAppData(k);
+            } catch (e) {}
+            if (!got) {
+                const raw = localStorage.getItem(k);
+                if (raw) {
+                    try { got = JSON.parse(raw); } catch (e) {}
+                }
+            }
+            if (!got || typeof got !== 'object') return { v: 1, entries: [] };
+            if (!Array.isArray(got.entries)) got.entries = [];
+            if (!got.v) got.v = 1;
+            return got;
+        }
+
+        async function putBox(next) {
+            const k = 'mapAppData';
+            appBox = next;
+            try {
+                const db = ensureImageStorageDB();
+                await db.saveAppData(k, next);
+            } catch (e) {}
+            try {
+                localStorage.setItem(k, JSON.stringify(next));
+            } catch (e) {}
+        }
+
+        function pad2(n) {
+            return String(n).padStart(2, '0');
+        }
+
+        function nowParts() {
+            const d = new Date();
+            const y = d.getFullYear();
+            const m = pad2(d.getMonth() + 1);
+            const day = pad2(d.getDate());
+            const hh = pad2(d.getHours());
+            const mm = pad2(d.getMinutes());
+            return { y, m, day, hh, mm, dateKey: `${y}-${m}-${day}`, timeKey: `${hh}:${mm}` };
+        }
+
+        function toClockKey(parts) {
+            const hh = Number(parts && parts.hh != null ? parts.hh : 0);
+            const mm = Number(parts && parts.mm != null ? parts.mm : 0);
+            const rounded = Math.round(mm / 10) * 10;
+            if (rounded >= 60) {
+                const nh = (hh + 1) % 24;
+                return `${pad2(nh)}:00`;
+            }
+            return `${pad2(hh)}:${pad2(rounded)}`;
+        }
+
+        function prettyDate(key) {
+            const s = String(key || '');
+            const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (m) return `${m[1]}年${Number(m[2])}月${Number(m[3])}日`;
+            const mm = s.match(/^(\d{4})-(\d{2})$/);
+            if (mm) return `${mm[1]}年${Number(mm[2])}月`;
+            return s;
+        }
+
+        function todayKey() {
+            return nowParts().dateKey;
+        }
+
+        function roleNameById(id) {
+            const k = String(id || '');
+            const hit = roleList.find(r => r && String(r.id) === k);
+            return hit ? hit.name : '';
+        }
+
+        async function getWechatBox() {
+            let got = null;
+            try {
+                const db = ensureImageStorageDB();
+                got = await db.getAppData('wechatAppData');
+            } catch (e) {}
+            if (!got) {
+                const raw = localStorage.getItem('wechatAppData');
+                if (raw) {
+                    try { got = JSON.parse(raw); } catch (e) {}
+                }
+            }
+            wechatBox = got && typeof got === 'object' ? got : null;
+            return wechatBox;
+        }
+
+        function mapAvatarColor(name) {
+            const map = {
+                'bg-sage': '#a3b1c6',
+                'bg-rose': '#c9b1be',
+                'bg-sand': '#d6cebe',
+                'bg-slate': '#8fa1b3',
+                'bg-olive': '#9da391',
+                'bg-terracotta': '#c6a3a3'
+            };
+            return map[name] || '';
+        }
+
+        function findContactById(appData, desiredId) {
+            const id = String(desiredId || '').trim();
+            if (!id || !appData) return null;
+            const contacts = Array.isArray(appData.contacts) ? appData.contacts : [];
+            return contacts.find(c => c && (String(c.id || '') === id || String(c.wechatId || '') === id)) || null;
+        }
+
+        function normalizePlainSrc(input) {
+            if (input == null) return '';
+            if (typeof input !== 'string') return '';
+            let s = input.trim();
+            if (!s) return '';
+            if (s === '[object Blob]') return '';
+            if (s.startsWith('url(')) {
+                const inner = s.replace(/^url\(\s*/i, '').replace(/\)\s*$/, '');
+                s = inner.trim().replace(/^['"]|['"]$/g, '');
+            }
+            if (!s) return '';
+            if (s.startsWith('blob:') && (s.startsWith('blob:file:') || window.location.protocol === 'file:')) return '';
+            return s;
+        }
+
+        function toAvatarModelFromUser(user) {
+            if (!user || typeof user !== 'object') return null;
+            const hasCustom = !!user.hasCustomAvatar;
+            const text = (user.name ? String(user.name).trim().slice(0, 1) : '我') || '我';
+            const color = mapAvatarColor(user.avatarColor) || '';
+            const src = hasCustom ? normalizePlainSrc(localStorage.getItem('user_avatar') || '') : '';
+            return { src, text, color };
+        }
+
+        function toAvatarModelFromContact(contact) {
+            if (!contact || typeof contact !== 'object') return null;
+            const id = contact.id != null ? String(contact.id) : (contact.wechatId != null ? String(contact.wechatId) : '');
+            const hasCustom = !!contact.hasCustomAvatar;
+            const stored = hasCustom && id ? normalizePlainSrc(localStorage.getItem(`avatar_${id}`) || '') : '';
+            const direct = normalizePlainSrc((contact.avatar && typeof contact.avatar === 'string') ? String(contact.avatar) : '');
+            const raw = stored || direct;
+            const src = raw && /^(data:|blob:|https?:|idb:)/.test(raw) ? raw : '';
+            const avatarText = contact.avatarText || (contact.name ? String(contact.name).trim().slice(0, 1) : '友');
+            const color = mapAvatarColor(contact.avatarColor) || '';
+            return { src, text: String(avatarText || '友').slice(0, 1), color };
+        }
+
+        function avatarModelByRoleId(roleId) {
+            const rid = String(roleId || '').trim();
+            if (!rid) return null;
+            const box = wechatBox;
+            if (rid === '__me__') return toAvatarModelFromUser(box && box.currentUser);
+            const c = findContactById(box, rid);
+            return toAvatarModelFromContact(c);
+        }
+
+        function renderFace(el, model, fallbackText) {
+            if (!el) return;
+            const m = model && typeof model === 'object' ? model : null;
+            const src = m && m.src ? String(m.src) : '';
+
+            const color = m && m.color ? String(m.color) : '';
+            const text = (m && m.text ? String(m.text) : '') || String(fallbackText || '').trim().slice(0, 1) || '友';
+
+            el.dataset.faceSrc = src;
+            el.style.backgroundSize = 'cover';
+            el.style.backgroundImage = '';
+            el.style.backgroundColor = color || '';
+            el.textContent = text;
+
+            if (!src) return;
+
+            if (src.startsWith('idb:')) {
+                resolveIdbSrc(src).then((resolved) => {
+                    if (!resolved) return;
+                    if (!el.isConnected) return;
+                    if (el.dataset.faceSrc !== src) return;
+                    const safe = String(resolved).replace(/"/g, '%22');
+                    el.style.backgroundImage = safe ? `url("${safe}")` : '';
+                    el.style.backgroundColor = '';
+                    el.textContent = '';
+                });
+                return;
+            }
+
+            const safe = String(src).replace(/"/g, '%22');
+            el.style.backgroundImage = safe ? `url("${safe}")` : '';
+            el.style.backgroundColor = '';
+            el.textContent = '';
+        }
+
+        function updatePeerFace(force) {
+            const el = document.getElementById('peerFace');
+            if (!el) return;
+            const rid = String(cfg.viewRole || '').trim() || '__me__';
+            if (!force && lastPeerRoleId === rid) return;
+            lastPeerRoleId = rid;
+            const nm = rid === '__me__' ? '我' : (roleNameById(rid) || '友');
+            renderFace(el, avatarModelByRoleId(rid), nm);
+        }
+
+        async function syncRoles() {
+            // 确保完全清空角色列表
+            roleList.splice(0, roleList.length);
+            roleList.push({ id: '__me__', name: '我' });
+            
+            // 增强去重机制，使用Map存储角色，确保每个id只对应一个角色
+            const roleMap = new Map();
+            roleMap.set('__me__', { id: '__me__', name: '我' });
+
+            const wb = await getWechatBox();
+            if (!wb) {
+                renderWho();
+                fillRolePick();
+                fillRoleLinkPills();
+                setSubLine(true);
+                return;
+            }
+            
+            // 处理contacts数组（传讯应用使用）
+            const contacts = Array.isArray(wb.contacts) ? wb.contacts : [];
+            contacts.forEach(c => {
+                if (!c) return;
+                // 获取唯一标识符
+                const id = c.id != null ? String(c.id).trim() : 
+                           (c.wechatId != null ? String(c.wechatId).trim() : null);
+                if (!id) return;
+                
+                const name = String(c.name || '').trim();
+                if (!name) return;
+                
+                // 只保留最新的角色信息
+                roleMap.set(id, { id, name });
+            });
+            
+            // 处理friends数组（兼容旧格式）
+            const friends = Array.isArray(wb.friends) ? wb.friends : [];
+            friends.forEach(f => {
+                if (!f) return;
+                // 获取唯一标识符
+                const id = f.id != null ? String(f.id).trim() : 
+                           (f.wechatId != null ? String(f.wechatId).trim() : null);
+                if (!id) return;
+                
+                const name = String(f.name || '').trim();
+                if (!name) return;
+                
+                // 只保留最新的角色信息
+                roleMap.set(id, { id, name });
+            });
+            
+            // 将Map转换为数组，替换roleList
+            roleList.splice(1, roleList.length - 1, ...Array.from(roleMap.values()).filter(r => r.id !== '__me__'));
+
+            const idSet = new Set(roleList.map(r => String(r && r.id)));
+            if (!idSet.has(String(cfg.viewRole))) {
+                cfg.viewRole = '__me__';
+            }
+            if (cfg.linkRoleIds && typeof cfg.linkRoleIds.forEach === 'function') {
+                const next = new Set();
+                cfg.linkRoleIds.forEach(id => {
+                    const sid = String(id || '').trim();
+                    if (!sid || sid === '__me__') return;
+                    if (idSet.has(sid)) next.add(sid);
+                });
+                cfg.linkRoleIds = next;
+            }
+
+            renderWho();
+            fillRolePick();
+            fillRoleLinkPills();
+            setSubLine(true);
+        }
+
+        function setSubLine(forceFace) {
+            const sub = document.getElementById('subLine');
+            if (!sub) return;
+            const who = cfg.viewRole === '__me__' ? '我' : (roleNameById(cfg.viewRole) || '角色');
+            const day = cfg.showAllDays ? '全部日期' : '今天';
+            sub.textContent = `${day} · ${who}`;
+            updatePeerFace(!!forceFace);
+        }
+
+        function listForView() {
+            const list = Array.isArray(appBox.entries) ? appBox.entries.slice() : [];
+            const who = cfg.viewRole;
+
+            const filtered = list.filter(it => {
+                if (!it || typeof it !== 'object') return false;
+                if (who === '__me__') return true;
+                const ids = Array.isArray(it.roleIds) ? it.roleIds : [];
+                return ids.map(String).includes(String(who));
+            });
+
+            filtered.sort((a, b) => {
+                const da = String(a.dateKey || '');
+                const db = String(b.dateKey || '');
+                if (da !== db) return da < db ? 1 : -1;
+                const ta = String(a.timeKey || '');
+                const tb = String(b.timeKey || '');
+                if (ta !== tb) return ta < tb ? 1 : -1;
+                const ca = Number(a.createdAt || 0);
+                const cb = Number(b.createdAt || 0);
+                return cb - ca;
+            });
+            return filtered;
+        }
+
+        function groupByDay(list) {
+            const mp = new Map();
+            list.forEach(it => {
+                const k = String(it.dateKey || '');
+                if (!k) return;
+                if (!mp.has(k)) mp.set(k, []);
+                mp.get(k).push(it);
+            });
+            return mp;
+        }
+
+        function _keyToNum(k) {
+            const s = String(k || '').trim();
+            if (!s) return 0;
+            const d = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (d) return Number(d[1]) * 10000 + Number(d[2]) * 100 + Number(d[3]);
+            const m = s.match(/^(\d{4})-(\d{2})$/);
+            if (m) return Number(m[1]) * 10000 + Number(m[2]) * 100;
+            return 0;
+        }
+
+        function jumpToLatestDay() {
+            const root = document.getElementById('timelineRoot');
+            if (!root) return;
+            const main = document.querySelector('.main');
+            if (!main) return;
+
+            const days = Array.from(root.querySelectorAll('.day'));
+            const last = days.length ? days[days.length - 1] : null;
+
+            const reduce = (() => {
+                try {
+                    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+                } catch (e) {
+                    return false;
+                }
+            })();
+
+            if (last && typeof last.scrollIntoView === 'function') {
+                try {
+                    last.scrollIntoView({ block: 'end', behavior: reduce ? 'auto' : 'smooth' });
+                    return;
+                } catch (e) {}
+            }
+
+            main.scrollTop = main.scrollHeight;
+        }
+
+        function renderTimeline() {
+            const root = document.getElementById('timelineRoot');
+            if (!root) return;
+
+            const list = listForView();
+            const mp = groupByDay(list);
+            const keys = Array.from(mp.keys()).sort((a, b) => {
+                const na = _keyToNum(a);
+                const nb = _keyToNum(b);
+                if (na === nb) return 0;
+                return na < nb ? -1 : 1;
+            });
+
+            const td = todayKey();
+            let showKeys = cfg.showAllDays ? keys.slice() : [td];
+            if (!showKeys.length) showKeys = [td];
+            if (!mp.has(td)) mp.set(td, []);
+            if (cfg.showAllDays && !showKeys.includes(td)) {
+                showKeys.push(td);
+                showKeys.sort((a, b) => {
+                    const na = _keyToNum(a);
+                    const nb = _keyToNum(b);
+                    if (na === nb) return 0;
+                    return na < nb ? -1 : 1;
+                });
+            }
+
+            root.innerHTML = '';
+
+            showKeys.forEach(k => {
+                const dayBox = document.createElement('div');
+                dayBox.className = 'day';
+                dayBox.dataset.dateKey = String(k);
+
+                const rail = document.createElement('div');
+                rail.className = 'rail';
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                rail.appendChild(dot);
+
+                const body = document.createElement('div');
+                body.className = 'day-body';
+
+                const head = document.createElement('div');
+                head.className = 'day-title';
+                const h3 = document.createElement('h3');
+                h3.textContent = (k === td) ? '今天' : prettyDate(k);
+                const sp = document.createElement('span');
+                sp.textContent = k === td ? prettyDate(k) : '';
+                head.appendChild(h3);
+                head.appendChild(sp);
+                body.appendChild(head);
+
+                const items = mp.get(k) || [];
+                if (!items.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'empty';
+                    empty.textContent = k === td ? '今天还没有记录。\n点右下角开始写下一个地点。' : '这一天没有记录。';
+                    body.appendChild(empty);
+                } else {
+                    const lst = document.createElement('div');
+                    lst.className = 'entry-list';
+                    items.forEach(it => {
+                        const el = document.createElement('div');
+                        el.className = 'entry';
+                        bindEntryLongPress(el, it);
+
+                        const t = document.createElement('div');
+                        t.className = 'entry-time';
+                        t.textContent = String(it.timeKey || '').trim() || '—';
+
+                        const m = document.createElement('div');
+                        m.className = 'entry-main';
+                        const place = document.createElement('div');
+                        place.className = 'entry-place';
+                        place.textContent = String(it.place || '');
+                        m.appendChild(place);
+
+                        const note = String(it.note || '').trim();
+                        if (note) {
+                            const p = document.createElement('div');
+                            p.className = 'entry-note';
+                            p.textContent = note;
+                            m.appendChild(p);
+                        }
+
+                        const ids = Array.isArray(it.roleIds) ? it.roleIds.map(String) : [];
+                        if (ids.length) {
+                            const peers = ids
+                                .filter(rid => rid && rid !== '__me__' && rid !== '__sum__')
+                                .filter(rid => !(cfg.viewRole && String(rid) === String(cfg.viewRole)));
+
+                            const badges = peers.map(rid => ({ rid, name: roleNameById(rid) || '友' }));
+                            if (badges.length) {
+                                const tagRow = document.createElement('div');
+                                tagRow.className = 'entry-tags';
+                                badges.forEach(item => {
+                                    const b = document.createElement('span');
+                                    b.className = 'badge';
+                                    b.textContent = item.name;
+                                    tagRow.appendChild(b);
+                                });
+                                m.appendChild(tagRow);
+
+                                const foot = document.createElement('div');
+                                foot.className = 'entry-foot';
+
+                                const box = document.createElement('div');
+                                box.className = 'entry-peers';
+                                badges.forEach(item => {
+                                    const av = document.createElement('div');
+                                    av.className = 'peer-face';
+                                    renderFace(av, avatarModelByRoleId(item.rid), item.name);
+                                    box.appendChild(av);
+                                });
+
+                                foot.appendChild(box);
+                                el.appendChild(foot);
+                            }
+                        }
+
+                        el.appendChild(t);
+                        el.appendChild(m);
+                        lst.appendChild(el);
+                    });
+                    body.appendChild(lst);
+                }
+
+                dayBox.appendChild(rail);
+                dayBox.appendChild(body);
+                root.appendChild(dayBox);
+            });
+            setSubLine();
+
+            if (cfg.showAllDays && cfg.jumpToLatestDay) {
+                cfg.jumpToLatestDay = false;
+                requestAnimationFrame(() => requestAnimationFrame(jumpToLatestDay));
+            }
+        }
+
+        function bindEntryLongPress(el, entry) {
+            if (!el) return;
+            let timer = null;
+            let longFired = false;
+            let sx = 0;
+            let sy = 0;
+
+            const clear = () => {
+                if (timer) {
+                    clearTimeout(timer);
+                    timer = null;
+                }
+                longFired = false;
+            };
+
+            const start = (x, y) => {
+                sx = x;
+                sy = y;
+                longFired = false;
+                if (timer) clearTimeout(timer);
+                timer = setTimeout(() => {
+                    timer = null;
+                    longFired = true;
+                    openEntryMenu(entry);
+                }, 520);
+            };
+
+            const move = (x, y) => {
+                if (!timer) return;
+                const dx = Math.abs(x - sx);
+                const dy = Math.abs(y - sy);
+                if (dx > 8 || dy > 8) {
+                    clear();
+                }
+            };
+
+            const end = () => {
+                if (longFired) {
+                    clear();
+                    return;
+                }
+                if (timer) {
+                    clear();
+                    if (entry) openEditor(entry);
+                    else openEditor();
+                }
+            };
+
+            if ('PointerEvent' in window) {
+                el.addEventListener('pointerdown', (ev) => {
+                    if (ev && ev.button != null && ev.button !== 0) return;
+                    start(ev.clientX, ev.clientY);
+                });
+                el.addEventListener('pointermove', (ev) => move(ev.clientX, ev.clientY));
+                el.addEventListener('pointerup', end);
+                el.addEventListener('pointercancel', clear);
+                el.addEventListener('lostpointercapture', clear);
+            } else {
+                let mouseDown = false;
+
+                el.addEventListener('touchstart', (ev) => {
+                    const t = ev && ev.touches && ev.touches[0] ? ev.touches[0] : null;
+                    if (!t) return;
+                    start(t.clientX, t.clientY);
+                }, { passive: true });
+                el.addEventListener('touchmove', (ev) => {
+                    const t = ev && ev.touches && ev.touches[0] ? ev.touches[0] : null;
+                    if (!t) return;
+                    move(t.clientX, t.clientY);
+                }, { passive: true });
+                el.addEventListener('touchend', () => {
+                    if (longFired) {
+                        clear();
+                        return;
+                    }
+                    end();
+                });
+                el.addEventListener('touchcancel', clear);
+
+                el.addEventListener('mousedown', (ev) => {
+                    if (ev && ev.button != null && ev.button !== 0) return;
+                    mouseDown = true;
+                    start(ev.clientX, ev.clientY);
+                });
+                window.addEventListener('mousemove', (ev) => {
+                    if (!mouseDown) return;
+                    move(ev.clientX, ev.clientY);
+                });
+                window.addEventListener('mouseup', () => {
+                    if (!mouseDown) return;
+                    mouseDown = false;
+                    if (longFired) {
+                        clear();
+                        return;
+                    }
+                    end();
+                });
+            }
+
+            el.addEventListener('keydown', (ev) => {
+                if (!ev) return;
+                if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault();
+                    openEntryMenu(entry);
+                }
+            });
+        }
+
+        function openEntryMenu(entry) {
+            menuEntry = entry;
+            const m = document.getElementById('entryMenuMask');
+            if (m) m.style.display = 'flex';
+        }
+
+        function closeEntryMenu() {
+            const m = document.getElementById('entryMenuMask');
+            if (m) m.style.display = 'none';
+            menuEntry = null;
+        }
+
+        function bindMenuAction(el, fn) {
+            if (!el) return;
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (typeof fn === 'function') fn();
+            });
+        }
+
+        async function deleteEntry(entry) {
+            if (!entry || !entry.id) return;
+            const list = Array.isArray(appBox.entries) ? appBox.entries : [];
+            const idx = list.findIndex(e => String(e.id) === String(entry.id));
+            if (idx < 0) return;
+            list.splice(idx, 1);
+            await putBox({ ...appBox, entries: list });
+            renderTimeline();
+            setSubLine();
+        }
+
+        function syncModePills() {
+            const box = document.getElementById('modePills');
+            if (!box) return;
+            Array.from(box.querySelectorAll('.pill')).forEach(p => {
+                const m = p.getAttribute('data-mode');
+                p.classList.toggle('is-on', m === cfg.mode);
+            });
+        }
+
+        function syncModeRows() {
+            const rolePickRow = document.getElementById('rolePickRow');
+            const roleLinkRow = document.getElementById('roleLinkRow');
+            if (rolePickRow) rolePickRow.style.display = cfg.mode === 'role' ? 'flex' : 'none';
+            if (roleLinkRow) roleLinkRow.style.display = cfg.mode === 'me' ? 'flex' : 'none';
+        }
+
+        function fillRolePick() {
+            const sel = document.getElementById('rolePick');
+            if (!sel) return;
+            const prev = sel.value;
+            sel.innerHTML = '';
+            const roles = roleList.filter(r => r && !['__me__'].includes(String(r.id)));
+            if (!roles.length) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = '未发现角色';
+                opt.disabled = true;
+                opt.selected = true;
+                sel.appendChild(opt);
+                return;
+            }
+            roles.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = String(r.id);
+                opt.textContent = r.name;
+                sel.appendChild(opt);
+            });
+            if (prev) sel.value = prev;
+        }
+
+        function fillRoleLinkPills() {
+            const wrap = document.getElementById('roleLinkPills');
+            if (!wrap) return;
+            wrap.innerHTML = '';
+            const roles = roleList.filter(r => r && !['__me__'].includes(String(r.id)));
+            if (!roles.length) {
+                const tip = document.createElement('div');
+                tip.style.color = 'rgba(255,255,255,0.66)';
+                tip.style.fontSize = '0.92rem';
+                tip.textContent = '未发现角色，请先在「传讯」里添加好友。';
+                wrap.appendChild(tip);
+                return;
+            }
+            roles.forEach(r => {
+                const p = document.createElement('div');
+                p.className = 'pill';
+                p.textContent = r.name;
+                p.dataset.rid = String(r.id);
+                p.classList.toggle('is-on', cfg.linkRoleIds.has(String(r.id)));
+                p.addEventListener('click', () => {
+                    const rid = String(r.id);
+                    if (cfg.linkRoleIds.has(rid)) cfg.linkRoleIds.delete(rid);
+                    else cfg.linkRoleIds.add(rid);
+                    p.classList.toggle('is-on', cfg.linkRoleIds.has(rid));
+                });
+                wrap.appendChild(p);
+            });
+        }
+
+        async function saveEntry() {
+            const yearEl = document.getElementById('yearPick');
+            const monthEl = document.getElementById('monthPick');
+
+            const year = String((yearEl && yearEl.value) || '').trim();
+            const month = String((monthEl && monthEl.value) || '').trim();
+            const day = String(document.getElementById('dayPick').value || '').trim();
+            const hour = String(document.getElementById('hourPick').value || '').trim();
+            const minute = String(document.getElementById('minutePick').value || '').trim();
+            const place = String(document.getElementById('placePick').value || '').trim();
+            const note = String(document.getElementById('notePick').value || '').trim();
+            if (!year) {
+                showTimeWarn('年份不能为空');
+                if (yearEl) {
+                    try {
+                        yearEl.focus();
+                        if (typeof yearEl.select === 'function') yearEl.select();
+                    } catch (e) {}
+                }
+                return;
+            }
+            if (!month) {
+                showTimeWarn('月份不能为空');
+                if (monthEl) {
+                    try {
+                        monthEl.focus();
+                        if (typeof monthEl.select === 'function') monthEl.select();
+                    } catch (e) {}
+                }
+                return;
+            }
+            if (!place) return;
+
+            const yv = Math.max(1, parseInt(year, 10) || 0);
+            const mv = Math.max(1, Math.min(12, parseInt(month, 10) || 0));
+            const hasDay = day !== '';
+            const hasTime = hour !== '' && minute !== '';
+
+            let dv = null;
+            if (hasDay) dv = Math.max(1, Math.min(31, parseInt(day, 10) || 0));
+
+            let dateKey = dv != null ? `${yv}-${pad2(mv)}-${pad2(dv)}` : `${yv}-${pad2(mv)}`;
+            let timeKey = '';
+
+            if (dv == null && hasTime) {
+                document.getElementById('hourPick').value = '';
+                document.getElementById('minutePick').value = '';
+            }
+
+            if (dv != null && hasTime) {
+                let hv = Math.max(0, Math.min(23, parseInt(hour, 10) || 0));
+                let minv = Math.max(0, Math.min(59, parseInt(minute, 10) || 0));
+
+                const now = nowParts();
+                const nowNum = Number(String(now.y).padStart(4, '0') + String(now.m).padStart(2, '0') + String(now.day).padStart(2, '0') + String(now.hh).padStart(2, '0') + String(now.mm).padStart(2, '0'));
+                const curNum = Number(String(yv).padStart(4, '0') + pad2(mv) + pad2(dv) + pad2(hv) + pad2(minv));
+                if (curNum > nowNum) {
+                    dateKey = String(now.dateKey);
+                    hv = Number(now.hh);
+                    minv = Number(now.mm);
+                }
+
+                timeKey = `${pad2(hv)}:${pad2(minv)}`;
+            }
+
+            let origin = 'me';
+            let roleIds = [];
+            let jumpRole = '__me__';
+            if (cfg.mode === 'role') {
+                const rid = String(document.getElementById('rolePick').value || '').trim();
+                if (!rid) return;
+                origin = 'role';
+                roleIds = [rid];
+                jumpRole = rid;
+            } else {
+                origin = 'me';
+                roleIds = Array.from(cfg.linkRoleIds);
+                jumpRole = '__me__';
+            }
+
+            const next = {
+                v: 1,
+                entries: Array.isArray(appBox.entries) ? appBox.entries.slice() : []
+            };
+
+            if (editingEntryId) {
+                const idx = next.entries.findIndex(e => e && String(e.id) === String(editingEntryId));
+                if (idx >= 0) {
+                    const old = next.entries[idx] || {};
+                    next.entries[idx] = {
+                        ...old,
+                        dateKey,
+                        timeKey,
+                        place,
+                        note,
+                        origin,
+                        roleIds
+                    };
+                } else {
+                    const createdAt = Date.now();
+                    next.entries.push({
+                        id: String(editingEntryId),
+                        createdAt,
+                        dateKey,
+                        timeKey,
+                        place,
+                        note,
+                        origin,
+                        roleIds
+                    });
+                }
+                editingEntryId = null;
+            } else {
+                const createdAt = Date.now();
+                const id = `${createdAt}_${Math.random().toString(16).slice(2)}`;
+                next.entries.push({
+                    id,
+                    createdAt,
+                    dateKey,
+                    timeKey,
+                    place,
+                    note,
+                    origin,
+                    roleIds
+                });
+            }
+
+            await putBox(next);
+            cfg.viewRole = jumpRole;
+            closeEditor();
+            renderTimeline();
+            renderWho();
+            setSubLine();
+        }
+
+        function openWho() {
+            const m = document.getElementById('whoMask');
+            if (!m) return;
+            m.style.display = 'flex';
+        }
+
+        function closeWho() {
+            const m = document.getElementById('whoMask');
+            if (!m) return;
+            m.style.display = 'none';
+        }
+
+        function renderWho() {
+            const wrap = document.getElementById('whoPills');
+            if (!wrap) return;
+            wrap.innerHTML = '';
+            roleList.forEach(r => {
+                if (!r) return;
+                const p = document.createElement('div');
+                p.className = 'pill';
+                p.textContent = r.name;
+                p.dataset.rid = String(r.id);
+                p.classList.toggle('is-on', String(r.id) === String(cfg.viewRole));
+                p.addEventListener('click', () => {
+                    cfg.viewRole = String(r.id);
+                    Array.from(wrap.querySelectorAll('.pill')).forEach(x => x.classList.toggle('is-on', x.dataset.rid === cfg.viewRole));
+                    renderTimeline();
+                });
+                wrap.appendChild(p);
+            });
+        }
+
+        function bindUi() {
+            const todayLab = document.getElementById('todayLabel');
+            if (todayLab) todayLab.textContent = `（${prettyDate(todayKey())}）`;
+
+            const backBtn = document.getElementById('backBtn');
+            if (backBtn) {
+                backBtn.addEventListener('click', () => {
+                    try {
+                        if (window.parent && window.parent !== window) {
+                            window.parent.postMessage({ type: 'closeApp' }, _getPostTargetOrigin());
+                            return;
+                        }
+                    } catch (e) {}
+                    window.location.href = 'index.html';
+                });
+            }
+
+            const whoBtn = document.getElementById('whoBtn');
+            if (whoBtn) whoBtn.addEventListener('click', openWho);
+
+            const modeBtn = document.getElementById('modeBtn');
+            if (modeBtn) {
+                modeBtn.addEventListener('click', () => {
+                    const next = (document.body.dataset.theme === 'light') ? 'dark' : 'light';
+                    applyTheme(next);
+                });
+                modeBtn.addEventListener('pointerdown', () => modeBtn.classList.add('pressed'));
+                modeBtn.addEventListener('pointerup', () => modeBtn.classList.remove('pressed'));
+                modeBtn.addEventListener('pointercancel', () => modeBtn.classList.remove('pressed'));
+            }
+            const whoCloseBtn = document.getElementById('whoCloseBtn');
+            if (whoCloseBtn) whoCloseBtn.addEventListener('click', closeWho);
+
+            const whoMask = document.getElementById('whoMask');
+            if (whoMask) {
+                whoMask.addEventListener('click', (e) => {
+                    if (e.target === whoMask) closeWho();
+                });
+            }
+            const menuMask = document.getElementById('entryMenuMask');
+            if (menuMask) {
+                menuMask.addEventListener('click', (e) => {
+                    if (e.target === menuMask) closeEntryMenu();
+                });
+            }
+
+            const newBtn = document.getElementById('newEntryBtn');
+            if (newBtn) newBtn.addEventListener('click', () => openEditor());
+
+            const editorCancelBtn = document.getElementById('editorCancelBtn');
+            if (editorCancelBtn) editorCancelBtn.addEventListener('click', closeEditor);
+            const saveBtn = document.getElementById('saveBtn');
+            if (saveBtn) saveBtn.addEventListener('click', saveEntry);
+
+            const menuEditBtn = document.getElementById('entryMenuEdit');
+            bindMenuAction(menuEditBtn, () => {
+                const entry = menuEntry;
+                closeEntryMenu();
+                if (entry) openEditor(entry);
+            });
+            const menuDeleteBtn = document.getElementById('entryMenuDelete');
+            bindMenuAction(menuDeleteBtn, async () => {
+                const entry = menuEntry;
+                if (!entry) {
+                    closeEntryMenu();
+                    return;
+                }
+                if (!confirm('确定要删除这个地点记录吗？')) return;
+                closeEntryMenu();
+                await deleteEntry(entry);
+            });
+            const menuCancelBtn = document.getElementById('entryMenuCancel');
+            bindMenuAction(menuCancelBtn, closeEntryMenu);
+
+            const editorMask = document.getElementById('editorMask');
+            if (editorMask) {
+                editorMask.addEventListener('click', (e) => {
+                    if (e.target === editorMask) closeEditor();
+                });
+            }
+
+            const todayOnlyBtn = document.getElementById('todayOnlyBtn');
+            const allDaysBtn = document.getElementById('allDaysBtn');
+            if (todayOnlyBtn) {
+                todayOnlyBtn.addEventListener('click', () => {
+                    cfg.showAllDays = false;
+                    todayOnlyBtn.classList.add('is-on');
+                    if (allDaysBtn) allDaysBtn.classList.remove('is-on');
+                    renderTimeline();
+                });
+            }
+            if (allDaysBtn) {
+                allDaysBtn.addEventListener('click', () => {
+                    cfg.showAllDays = true;
+                    cfg.jumpToLatestDay = true;
+                    allDaysBtn.classList.add('is-on');
+                    if (todayOnlyBtn) todayOnlyBtn.classList.remove('is-on');
+                    renderTimeline();
+                });
+            }
+
+            const modeBox = document.getElementById('modePills');
+            if (modeBox) {
+                modeBox.addEventListener('click', (e) => {
+                    const p = e.target && e.target.closest ? e.target.closest('.pill') : null;
+                    if (!p) return;
+                    const m = p.getAttribute('data-mode');
+                    if (!m) return;
+                    cfg.mode = m;
+                    if (cfg.mode === 'role') cfg.linkRoleIds = new Set();
+                    syncModePills();
+                    syncModeRows();
+                    fillRoleLinkPills();
+                });
+            }
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key !== 'Escape') return;
+                const wm = document.getElementById('whoMask');
+                const mm = document.getElementById('entryMenuMask');
+                const em = document.getElementById('editorMask');
+                if (em && em.style.display === 'flex') {
+                    closeEditor();
+                    return;
+                }
+                if (mm && mm.style.display === 'flex') {
+                    closeEntryMenu();
+                    return;
+                }
+                if (wm && wm.style.display === 'flex') {
+                    closeWho();
+                }
+            });
+        }
+
+        async function init() {
+            const db = ensureImageStorageDB();
+            if (db && typeof db.init === 'function') {
+                try {
+                    await db.init();
+                } catch (e) {}
+            }
+            initTimeSelectors();
+            applyTheme(loadTheme());
+            bindUi();
+            appBox = await getBox();
+            await syncRoles();
+            renderTimeline();
+
+            try {
+                const k = 'map_hint_v1';
+                if (!localStorage.getItem(k)) {
+                    localStorage.setItem(k, '1');
+                    showTopHint('点条目可编辑，长按呼出菜单');
+                }
+            } catch (e) {}
+
+            document.addEventListener('click', () => {
+                try {
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'iframe_click' }, _getPostTargetOrigin());
+                    }
+                } catch (e) {}
+            }, true);
+
+            window.addEventListener('storage', (e) => {
+                if (!e || !e.key) return;
+                if (e.key === 'wechatAppData' || e.key === 'wechatAppData_rev' || (e.key && e.key.indexOf('avatar_') === 0)) {
+                    syncRoles().then(() => renderTimeline());
+                    return;
+                }
+                if (e.key === 'mapAppData') {
+                    getBox().then(b => {
+                        appBox = b;
+                        renderTimeline();
+                    });
+                }
+            });
+
+            try {
+                window.parent.postMessage({ type: 'app_ready', appId: 'ditu' }, _getPostTargetOrigin());
+            } catch (e) {
+                console.error('Failed to send app_ready message:', e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+
+        function loadTheme() {
+            try {
+                const v = String(localStorage.getItem('mapUiMode') || '').trim();
+                if (v === 'light' || v === 'dark') return v;
+            } catch (e) {}
+            return 'light';
+        }
+
+        function applyTheme(next) {
+            const t = (next === 'dark') ? 'dark' : 'light';
+            document.body.dataset.theme = t;
+            try {
+                localStorage.setItem('mapUiMode', t);
+            } catch (e) {}
+            const meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', t === 'dark' ? '#0f1115' : '#f6f7fb');
+        }
+
+        function initTimeSelectors() {
+            const y = document.getElementById('yearPick');
+            const m = document.getElementById('monthPick');
+            const d = document.getElementById('dayPick');
+            const hh = document.getElementById('hourPick');
+            const mm = document.getElementById('minutePick');
+            if (!y || !m || !d || !hh || !mm) return;
+
+            y.addEventListener('focus', () => { y.dataset.prevVal = String(y.value || '').trim(); });
+            m.addEventListener('focus', () => { m.dataset.prevVal = String(m.value || '').trim(); });
+
+            const allEmpty = !String(y.value || '').trim() && !String(m.value || '').trim() && !String(d.value || '').trim() && !String(hh.value || '').trim() && !String(mm.value || '').trim();
+            if (allEmpty) {
+                const now = nowParts();
+                y.value = String(now.y);
+                m.value = String(Number(now.m));
+                d.value = String(Number(now.day));
+                hh.value = String(Number(now.hh));
+                mm.value = String(Number(now.mm));
+            }
+
+            const clampInt = (v, min, max) => {
+                const n = parseInt(String(v || '').trim(), 10);
+                if (isNaN(n)) return '';
+                return String(Math.max(min, Math.min(max, n)));
+            };
+
+            const clampToNow = () => {
+                const now = nowParts();
+
+                let yy = parseInt(String(y.value || '').trim(), 10);
+                let mo = parseInt(String(m.value || '').trim(), 10);
+                const hasDay = String(d.value || '').trim() !== '';
+                const hasTime = String(hh.value || '').trim() !== '' && String(mm.value || '').trim() !== '';
+                let da = hasDay ? parseInt(String(d.value || '').trim(), 10) : NaN;
+                let ho = hasTime ? parseInt(String(hh.value || '').trim(), 10) : NaN;
+                let mi = hasTime ? parseInt(String(mm.value || '').trim(), 10) : NaN;
+
+                if (isNaN(yy) || isNaN(mo)) return;
+
+                yy = Math.max(1, Math.min(9999, yy));
+                mo = Math.max(1, Math.min(12, mo));
+                if (hasDay) da = Math.max(1, Math.min(31, da));
+                if (hasTime) {
+                    ho = Math.max(0, Math.min(23, ho));
+                    mi = Math.max(0, Math.min(59, mi));
+                }
+
+                const nY = Number(now.y);
+                const nM = Number(now.m);
+                const nD = Number(now.day);
+                const nH = Number(now.hh);
+                const nMin = Number(now.mm);
+
+                if (yy > nY) {
+                    yy = nY;
+                    mo = nM;
+                    d.value = '';
+                    hh.value = '';
+                    mm.value = '';
+                } else if (yy === nY) {
+                    if (mo > nM) {
+                        mo = nM;
+                        d.value = '';
+                        hh.value = '';
+                        mm.value = '';
+                    } else if (mo === nM) {
+                        if (hasDay && da > nD) {
+                            da = nD;
+                            d.value = String(da);
+                            hh.value = '';
+                            mm.value = '';
+                        } else if (hasDay && da === nD && hasTime) {
+                            if (ho > nH) {
+                                ho = nH;
+                                mi = nMin;
+                            } else if (ho === nH) {
+                                if (mi > nMin) mi = nMin;
+                            }
+                        }
+                    }
+                }
+
+                y.value = String(yy);
+                m.value = String(mo);
+
+                if (String(d.value || '').trim() !== '' && hasDay && !isNaN(da)) d.value = String(da);
+                if (String(d.value || '').trim() === '') {
+                    hh.value = '';
+                    mm.value = '';
+                } else if (hasTime && !isNaN(ho) && !isNaN(mi)) {
+                    hh.value = String(ho);
+                    mm.value = String(mi);
+                }
+            };
+
+            y.addEventListener('blur', () => {
+                const prev = String(y.dataset.prevVal || '').trim();
+                y.value = clampInt(y.value, 1, 9999);
+                const after = String(y.value || '').trim();
+                if (prev && !after) {
+                    showTimeWarn('年份不能为空');
+                    requestAnimationFrame(() => {
+                        try {
+                            y.focus();
+                            if (typeof y.select === 'function') y.select();
+                        } catch (e) {}
+                    });
+                }
+                clampToNow();
+            });
+            m.addEventListener('blur', () => {
+                const prev = String(m.dataset.prevVal || '').trim();
+                m.value = clampInt(m.value, 1, 12);
+                const after = String(m.value || '').trim();
+                if (prev && !after) {
+                    showTimeWarn('月份不能为空');
+                    requestAnimationFrame(() => {
+                        try {
+                            m.focus();
+                            if (typeof m.select === 'function') m.select();
+                        } catch (e) {}
+                    });
+                }
+                clampToNow();
+            });
+            d.addEventListener('blur', () => { d.value = clampInt(d.value, 1, 31); clampToNow(); });
+            hh.addEventListener('blur', () => { hh.value = clampInt(hh.value, 0, 23); clampToNow(); });
+            mm.addEventListener('blur', () => { mm.value = clampInt(mm.value, 0, 59); clampToNow(); });
+
+            hh.addEventListener('input', () => {
+                if (!String(d.value || '').trim()) {
+                    hh.value = '';
+                    mm.value = '';
+                }
+            });
+
+            mm.addEventListener('input', () => {
+                if (!String(d.value || '').trim()) {
+                    hh.value = '';
+                    mm.value = '';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
