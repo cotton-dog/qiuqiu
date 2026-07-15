@@ -1,0 +1,475 @@
+/* css/core-ui.css */
+
+:root {
+    /* 核心色彩系统 */
+    --primary-color: #1a73e8;
+    --secondary-color: #34a853;
+    --background-color: #f1f3f4;
+    --surface-color: #ffffff;
+    --text-primary: #202124;
+    --text-secondary: #5f6368;
+    --error-color: #ea4335;
+    --warning-color: #fbbc04;
+    --success-color: #34a853;
+
+    /* 布局变量 */
+    --status-bar-height: 40px;
+    --nav-bar-height: 64px;
+    --safe-inset-top: env(safe-area-inset-top, 0px);
+    --safe-inset-bottom: env(safe-area-inset-bottom, 0px);
+
+    /* UI 元素 */
+    --app-icon-size: 56px;
+    --border-radius: 12px;
+    --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    
+    /* 玻璃拟态 */
+    --glass-bg: rgba(255, 255, 255, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --glass-blur: 20px;
+}
+
+/* 基础重置 */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-primary);
+    /* 禁止 root 橡皮筋回弹效果，保持 PWA 稳定性 */
+    overscroll-behavior: contain;
+}
+
+/* 统一按钮触控反馈 */
+button, .ios-btn, [role="button"] {
+    touch-action: manipulation;
+}
+
+/* 原子类 */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hidden {
+    display: none !important;
+}
+
+ .flex-scroll {
+     min-height: 0;
+     min-width: 0;
+ }
+ 
+ .scroll-y {
+     overflow-y: auto;
+     -webkit-overflow-scrolling: touch;
+     overscroll-behavior-y: contain;
+     touch-action: pan-y;
+ }
+ 
+ .scroll-x {
+     overflow-x: auto;
+     -webkit-overflow-scrolling: touch;
+     overscroll-behavior-x: contain;
+     touch-action: pan-x;
+ }
+ 
+ .scroll-y-hidebar {
+     overflow-y: auto;
+     -webkit-overflow-scrolling: touch;
+     overscroll-behavior-y: contain;
+     touch-action: pan-y;
+     scrollbar-width: none;
+     -ms-overflow-style: none;
+ }
+ 
+ .scroll-y-hidebar::-webkit-scrollbar {
+     display: none !important;
+     width: 0 !important;
+     height: 0 !important;
+ }
+ 
+ .scroll-x-hidebar {
+     overflow-x: auto;
+     -webkit-overflow-scrolling: touch;
+     overscroll-behavior-x: contain;
+     touch-action: pan-x;
+     scrollbar-width: none;
+     -ms-overflow-style: none;
+ }
+ 
+ .scroll-x-hidebar::-webkit-scrollbar {
+     display: none !important;
+     width: 0 !important;
+     height: 0 !important;
+ }
+ 
+/* 按钮样式 */
+.ios-btn {
+    border: none;
+    background: var(--primary-color);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.ios-btn:active {
+    opacity: 0.8;
+}
+
+.ios-btn.secondary {
+    background: #e0e0e0;
+    color: #333;
+}
+
+/* === 通用应用 UI 组件 === */
+
+/* 应用容器 */
+.phone-app-container {
+    width: 100%;
+    height: 100%;
+    background-color: var(--surface-color);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+/* 顶部导航栏 */
+.phone-app-header {
+    height: calc(var(--nav-bar-height) + var(--safe-inset-top));
+    padding: var(--safe-inset-top) 16px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 10;
+    flex-shrink: 0;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.phone-app-header-left, .phone-app-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.phone-app-title {
+    font-size: 18px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 返回按钮 */
+.phone-app-back-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.phone-app-back-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.phone-app-back-btn:active {
+    transform: scale(0.95);
+}
+
+/* 设置按钮 (通常在右侧) */
+.phone-app-settings-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: inherit;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s;
+}
+
+.phone-app-settings-btn:active {
+    transform: scale(0.95);
+}
+
+/* Toast 提示 */
+.phone-app-toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background-color: #ffffff;
+    color: #000000;
+    padding: 12px 24px;
+    border-radius: 9999px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: var(--z-toast, 2300); /* 使用CSS变量 */
+    opacity: 0;
+    transition: transform 0.3s, opacity 0.3s;
+    max-width: 80%;
+    text-align: center;
+    font-weight: 500;
+    pointer-events: none;
+}
+
+.phone-app-toast.active {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+/* 浮窗组件：推荐使用 Core.Popup (PopupService) 统一管理浮窗
+ * 用法：Core.Popup.open('#yourPopupElement'); Core.Popup.close();
+ * 遮罩使用 .popup-overlay，浮窗内容使用 .popup-window */
+.popup-overlay {
+    position: fixed;
+    inset: 0; /* 使用inset固定到viewport，不受键盘影响 */
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: var(--z-overlay, 2000); /* 使用CSS变量 */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+    pointer-events: none;
+    touch-action: none;
+    /* 彻底阻断滚动传播 */
+    overscroll-behavior: none;
+    /* 确保遮罩层固定在viewport，不受键盘影响 */
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+}
+
+.popup-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* 键盘弹起时，遮罩层保持固定 */
+.popup-overlay.keyboard-open {
+    /* 遮罩层位置不变，确保覆盖整个viewport */
+    top: 0 !important;
+    bottom: 0 !important;
+}
+
+.popup-window {
+    position: fixed;
+    top: 10vh;
+    left: 50%;
+    transform: translateX(-50%) scale(0.98);
+    width: 90%;
+    max-width: 320px;
+    background-color: var(--surface-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    z-index: var(--z-modal, 2100); /* 使用CSS变量，高于遮罩层 */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+    pointer-events: none;
+    /* 确保浮窗基于viewport定位，不受键盘影响 */
+    max-height: calc(100svh - 20vh);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.popup-window.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) scale(1);
+    pointer-events: auto;
+}
+
+/* 键盘弹起时，浮窗位置保持不变 */
+.popup-window.keyboard-open {
+    /* 浮窗位置基于viewport，不受键盘影响 */
+    top: 10vh;
+    /* 如果浮窗内有输入框，禁用自动滚动到输入框 */
+    scroll-behavior: auto;
+}
+
+.popup-window-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+}
+
+.popup-window-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.popup-window-content {
+    padding: 16px;
+    max-height: 420px;
+    max-height: min(420px, calc(100svh - 20vh - 80px)); /* 使用svh确保基于viewport */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+}
+
+/* 键盘弹起时，内容区域保持可滚动但不自动滚动到输入框 */
+.popup-window.keyboard-open .popup-window-content {
+    /* 禁用自动滚动到聚焦的输入框 */
+    scroll-padding: 0;
+}
+
+.popup-window-section {
+    margin-bottom: 20px;
+}
+
+.popup-window-section h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text-secondary);
+}
+
+.popup-window-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 16px;
+}
+
+.popup-window .upload-selector {
+    position: static;
+    transform: none;
+    display: block;
+    width: 100%;
+    box-shadow: none;
+    padding: 0;
+    background: transparent;
+    text-align: center;
+}
+
+/* === 美化面板 Tab 样式 === */
+.beautify-tabs {
+    display: flex;
+    padding: 0 16px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.beautify-tab {
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.3s;
+}
+
+.beautify-tab.active {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.beautify-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--primary-color);
+    border-radius: 2px 2px 0 0;
+}
+
+.beautify-tab-content {
+    display: none;
+    padding: 0 16px 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.beautify-tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.beautify-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.beautify-option {
+    padding: 16px;
+    background-color: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.beautify-option:active {
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
+.beautify-option span {
+    font-size: 15px;
+    font-weight: 500;
+}
+
+/* 隐藏美化面板中多余的旧上传组件 */
+#beautifyPanel > #avatarUpload {
+    display: none;
+}

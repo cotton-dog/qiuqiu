@@ -1,0 +1,10 @@
+/* 本地图标样式文件 - 用于替代缺失的图标文件 */
+/* 此文件用于避免404错误，实际图标使用Font Awesome */
+
+/* 占位样式，避免浏览器报错 */
+.icon-placeholder {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background: transparent;
+}
