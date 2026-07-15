@@ -1,0 +1,2777 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>微信 - 莫兰迪色系</title>
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" sizes="180x180">
+    <meta name="theme-color" content="#f1f3f4">
+    <!-- iOS PWA 兼容 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="湫丘捕梦机">
+    <link rel="stylesheet" href="css/core-icons.min.css">
+    <link rel="stylesheet" href="css/core-ui.css">
+    <!-- 平台加载器 - 必须在其他脚本之前加载 -->
+    <script src="js/core/PlatformLoader.js"></script>
+    <script src="js/core/DeviceAdapter.js"></script>
+    <script src="js/core/CapacityMonitor.js"></script>
+    <script src="js/core/PerformanceMonitor.js"></script>
+    <script src="js/core/VisualAnomalyDetector.js"></script>
+    <script src="js/core/PatrolService.js"></script>
+    <script src="js/core/OperaKeyboardFix.js"></script>
+    <script src="js/core/StorageService.js"></script>
+    <script src="js/core/ImageService.js"></script>
+    <script src="js/core/AuthService.js" defer></script>
+    <script src="js/core/MessageBus.js" defer></script>
+    <script src="js/ImageStorageDB.js" defer></script>
+    <script src="js/apps/messaging/config.js"></script>
+    <script src="js/apps/messaging/storage.js"></script>
+    <script src="js/lorebook_engine.js"></script>
+    <script src="js/apps/messaging/lorebook_integration.js"></script>
+    <script src="js/components/VirtualScroll.js"></script>
+    <script src="js/EventBus.js"></script>
+    <script src="js/core/TokenEstimator.js"></script>
+    <script src="js/core/TokenBudgetManager.js"></script>
+    <script src="js/core/ContextTemplates.js"></script>
+    <script src="js/core/PromptManager.js"></script>
+    <script src="js/core/PromptManagerBuilders.js"></script>
+    <script src="js/core/SemanticSearch.js"></script>
+    <script src="js/core/SecureKeyStore.js"></script>
+    <script src="js/core/EmbeddingCache.js"></script>
+    <script src="js/core/providers/OpenAIEmbeddingProvider.js"></script>
+    <script src="js/core/EmbeddingService.js"></script>
+    <script src="js/core/MemoryDeduplicator.js"></script>
+    <script src="js/core/ApiJournalStore.js"></script>
+    <script src="js/core/ApiJournalView.js"></script>
+    <link rel="stylesheet" href="css/apps/messaging.css">
+    <link rel="stylesheet" href="css/apps/messaging_transfer_card.css">
+</head>
+<body>
+    <!-- ========== 传讯功能分区 ==========
+         1. 顶部栏 + 主内容(聊天/通讯录/我) + 底部 Tab
+         2. 全屏页：设置、钱包、界面美化、API、人设、提示词、表情包、好友设置等
+         3. 对话页：内容层(键盘仅影响此层) + 浮窗区(相机/拍摄/转账等)
+         4. 全局浮窗：好友状态、添加好友等
+    -->
+    <!-- 1. 顶部导航栏 -->
+    <div class="header">
+        <div class="header-back">
+            <i class="fas fa-chevron-left" id="go-back-btn"></i>
+        </div>
+        <div class="header-title" id="header-title">微信</div>
+        <div class="header-icons">
+            <i class="fas fa-magic" id="mode-switch-btn"></i>
+            <i class="fas fa-plus-circle" id="add-friend-btn"></i>
+        </div>
+    </div>
+    
+    <!-- 1. 主内容区：聊天 / 通讯录 / 我 -->
+    <div class="main-content scroll-y-hidebar flex-scroll">
+        <!-- 聊天标签 -->
+        <div id="chat-tab" class="tab-content active">
+            <div class="empty-view" id="chat-empty">
+                <div class="empty-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="empty-text">
+                    还没有聊天记录<br>
+                    点击右上角+号添加好友开始聊天
+                </div>
+            </div>
+            
+            <div class="chat-list" id="chat-list" style="display: none;">
+                <!-- 聊天项将通过JavaScript动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 通讯录标签 -->
+        <div id="contacts-tab" class="tab-content">
+            <div class="empty-view" id="contacts-empty">
+                <div class="empty-icon">
+                    <i class="fas fa-address-book"></i>
+                </div>
+                <div class="empty-text">
+                    通讯录空空如也<br>
+                    快去添加好友吧
+                </div>
+            </div>
+            
+            <div class="contacts-list" id="contacts-list" style="display: none;">
+                <!-- 联系人项将通过JavaScript动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 我标签 -->
+        <div id="me-tab" class="tab-content">
+            <!-- 个人信息头部 -->
+            <div class="profile-header">
+                <div class="profile-avatar" id="profile-avatar">
+                    <div class="avatar-edit-overlay">点击修改</div>
+                </div>
+                <div class="profile-info">
+                    <div class="profile-name" id="profile-name">
+                        <span id="profile-name-text">微信用户</span>
+                        <i class="fas fa-edit"></i>
+                    </div>
+                    <div class="profile-wechat-id" id="profile-wechat-id">
+                        微信号: <span id="profile-wechat-id-text">wechat_2023</span>
+                        <i class="fas fa-edit"></i>
+                    </div>
+                </div>
+                <div>
+                    <i class="fas fa-qrcode" style="font-size: 20px; color: #a3b1c6; cursor: pointer;" title="我的二维码"></i>
+                </div>
+            </div>
+            
+            <!-- 功能列表 -->
+            <div class="profile-menu-item" id="profile-settings">
+                <div class="profile-menu-icon bg-stone">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="profile-menu-text">设置</div>
+                <div class="profile-menu-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+
+            <div class="profile-menu-item" id="profile-wallet">
+                <div class="profile-menu-icon" style="background-color: #8a9ba3;">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <div class="profile-menu-text">钱包</div>
+                <div class="profile-menu-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+            
+            <!-- 外观美化设置 -->
+            <div class="profile-menu-item" id="css-settings">
+                <div class="profile-menu-icon bg-mauve">
+                    <i class="fas fa-palette"></i>
+                </div>
+                <div class="profile-menu-text">界面美化</div>
+                <div class="profile-menu-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+
+            <!-- API 管理入口 -->
+            <div class="profile-menu-item" id="api-management">
+                <div class="profile-menu-icon bg-slate">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="profile-menu-text">API 管理</div>
+                <div class="profile-menu-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+
+            <!-- 全局人设管理 -->
+            <div class="profile-menu-item" id="persona-management">
+                <div class="profile-menu-icon" style="background-color: #b48ead;">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="profile-menu-text">人设管理</div>
+                <div class="profile-menu-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+
+            <!-- 提示词调整 -->
+            <div class="profile-menu-item" id="prompt-adjustment">
+                <div class="profile-menu-icon bg-dusty-rose">
+                    <i class="fas fa-pencil-alt"></i>
+                </div>
+                <div class="profile-menu-text">提示词调整</div>
+                <div class="profile-menu-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+
+            <!-- 表情包管理 -->
+            <div class="profile-menu-item" id="sticker-management">
+                <div class="profile-menu-icon" style="background-color: #f39c12;">
+                    <i class="fas fa-smile"></i>
+                </div>
+                <div class="profile-menu-text">表情包管理</div>
+                <div class="profile-menu-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 2. 全屏页：设置、钱包、界面美化、API、人设、提示词、表情包、好友设置 -->
+    <div class="settings-page" id="settings-page">
+        <div class="settings-header">
+            <div class="settings-back" id="settings-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="settings-title">设置</div>
+        </div>
+        
+        <div class="settings-body">
+        </div>
+    </div>
+
+    <div class="settings-page" id="wallet-page">
+        <div class="settings-header">
+            <div class="settings-back" id="wallet-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="settings-title">钱包</div>
+        </div>
+
+        <div class="settings-body">
+            <div class="wallet-summary-card">
+                <div class="wallet-summary-top">
+                    <div class="wallet-balance-block">
+                        <div class="wallet-balance-label">可用余额</div>
+                        <div class="wallet-balance-value" id="wallet-balance-value">¥0.00</div>
+                    </div>
+                    <button class="wallet-mini-btn" id="wallet-manage-cards" type="button">银行卡</button>
+                </div>
+                <div class="wallet-summary-actions">
+                    <button class="wallet-primary-btn" id="wallet-topup-btn" type="button">充值</button>
+                    <button class="wallet-secondary-btn" id="wallet-withdraw-btn" type="button">提现</button>
+                </div>
+            </div>
+
+            <div class="wallet-action-grid">
+                <button class="wallet-action-btn" id="wallet-action-code" type="button">
+                    <span class="wallet-action-main">
+                        <span class="wallet-action-ico" style="background-color:#b1c2a9;">
+                            <i class="fas fa-qrcode"></i>
+                        </span>
+                        <span class="wallet-action-text">
+                            <div class="wallet-action-title">收付款</div>
+                            <div class="wallet-action-sub">付款码与收款码</div>
+                        </span>
+                    </span>
+                    <span class="wallet-action-right"><i class="fas fa-chevron-right"></i></span>
+                </button>
+
+                <button class="wallet-action-btn" id="wallet-action-transfer" type="button">
+                    <span class="wallet-action-main">
+                        <span class="wallet-action-ico" style="background-color:#d8a8a8;">
+                            <i class="fas fa-exchange-alt"></i>
+                        </span>
+                        <span class="wallet-action-text">
+                            <div class="wallet-action-title">转账</div>
+                            <div class="wallet-action-sub">给好友转一笔</div>
+                        </span>
+                    </span>
+                    <span class="wallet-action-right"><i class="fas fa-chevron-right"></i></span>
+                </button>
+
+                <button class="wallet-action-btn" id="wallet-action-bill" type="button">
+                    <span class="wallet-action-main">
+                        <span class="wallet-action-ico" style="background-color:#c9b1be;">
+                            <i class="fas fa-receipt"></i>
+                        </span>
+                        <span class="wallet-action-text">
+                            <div class="wallet-action-title">账单</div>
+                            <div class="wallet-action-sub">查看最近记录</div>
+                        </span>
+                    </span>
+                    <span class="wallet-action-right"><i class="fas fa-chevron-right"></i></span>
+                </button>
+
+                <button class="wallet-action-btn" id="wallet-action-cards" type="button">
+                    <span class="wallet-action-main">
+                        <span class="wallet-action-ico" style="background-color:#b8a38d;">
+                            <i class="fas fa-credit-card"></i>
+                        </span>
+                        <span class="wallet-action-text">
+                            <div class="wallet-action-title">银行卡</div>
+                            <div class="wallet-action-sub">添加与管理</div>
+                        </span>
+                    </span>
+                    <span class="wallet-action-right"><i class="fas fa-chevron-right"></i></span>
+                </button>
+            </div>
+
+            <div class="settings-group" id="wallet-records-group">
+                <div class="wallet-section-hd">最近记录</div>
+                <div class="wallet-tx-list" id="wallet-tx-list"></div>
+                <div class="wallet-empty" id="wallet-tx-empty">暂无记录</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="wallet-modal" id="wallet-code-modal" aria-hidden="true">
+        <div class="wallet-modal-mask" id="wallet-code-mask"></div>
+        <div class="wallet-modal-card" role="dialog" aria-modal="true" aria-label="收付款">
+            <div class="wallet-modal-hd">
+                <div class="wallet-modal-title">收付款</div>
+                <button class="wallet-modal-close" id="wallet-code-close" type="button" aria-label="关闭">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="wallet-code-box">
+                <div class="wallet-code-bar" aria-hidden="true"></div>
+                <div class="wallet-code-num" id="wallet-code-num">0000 0000 0000 0000</div>
+                <div class="wallet-code-hint">向商家出示即可</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="wallet-modal" id="wallet-cards-modal" aria-hidden="true">
+        <div class="wallet-modal-mask" id="wallet-cards-mask"></div>
+        <div class="wallet-modal-card" role="dialog" aria-modal="true" aria-label="银行卡">
+            <div class="wallet-modal-hd">
+                <div class="wallet-modal-title">银行卡</div>
+                <button class="wallet-modal-close" id="wallet-cards-close" type="button" aria-label="关闭">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="wallet-card-list" id="wallet-card-list"></div>
+            <div class="wallet-card-actions">
+                <button class="wallet-card-add" id="wallet-add-card-btn" type="button">添加银行卡</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 全局人设管理页面 -->
+    <div class="settings-page" id="persona-management-page">
+        <div class="settings-header">
+            <div class="settings-back" id="persona-management-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="settings-title">人设管理</div>
+        </div>
+
+        <div class="settings-body">
+            <div class="settings-group" style="padding:12px 15px 10px 15px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                    <div>
+                        <div style="font-size:15px; font-weight:600; color:#333;">默认人设</div>
+                        <div id="persona-default-desc" style="margin-top:4px; font-size:13px; color:#888;">未设置</div>
+                    </div>
+                    <button id="persona-add-profile" style="padding:6px 14px; border-radius:999px; border:none; background:#a3b1c6; color:#fff; font-size:13px; cursor:pointer;">新建人设</button>
+                </div>
+                <div style="font-size:12px; color:#aaa; line-height:1.5;">
+                    为自己创建不同的人设卡片，在与好友相处时切换更合适的自我介绍。
+                </div>
+            </div>
+
+            <div class="settings-group" style="padding:0 15px 15px 15px;">
+                <div id="persona-profile-list"></div>
+            </div>
+        </div>
+        <div class="persona-editor-modal" id="persona-editor-modal">
+            <div class="persona-editor-sheet" id="persona-editor-panel" role="dialog" aria-modal="true" aria-label="人设编辑">
+                <div class="persona-editor-sheet-body">
+                    <div style="display:flex; align-items:center; gap:14px; margin-bottom:12px;">
+                        <div id="persona-editor-avatar" class="persona-editor-avatar">我</div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="display:flex; gap:8px; margin-bottom:6px;">
+                                <button type="button" id="persona-editor-upload-btn" class="persona-editor-upload-btn">选择头像</button>
+                                <button type="button" id="persona-editor-sync-btn" class="persona-editor-upload-btn" style="background-color:#f0f2f5; color:#666;">同步资料</button>
+                            </div>
+                            <div class="persona-editor-upload-hint">支持 JPG / PNG，建议小于 1MB</div>
+                            <input type="file" id="persona-editor-file" accept="image/*" style="display:none;">
+                        </div>
+                    </div>
+                    <div class="persona-editor-field">
+                        <label for="persona-editor-name">人设名称</label>
+                        <input type="text" id="persona-editor-name" maxlength="20" placeholder="例如：上班版的我">
+                    </div>
+                    <div class="persona-editor-field">
+                        <label for="persona-editor-desc">人设描述</label>
+                        <textarea id="persona-editor-desc" rows="4" maxlength="400" placeholder="介绍这个人设的性格、语气、适用场景等"></textarea>
+                    </div>
+                    <div class="persona-editor-actions">
+                        <button type="button" id="persona-editor-remove">删除</button>
+                        <div style="display:flex; gap:10px;">
+                            <button type="button" id="persona-editor-cancel">取消</button>
+                            <button type="button" id="persona-editor-save">保存</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 提示词调整页面 -->
+    <div class="prompt-adjustment-page" id="prompt-adjustment-page">
+        <div class="prompt-adjustment-header">
+            <div class="prompt-adjustment-back" id="prompt-adjustment-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="prompt-adjustment-title">提示词调整</div>
+            <div class="prompt-adjustment-header-actions"></div>
+        </div>
+        
+        <div class="prompt-adjustment-body">
+                <div class="prompt-preset-strip">
+                <div class="prompt-preset-strip-main">
+                    <div class="prompt-preset-strip-title">模板预设</div>
+                    <div class="prompt-preset-strip-desc">一键应用常用提示词组合，之后可微调再保存。</div>
+                </div>
+                <div class="prompt-preset-buttons" id="prompt-preset-buttons"></div>
+                    <button type="button" class="prompt-preset-add-btn" id="add-prompt-preset-btn">从当前设置新增预设</button>
+            </div>
+
+            <div class="prompt-group" data-group="basic">
+                <div class="prompt-group-header">
+                    <div class="prompt-group-title">基础提示词结构</div>
+                    <i class="fas fa-chevron-down prompt-group-arrow"></i>
+                </div>
+                <div class="prompt-group-content">
+                    <div class="prompt-section">
+                        <div class="prompt-section-title">
+                            <span>发送顺序</span>
+                            <span class="prompt-reset-link" id="reset-prompt-order" style="font-size: 13px; color: #576b95; cursor: pointer; font-weight: normal;">恢复默认</span>
+                        </div>
+                        <div class="prompt-order-list" id="prompt-order-list"></div>
+                        <div class="variable-desc" style="margin-top:6px; color:#999;">
+                            世界书内容来自“世界书”管理与好友绑定条目，顺序越靠上越优先。
+                        </div>
+                    </div>
+
+                    <div class="prompt-section">
+                        <div class="prompt-section-title">
+                            <span>系统指令</span>
+                            <span class="prompt-reset-link" id="reset-system-prompt-only" style="font-size: 13px; color: #576b95; cursor: pointer; font-weight: normal;">恢复默认</span>
+                        </div>
+                        <textarea class="prompt-system-input" id="prompt-system-input" placeholder="输入系统级规则、格式要求或角色扮演框架"></textarea>
+                    </div>
+
+                    <div class="prompt-section">
+                        <div class="prompt-section-title">
+                            <span>AI字卡模式提示词</span>
+                            <span class="prompt-reset-link" id="reset-card-prompt" style="font-size: 13px; color: #576b95; cursor: pointer; font-weight: normal;">恢复默认</span>
+                        </div>
+                        <textarea class="prompt-system-input" id="prompt-card-input" placeholder="输入AI字卡模式的专用提示词..."></textarea>
+                        <div class="variable-desc" style="margin-top:5px; color:#999;">
+                            * 仅在开启"AI字卡模式"时生效。请保留关键指令如"仅输出ID"、"决策引擎"等。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prompt-group" data-group="advanced">
+                <div class="prompt-group-header">
+                    <div class="prompt-group-title">高级模板与后处理</div>
+                    <i class="fas fa-chevron-down prompt-group-arrow"></i>
+                </div>
+                <div class="prompt-group-content">
+                    <div class="prompt-section prompt-section--secondary">
+                        <div class="prompt-section-title">
+                            <span>高级模板编辑</span>
+                            <span class="prompt-reset-link" id="reset-sub-templates" style="font-size: 13px; color: #576b95; cursor: pointer; font-weight: normal;">恢复默认</span>
+                        </div>
+                        <div class="prompt-subtemplate-grid">
+                            <div class="prompt-subtemplate-item">
+                                <div class="prompt-subtemplate-label">角色设定块 (char_settings)</div>
+                                <textarea class="prompt-subtemplate-input" id="prompt-sub-char-settings" placeholder="{{char_desc}}"></textarea>
+                            </div>
+                            <div class="prompt-subtemplate-item">
+                                <div class="prompt-subtemplate-label">系统指令块 (system)</div>
+                                <textarea class="prompt-subtemplate-input" id="prompt-sub-system" placeholder="{{system_prompt}}"></textarea>
+                            </div>
+                            <div class="prompt-subtemplate-item">
+                                <div class="prompt-subtemplate-label">示例对话块 (examples)</div>
+                                <textarea class="prompt-subtemplate-input" id="prompt-sub-examples" placeholder="{{examples_content}}"></textarea>
+                            </div>
+                            <div class="prompt-subtemplate-item">
+                                <div class="prompt-subtemplate-label">历史行格式 (history_line)</div>
+                                <textarea class="prompt-subtemplate-input" id="prompt-sub-history-line" placeholder="[#{{id}}] {{role}}: {{content}}"></textarea>
+                            </div>
+                            <div class="prompt-subtemplate-item">
+                                <div class="prompt-subtemplate-label">世界书块 (world_lore)</div>
+                                <textarea class="prompt-subtemplate-input" id="prompt-sub-world-lore" placeholder="{{world_lore_content}}"></textarea>
+                            </div>
+                        </div>
+                        <div class="variable-desc" style="margin-top:5px; color:#999;">
+                            可用变量：{{char_name}} / {{char_desc}} / {{system_prompt}} / {{examples_content}} / {{world_lore_content}} / {{id}} / {{role}} / {{content}} / {{char}} / {{user}}。
+                        </div>
+                    </div>
+
+                    <div class="prompt-section prompt-section--secondary">
+                        <div class="prompt-section-title">
+                            <span>正则净化 (回复后处理)</span>
+                            <span class="prompt-reset-link" id="reset-regex-settings" style="font-size: 13px; color: #576b95; cursor: pointer; font-weight: normal;">恢复默认</span>
+                        </div>
+                        <div class="regex-list" id="regex-list"></div>
+                        <button class="add-regex-btn" id="add-regex-btn">+ 添加规则</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prompt-group ai-format-repair-section" data-group="repair">
+                <div class="prompt-group-header">
+                    <div class="prompt-group-title">格式修复</div>
+                    <i class="fas fa-chevron-down prompt-group-arrow"></i>
+                </div>
+                <div class="prompt-group-content">
+                    <div class="prompt-section prompt-section--secondary">
+                        <div class="prompt-section-title">
+                            <span>AI格式修复</span>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                            <span style="font-size: 13px; color: #555;">启用修复</span>
+                            <label class="switch">
+                                <input type="checkbox" id="ai-format-repair-toggle">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        
+                        <div id="ai-format-repair-settings" style="display: none;">
+                            <div style="margin-bottom: 10px;">
+                                <label style="font-size: 12px; color: #777; display: block; margin-bottom: 4px;">选择修复模型 (API配置)</label>
+                                <select id="ai-format-repair-profile" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #ddd; background: #fff;">
+                                    <option value="" disabled selected>请选择配置方案</option>
+                                </select>
+                                <div style="font-size: 11px; color: #999; margin-top: 4px;">建议使用更廉价的模型(如 gpt-3.5-turbo)</div>
+                            </div>
+                            
+                            <div style="margin-bottom: 10px;">
+                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <label style="font-size: 12px; color: #777;">修复提示词 (System Prompt)</label>
+                                    <span id="reset-repair-prompt" style="font-size: 11px; color: #576b95; cursor: pointer;">恢复默认</span>
+                                </div>
+                                <textarea id="ai-format-repair-prompt" style="width: 100%; height: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; resize: vertical; line-height: 1.4;"></textarea>
+                            </div>
+                            
+                            <div style="margin-bottom: 10px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <label style="font-size: 12px; color: #777;">AI字卡模式修复提示词 (Card Mode Prompt)</label>
+                                    <span id="reset-repair-card-prompt" style="font-size: 11px; color: #576b95; cursor: pointer;">恢复默认</span>
+                                </div>
+                                <textarea id="ai-format-repair-card-prompt" style="width: 100%; height: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; resize: vertical; line-height: 1.4;" placeholder="专用于字卡模式的格式修复提示词..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div style="font-size: 11px; color: #999; line-height: 1.4; margin-top: 8px;">
+                            * 使用选定的API配置对AI回复进行格式标准化，不修改内容。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="variable-desc" id="variable-desc-area">点击模块查看详细说明</div>
+
+            <div class="prompt-actions">
+                <button class="prompt-btn secondary" id="reset-prompt-templates">重置默认</button>
+                <button class="prompt-btn primary" id="save-prompt-templates">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CSS美化设置页面 -->
+    <div class="css-settings-page" id="css-settings-page">
+        <div class="css-settings-header">
+            <div class="css-settings-back" id="css-settings-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="css-settings-title">界面美化</div>
+        </div>
+        
+        <div class="css-settings-body">
+            <div class="css-settings-section">
+                <h3 class="css-section-title">预设主题</h3>
+                <div class="css-preset-grid" id="css-preset-grid">
+                    <!-- 预设主题会动态生成 -->
+                </div>
+            </div>
+
+            <div class="css-settings-section">
+                <h3 class="css-section-title">我的预设</h3>
+                <div class="css-user-preset-list" id="css-user-preset-list"></div>
+                <div class="css-hint">点击预设切换样式；右侧按钮可编辑/删除</div>
+            </div>
+            
+            <div class="css-settings-section">
+                <h3 class="css-section-title">自定义样式</h3>
+                <div class="css-custom-section">
+                    <div class="css-input-group">
+                        <label class="css-input-label">自定义CSS代码</label>
+                        <textarea class="css-textarea" id="custom-css-textarea" placeholder="在此处输入自定义CSS代码..."></textarea>
+                        <div class="css-hint">
+                            提示：聊天页常用选择器：#dialogue-page、.message-content、.dialogue-input、.menu-panel、.message-avatar、#dialogue-avatar。
+                        </div>
+                    </div>
+
+                    <div class="css-actions">
+                        <button class="css-btn secondary" id="save-css-preset-btn">保存为预设</button>
+                        <button class="css-btn secondary" id="update-css-preset-btn" disabled>更新当前预设</button>
+                    </div>
+                    
+                    <div class="css-actions">
+                        <button class="css-btn secondary" id="reset-css-btn">重置</button>
+                        <button class="css-btn primary" id="apply-css-btn">应用样式</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 个人资料编辑对话框 -->
+    <div class="profile-edit-dialog" id="profile-edit-dialog">
+        <div class="profile-edit-content">
+            <div class="profile-edit-title" id="profile-edit-title">修改个人资料</div>
+            
+            <div class="profile-edit-avatar-section">
+                <div class="profile-edit-avatar" id="profile-edit-avatar-preview">
+                    <div class="profile-edit-avatar-text" id="profile-edit-avatar-text">微</div>
+                </div>
+                <div class="profile-edit-upload-hint">
+                    <i class="fas fa-info-circle"></i> 点击头像可上传自定义头像
+                </div>
+                
+                <div class="profile-color-options" id="profile-color-options">
+                    <div class="profile-color-option bg-mauve" data-color="bg-mauve"></div>
+                    <div class="profile-color-option bg-dusty-rose" data-color="bg-dusty-rose"></div>
+                    <div class="profile-color-option bg-sage" data-color="bg-sage"></div>
+                    <div class="profile-color-option bg-slate" data-color="bg-slate"></div>
+                    <div class="profile-color-option bg-clay" data-color="bg-clay"></div>
+                    <div class="profile-color-option bg-sand" data-color="bg-sand"></div>
+                    <div class="profile-color-option bg-moss" data-color="bg-moss"></div>
+                </div>
+            </div>
+            
+            <div class="profile-edit-input-group">
+                <label class="profile-edit-label">昵称</label>
+                <input type="text" class="profile-edit-input" id="profile-name-input" 
+                       placeholder="请输入昵称" maxlength="20">
+                <div class="profile-edit-hint">昵称最多20个字符</div>
+            </div>
+            
+            <div class="profile-edit-input-group">
+                <label class="profile-edit-label">微信号</label>
+                <input type="text" class="profile-edit-input" id="profile-wechat-id-input" 
+                       placeholder="请输入微信号" maxlength="30">
+                <div class="profile-edit-hint">微信号最多30个字符</div>
+            </div>
+            
+            <div class="profile-edit-actions">
+                <button class="profile-edit-btn cancel" id="profile-edit-cancel">取消</button>
+                <button class="profile-edit-btn save" id="profile-edit-save">保存</button>
+            </div>
+            
+            <input type="file" class="profile-edit-upload" id="profile-edit-upload" accept="image/*">
+        </div>
+    </div>
+    
+    <!-- 添加好友弹窗 -->
+    <div class="add-friend-modal" id="addFriendModal">
+        <div class="add-friend-card">
+            <div class="modal-header">
+                <div class="modal-title">添加新好友</div>
+                <button class="close-modal" id="closeAddFriendModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="avatar-section">
+                <div class="avatar-preview" id="avatarPreview">
+                    <span id="avatarText">?</span>
+                </div>
+                <div class="avatar-placeholder">
+                    <i class="fas fa-info-circle"></i> 点击可上传自定义头像
+                </div>
+                
+                <div class="avatar-colors" id="avatarColors">
+                    <div class="avatar-color-option bg-mauve selected" data-color="bg-mauve"></div>
+                    <div class="avatar-color-option bg-dusty-rose" data-color="bg-dusty-rose"></div>
+                    <div class="avatar-color-option bg-sage" data-color="bg-sage"></div>
+                    <div class="avatar-color-option bg-slate" data-color="bg-slate"></div>
+                    <div class="avatar-color-option bg-clay" data-color="bg-clay"></div>
+                    <div class="avatar-color-option bg-sand" data-color="bg-sand"></div>
+                    <div class="avatar-color-option bg-moss" data-color="bg-moss"></div>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">好友姓名 <span>*</span></label>
+                <input type="text" class="text-input" id="friendName" 
+                       placeholder="请输入好友姓名" maxlength="20">
+                <div class="error-message" id="nameError">姓名不能为空</div>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">微信号（可选）</label>
+                <input type="text" class="text-input" id="friendWechatId" 
+                       placeholder="请输入微信号" maxlength="30">
+                <div class="error-message" id="wechatIdError">微信号不能超过30个字符</div>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">好友简介</label>
+                <textarea class="text-input" id="friendIntro" 
+                       placeholder="请用一句话形容这位好友" rows="2" style="resize: none; padding-top: 8px; height: auto; min-height: 60px;"></textarea>
+                <div class="input-hint" style="font-size: 11px; color: #999; margin-top: 4px; font-family: monospace;">// 请用一句话形容这位好友</div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="modal-btn secondary" id="cancelAddFriend">取消</button>
+                <button class="modal-btn primary" id="confirmAddFriend" disabled>添加好友</button>
+            </div>
+            
+            <input type="file" class="avatar-upload" id="avatarUpload" accept="image/*">
+        </div>
+    </div>
+    
+    <!-- 对话页面：背景由独立层承担，键盘仅影响下方内容层 -->
+    <div class="dialogue-page" id="dialogue-page">
+        <div class="dialogue-page__bg"></div>
+        <div class="dialogue-page__content">
+        <div class="dialogue-header">
+            <div class="dialogue-back" id="dialogue-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="dialogue-contact">
+                <div class="dialogue-contact-avatar" id="dialogue-avatar"></div>
+                <div class="dialogue-contact-name" id="dialogue-name"></div>
+            </div>
+            <div class="header-icons">
+                <i class="fas fa-phone-alt" id="phone-mode-btn"></i>
+                <i class="fas fa-eye" id="friend-status-btn"></i>
+                <i class="fas fa-ellipsis-v" id="friend-settings-btn"></i>
+                <!-- Reply Mode Menu -->
+                <div class="mode-menu" id="modeMenu">
+                    <div class="mode-menu-item active" data-mode="realtime">
+                        <i class="fas fa-bolt"></i>
+                        <span>实时回复</span>
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="mode-menu-item" data-mode="manual">
+                        <i class="fas fa-hand-pointer"></i>
+                        <span>手动回复</span>
+                        <i class="fas fa-check" style="opacity: 0;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dialogue-body" id="dialogue-messages">
+            <div class="dialogue-empty">
+                <i class="fas fa-comments"></i>
+                <h3>开始私密对话</h3>
+                <p>这是一个完全私密的一对一聊天室。所有消息仅存储在您的设备上，不会被发送到任何服务器。</p>
+            </div>
+        </div>
+        
+        <!-- 引用预览区域 -->
+        <div class="quote-preview" id="quotePreview">
+            <div class="quote-content">
+                <span class="quote-sender"></span>
+                <span class="quote-text"></span>
+            </div>
+            <button class="cancel-quote" id="cancelQuote" title="取消引用">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <!-- 菜单面板 -->
+        <div class="menu-panel" id="menuPanel">
+            <div class="menu-grid" id="menuGrid"></div>
+        </div>
+
+        <div class="menu-overlay" id="menuOverlay"></div>
+
+        <!-- 输入区域 -->
+        <div class="dialogue-input">
+            <i class="fas fa-plus-circle" id="menuButton"></i>
+            <textarea class="dialogue-input-box" id="message-input" placeholder="输入消息" rows="1"></textarea>
+            <i class="far fa-smile" id="manual-reply-trigger"></i>
+            <i class="fas fa-paper-plane" id="send-button"></i>
+        </div>
+        <!-- 键盘占位：作为flex item占据空间，实现物理占位 -->
+        <div class="keyboard-spacer"></div>
+        </div>
+
+        <!-- 浮窗/相机等：移入内容层内部，确保处于内容层 stacking context 之上 -->
+        <input type="file" id="photoInput" accept="image/*" style="display: none;">
+        <div id="cameraContainer" class="dialogue-camera-layer" style="display: none;">
+            <video id="cameraVideo" width="100%" height="100%" autoplay playsinline></video>
+            <div class="camera-controls">
+                <button type="button" id="takePhotoButton" class="camera-btn-take" aria-label="拍照"></button>
+                <button type="button" id="closeCameraButton" class="camera-btn-close" aria-label="关闭">×</button>
+            </div>
+        </div>
+        <div class="card-overlay" id="captureChoiceOverlay">
+            <div class="custom-replies-card capture-card">
+                <button class="card-close" id="closeCaptureChoice"><i class="fas fa-times"></i></button>
+                <div class="capture-title">选择拍摄方式</div>
+                <div class="capture-actions">
+                    <button class="capture-option" id="captureRealBtn" type="button"><i class="fas fa-camera"></i><span>真实拍摄</span></button>
+                    <button class="capture-option" id="captureTextBtn" type="button"><i class="fas fa-font"></i><span>文字拍摄</span></button>
+                </div>
+                <div class="capture-note">文字拍摄会发送空图片卡片，翻转后显示描述</div>
+            </div>
+        </div>
+        <div class="card-overlay" id="textCaptureOverlay">
+            <div class="custom-replies-card capture-card">
+                <button class="card-close" id="closeTextCapture"><i class="fas fa-times"></i></button>
+                <div class="capture-title">文字拍摄</div>
+                <textarea class="text-input capture-input" id="textCaptureInput" rows="4" placeholder="输入图片描述"></textarea>
+                <div class="capture-actions inline">
+                    <button class="capture-option" id="cancelTextCaptureBtn">取消</button>
+                    <button class="capture-option primary" id="sendTextCaptureBtn">发送</button>
+                </div>
+            </div>
+        </div>
+        <div class="card-overlay" id="voiceMessageOverlay">
+            <div class="custom-replies-card capture-card">
+                <button class="card-close" id="closeVoiceMessage"><i class="fas fa-times"></i></button>
+                <div class="capture-title">发语音消息</div>
+                <textarea class="text-input capture-input" id="voiceMessageInput" rows="4" placeholder="输入语音内容文字..."></textarea>
+                <div class="capture-actions inline">
+                    <button class="capture-option" id="cancelVoiceMessageBtn">取消</button>
+                    <button class="capture-option primary" id="sendVoiceMessageBtn">发送</button>
+                </div>
+                <div class="capture-note">不会录音，只是以语音样式发送文字。</div>
+            </div>
+        </div>
+        <div class="card-overlay" id="transferOverlay">
+            <div class="custom-replies-card capture-card">
+                <button class="card-close" id="closeTransferOverlay"><i class="fas fa-times"></i></button>
+                <div class="capture-title">转账</div>
+                <input class="reply-input" id="transferAmountInput" placeholder="输入转账金额（例如 10）" inputmode="decimal" autocomplete="off" />
+                <input class="reply-input" id="transferRemarkInput" placeholder="备注（可选，最多 20 字）" maxlength="20" autocomplete="off" />
+                <div class="capture-actions inline">
+                    <button class="capture-option" id="cancelTransferBtn">取消</button>
+                    <button class="capture-option primary" id="confirmTransferBtn">确认转账</button>
+                </div>
+                <div class="capture-note">确认后会发送一条转账消息，对方可收款或退回。</div>
+            </div>
+        </div>
+        <div class="card-overlay" id="incomingTransferOverlay">
+            <div class="custom-replies-card capture-card transfer-overlay-card">
+                <div class="transfer-card-icon"><i class="fas fa-comments-dollar"></i></div>
+                <button class="card-close" id="closeIncomingTransferOverlay"><i class="fas fa-times"></i></button>
+                <div class="capture-title">好友转账</div>
+                <div class="transfer-amount" id="incomingTransferAmount"></div>
+                <div class="transfer-remark" id="incomingTransferRemark"></div>
+                <div class="capture-actions inline" id="incomingTransferActions">
+                    <button class="capture-option primary" id="acceptIncomingTransferBtn">收款</button>
+                    <button class="capture-option" id="returnIncomingTransferBtn">退回</button>
+                </div>
+                <div class="transfer-status-text" id="incomingTransferStatusText" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- 4. 对话页内部浮窗：好友状态、自定义回复、设置等 -->
+        <div class="card-overlay" id="friendStatusOverlay" aria-hidden="true">
+            <div class="custom-replies-card friend-status-card" role="dialog" aria-modal="true" aria-label="好友状态">
+                <button class="card-close" id="closeFriendStatus" type="button" aria-label="关闭">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="friend-status-header">
+                    <div class="friend-status-avatar" id="friendStatusAvatar">
+                        <span class="friend-status-avatar-text" id="friendStatusAvatarText"></span>
+                    </div>
+                    <div class="friend-status-title">好友状态</div>
+                    <div class="friend-status-name" id="friendStatusName"></div>
+                </div>
+                <div class="friend-status-content">
+                    <div class="friend-status-line">
+                        <div class="friend-status-key">心情</div>
+                        <div class="friend-status-val" id="friendStatusMood"></div>
+                    </div>
+
+                    <div class="friend-status-line friend-status-line--favor">
+                        <div class="friend-status-key">好感度</div>
+                        <div class="friend-status-val friend-status-val--favor">
+                            <span class="friend-status-favor-text" id="friendStatusFavor"></span>
+                            <span class="friend-status-meter" aria-hidden="true">
+                                <span class="friend-status-meter-bar" id="friendStatusFavorBar"></span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="friend-status-block">
+                        <div class="friend-status-key">穿着</div>
+                        <div class="friend-status-val friend-status-val--prose" id="friendStatusOutfit"></div>
+                    </div>
+
+                    <div class="friend-status-block">
+                        <div class="friend-status-key">动作</div>
+                        <div class="friend-status-val friend-status-val--prose" id="friendStatusAction"></div>
+                    </div>
+
+                    <div class="friend-status-block">
+                        <div class="friend-status-key">心声</div>
+                        <div class="friend-status-val friend-status-val--prose" id="friendStatusInnerVoice"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 自定义回复卡片 -->
+        <div class="card-overlay" id="customRepliesOverlay">
+            <div class="custom-replies-card">
+                <button class="card-close" id="closeCustomReplies">
+                    <i class="fas fa-times"></i>
+                </button>
+                
+                <div class="custom-tabs">
+                    <button class="custom-tab active" data-tab="custom">自定义回复</button>
+                    <button class="custom-tab" data-tab="preset">预设回复</button>
+                </div>
+                
+                <!-- 自定义回复板块 -->
+                <div class="custom-tab-content active" id="customTab">
+                    <div class="add-reply-form">
+                        <input type="text" class="reply-input" id="customReplyInput" placeholder="输入自定义回复内容...">
+                        <button class="add-reply-btn" id="addCustomReply">添加</button>
+                    </div>
+                    <div class="replies-list" id="customRepliesList">
+                        <!-- 自定义回复列表会动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 预设回复板块 -->
+                <div class="custom-tab-content" id="presetTab">
+                    <div class="preset-controls">
+                        <div class="switch-container">
+                            <span class="switch-label">启用预设回复</span>
+                            <label class="switch">
+                                <input type="checkbox" id="presetSwitch">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- 预设回复管理头部 -->
+                    <div class="preset-management">
+                        <div class="preset-management-header">
+                            <div class="preset-management-title">预设回复管理</div>
+                            <div class="preset-management-actions">
+                                <button class="batch-import-btn" id="openBatchImport">
+                                    <i class="fas fa-file-import"></i> 批量导入
+                                </button>
+                                <button class="batch-export-btn" id="openBatchExport">
+                                    <i class="fas fa-file-export"></i> 批量导出
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 预设回复文件夹列表 -->
+                    <div class="replies-list" id="presetRepliesList">
+                        <!-- 预设回复文件夹会动态生成 -->
+                    </div>
+                    
+                    <div class="preset-hint">
+                        提示：启用预设后，TA可以从预设回复中选择回复您的消息
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 批量导入浮窗 -->
+        <div class="batch-import-overlay" id="batchImportOverlay">
+            <div class="batch-import-card">
+                <button class="card-close" id="closeBatchImport">
+                    <i class="fas fa-times"></i>
+                </button>
+                
+                <div class="batch-import-title">批量导入预设回复</div>
+                
+                <div class="batch-import-content">
+                    <div class="folder-management">
+                        <div class="folder-header">
+                            <div class="folder-title">选择目标文件夹</div>
+                            <div class="folder-controls">
+                                <select class="folder-select" id="batchImportFolderSelect">
+                                    <!-- 文件夹选项会动态生成 -->
+                                </select>
+                                <div class="folder-actions">
+                                    <button class="folder-action-btn primary" id="newFolderForImport">
+                                        <i class="fas fa-plus"></i> 新建
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <textarea class="batch-import-textarea" id="batchImportTextarea" 
+                            placeholder="每行一个回复内容..."></textarea>
+                    
+                    <div class="batch-import-actions">
+                        <button class="import-file-btn" id="importFromFile">
+                            <i class="fas fa-file-upload"></i> 选择文件
+                        </button>
+                        <button class="import-execute-btn" id="executeBatchImport">
+                            <i class="fas fa-check"></i> 导入
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="batch-import-overlay" id="batchExportOverlay">
+            <div class="batch-import-card">
+                <button class="card-close" id="closeBatchExport">
+                    <i class="fas fa-times"></i>
+                </button>
+
+                <div class="batch-import-title">批量导出</div>
+
+                <div class="batch-import-content">
+                    <div class="folder-management">
+                        <div class="folder-header">
+                            <div class="folder-title">导出类型</div>
+                            <div class="folder-controls">
+                                <select class="folder-select" id="batchExportTypeSelect">
+                                    <option value="folder">导出文件夹预设</option>
+                                    <option value="all">导出全部</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="folder-management" id="batchExportFolderRow">
+                        <div class="folder-header">
+                            <div class="folder-title">选择文件夹</div>
+                            <div class="folder-controls">
+                                <select class="folder-select" id="batchExportFolderSelect"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <textarea class="batch-import-textarea" id="batchExportTextarea" readonly placeholder="点击“生成内容”，然后可复制或下载"></textarea>
+
+                    <div class="batch-import-hint">
+                        <p>• 生成后可直接复制，或下载为 .json 文件</p>
+                    </div>
+
+                    <div class="batch-import-actions">
+                        <button class="import-file-btn" id="generateBatchExport">
+                            <i class="fas fa-wand-magic-sparkles"></i> 生成内容
+                        </button>
+                        <button class="import-template-btn" id="copyBatchExport">
+                            <i class="fas fa-copy"></i> 复制
+                        </button>
+                        <button class="import-execute-btn" id="downloadBatchExport">
+                            <i class="fas fa-download"></i> 下载
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 聊天模式选择面板 -->
+        <div class="card-overlay" id="chatModeOverlay">
+            <div class="custom-replies-card" style="height: auto; max-height: 80vh;">
+                <button class="card-close" id="closeChatMode">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="sticker-header">
+                    <h3>切换聊天模式</h3>
+                </div>
+                <div style="padding: 20px;" id="chatModeOptions">
+                    <!-- 动态生成或静态 -->
+                    <div class="mode-option" data-mode="card">
+                        <div class="mode-icon"><i class="fas fa-layer-group"></i></div>
+                        <div class="mode-info">
+                            <div class="mode-title">纯字卡聊天</div>
+                            <div class="mode-desc">仅使用手动发送的字卡，不使用AI生成回复。</div>
+                        </div>
+                        <div class="mode-check"><i class="fas fa-check"></i></div>
+                    </div>
+                    <div class="mode-option" data-mode="ai_card">
+                        <div class="mode-icon"><i class="fas fa-magic"></i></div>
+                        <div class="mode-info">
+                            <div class="mode-title">AI字卡聊天</div>
+                            <div class="mode-desc">AI选取字卡</div>
+                        </div>
+                        <div class="mode-check"><i class="fas fa-check"></i></div>
+                    </div>
+                    <div class="mode-option" data-mode="ai_chat">
+                        <div class="mode-icon"><i class="fas fa-robot"></i></div>
+                        <div class="mode-info">
+                            <div class="mode-title">AI聊天</div>
+                            <div class="mode-desc">AI直接生成文本回复，像正常聊天一样。</div>
+                        </div>
+                        <div class="mode-check"><i class="fas fa-check"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 表情包面板 -->
+        <div class="card-overlay sheet-overlay" id="stickerPanelOverlay">
+            <div class="sticker-panel-card">
+                <div class="sticker-header">
+                    <h3>表情包</h3>
+                    <div class="sticker-actions">
+                        <button id="chatAddStickerBtn" class="icon-btn" title="添加表情包" style="color: #666;">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button id="toggleStickerShare" class="icon-btn" title="共享表情包到好友" style="color: #666;">
+                            <i class="fas fa-share-alt"></i>
+                        </button>
+                        <button id="toggleStickerEdit" class="icon-btn" title="管理表情包" style="color: #666;">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="sticker-grid" id="stickerGrid">
+                    <!-- 动态生成 -->
+                </div>
+                <input type="file" id="stickerInput" multiple accept="image/*" style="display: none;">
+            </div>
+        </div>
+
+        <div class="batch-import-overlay" id="stickerImportOverlay">
+            <div class="batch-import-card">
+                <div class="batch-import-title">导入表情包</div>
+                <div class="batch-import-content">
+                    <textarea class="batch-import-textarea" id="stickerImportTextarea" placeholder="支持单个URL、多行URL，或JSON数组（字符串数组 / 对象数组）"></textarea>
+                    <div class="batch-import-hint">对象数组支持字段：url/src/content</div>
+                    <div style="margin-top: 15px; margin-bottom: 5px; font-size: 13px; color: #666; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+                        <span>导入到文件夹：</span>
+                        <button id="stickerImportNewFolderBtn" style="background: none; border: none; color: #1a73e8; font-size: 12px; cursor: pointer; padding: 0;">
+                            <i class="fas fa-plus"></i> 新建文件夹
+                        </button>
+                    </div>
+                    <select class="batch-import-select" id="stickerImportFolderSelect" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd; background: white; margin-bottom: 15px; font-size: 14px;">
+                        <!-- 动态生成 -->
+                    </select>
+                    <div class="batch-import-actions">
+                        <button class="import-file-btn" id="stickerImportFromFile">
+                            <i class="fas fa-file-upload"></i> 选择文件
+                        </button>
+                        <input type="file" id="stickerImportFile" accept=".json,.txt" style="display: none;">
+                        <button class="import-file-btn" id="stickerImportPickImages">
+                            <i class="fas fa-image"></i> 选图
+                        </button>
+                        <button class="import-template-btn" id="stickerImportExample">
+                            <i class="fas fa-code"></i> 示例
+                        </button>
+                        <button class="import-execute-btn" id="executeStickerImport">
+                            <i class="fas fa-check"></i> 导入
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 文件夹对话框 -->
+        <div class="folder-dialog" id="folderDialog">
+            <div class="folder-dialog-content">
+                <div class="folder-dialog-header">
+                    <div class="folder-dialog-title" id="folderDialogTitle">新建文件夹</div>
+                    <button class="close-folder-dialog" id="closeFolderDialog">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <input type="text" class="folder-input" id="folderNameInput" 
+                    placeholder="输入文件夹名称..." maxlength="20">
+                <div class="folder-dialog-buttons">
+                    <button class="folder-dialog-btn secondary" id="cancelFolder">取消</button>
+                    <button class="folder-dialog-btn primary" id="saveFolder">保存</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 文件夹管理器浮窗 -->
+        <div class="folders-manager-overlay" id="foldersManagerOverlay">
+            <div class="folders-manager-card">
+                <button class="card-close" id="closeFoldersManager">
+                    <i class="fas fa-times"></i>
+                </button>
+
+                <div class="batch-import-title">文件夹管理</div>
+
+                <div class="folders-list" id="foldersList">
+                    <!-- 文件夹列表会动态生成 -->
+                </div>
+
+                <div class="folder-dialog-buttons">
+                    <button class="folder-dialog-btn primary" id="addFolderFromManager">
+                        <i class="fas fa-plus"></i> 添加新文件夹
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 消息统计卡片 -->
+        <div class="card-overlay" id="metricsOverlay">
+            <div class="custom-replies-card">
+                <button class="card-close" id="closeMetrics">
+                    <i class="fas fa-times"></i>
+                </button>
+
+                <div class="metrics-title">消息统计</div>
+
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <div class="metric-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="totalMessages">0</div>
+                            <div class="metric-label">总消息数</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-item">
+                        <div class="metric-icon">
+                            <i class="fas fa-font"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="totalWords">0</div>
+                            <div class="metric-label">总字数</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-item">
+                        <div class="metric-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="mostActiveHour">--:--</div>
+                            <div class="metric-label">最活跃时段</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-item">
+                        <div class="metric-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="sentMessages">0</div>
+                            <div class="metric-label">你发送的消息</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metrics-hint">
+                    统计范围：当前会话的所有消息
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- 编辑回复对话框 -->
+    <div class="edit-dialog" id="editDialog">
+            <div class="edit-dialog-content">
+                <div class="edit-dialog-header">
+                    <div class="edit-dialog-title" id="editDialogTitle">编辑回复</div>
+                    <button class="close-edit" id="closeEditDialog">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <textarea class="edit-textarea" id="editTextarea" placeholder="请输入回复内容..."></textarea>
+                <div class="edit-dialog-buttons">
+                    <button class="cancel-btn" id="cancelEdit">取消</button>
+                    <button class="edit-btn" id="saveEdit">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- 表情包文件夹编辑浮窗 -->
+    <div class="card-overlay" id="stickerFolderEditOverlay">
+        <div class="folders-manager-card">
+            <button class="card-close" id="closeStickerFolderEdit">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="batch-import-title">文件夹设置</div>
+            
+            <div style="padding: 15px; display: flex; flex-direction: column; gap: 15px;">
+                <!-- 修改名称 -->
+                <div>
+                    <div style="font-size: 13px; color: #666; margin-bottom: 8px; font-weight: bold;">修改名称</div>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="editStickerFolderNameInput" style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;" placeholder="请输入新名称">
+                        <button id="confirmRenameStickerFolder" class="folder-dialog-btn primary" style="padding: 8px 15px; width: auto; font-size: 13px;">重命名</button>
+                    </div>
+                </div>
+
+                <!-- 批量转移 -->
+                <div>
+                    <div style="font-size: 13px; color: #666; margin-bottom: 8px; font-weight: bold;">批量转移全部表情到</div>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="transferStickerFolderSelect" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: white;">
+                            <!-- 动态生成其他文件夹 -->
+                        </select>
+                        <button id="confirmTransferStickers" class="folder-dialog-btn primary" style="padding: 8px 15px; width: auto; font-size: 13px; background: #52c41a; border-color: #52c41a;">转移</button>
+                    </div>
+                </div>
+
+                <!-- 删除文件夹 -->
+                <div style="margin-top: 10px; padding-top: 15px; border-top: 1px dashed #eee;">
+                    <button id="confirmDeleteStickerFolder" class="folder-dialog-btn" style="width: 100%; padding: 10px; background: #fff1f0; color: #ff4d4d; border: 1px solid #ffccc7; font-weight: bold;">
+                        <i class="fas fa-trash-alt"></i> 删除此文件夹
+                    </button>
+                    <div style="font-size: 11px; color: #999; margin-top: 5px; text-align: center;">注意：删除文件夹将同时删除其中的所有表情包</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 表情包管理页面 -->
+    <div class="sticker-management-page app-slide-page" id="sticker-management-page" style="display: none;">
+        <div class="sticker-management-header app-page-header">
+            <div class="sticker-management-back app-page-back" id="sticker-management-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="sticker-management-title app-page-title">表情包管理</div>
+        </div>
+        
+        <div class="sticker-management-body app-page-body">
+            <div class="sticker-management-actions" style="margin-bottom: 20px; display: flex; gap: 10px;">
+                <button id="addStickerBtn" style="flex: 2; padding: 12px; border-radius: 12px; border: 2px dashed #a3b1c6; background: white; color: #a3b1c6; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-plus"></i> 添加表情包
+                </button>
+                <button id="createStickerFolderBtn" style="flex: 1; padding: 12px; border-radius: 12px; border: 1px solid #a3b1c6; background: #fdfaf6; color: #a3b1c6; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-folder-plus"></i> 新建
+                </button>
+            </div>
+            
+            <div id="globalStickerLibrary" class="global-sticker-library" style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- 表情包内容动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- API 管理页面 -->
+    <div class="api-management-page app-slide-page" id="api-management-page" style="display: none;">
+        <div class="api-management-header app-page-header">
+            <div class="api-management-back app-page-back" id="api-management-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="api-management-title app-page-title">API 管理</div>
+        </div>
+
+        <div class="api-management-body app-page-body">
+            <div style="margin-bottom: 16px; font-size: 13px; color: #666; line-height: 1.6;">
+                配置 AI 服务连接信息，启用智能聊天功能。
+            </div>
+
+            <form style="background: #ffffff; border-radius: 12px; padding: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); margin-bottom: 12px;" onsubmit="return false;">
+                <!-- 连接状态显示 -->
+                <div style="background: #f8f9fa; border-radius: 8px; padding: 10px; margin-bottom: 16px; display: flex; align-items: center; border: 1px solid #eee;">
+                    <div id="ai-connection-status-dot" style="width: 10px; height: 10px; border-radius: 50%; background-color: #ccc; margin-right: 10px; transition: background-color 0.3s;"></div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 500; color: #333;">连接状态</div>
+                        <div id="ai-connection-status-text" style="font-size: 12px; color: #666;">未连接</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 12px;">
+                    <div>
+                        <div style="font-size: 14px; font-weight: 500; color: #333;">启用 AI 服务</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="ai-enabled-toggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 13px; font-weight: 500; color: #333; margin-bottom: 6px;">接口地址 (URL)</label>
+                    <input type="text" id="ai-api-url" placeholder="https://api.openai.com/v1" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #f9f9f9; -webkit-appearance: none; appearance: none;">
+                </div>
+                
+                <div style="margin-bottom: 12px;">
+                     <label style="display: block; font-size: 13px; font-weight: 500; color: #333; margin-bottom: 6px;">API 密钥 (Key)</label>
+                     <div style="position: relative;">
+                        <input type="password" id="ai-api-key" placeholder="sk-..." style="width: 100%; padding: 10px; padding-right: 40px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #f9f9f9; -webkit-appearance: none; appearance: none;">
+                        <i class="fas fa-eye" id="toggle-api-key" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #999; cursor: pointer; padding: 5px;"></i>
+                     </div>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 13px; font-weight: 500; color: #333; margin-bottom: 6px;">模型名称 (Model)</label>
+                    <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                        <select id="ai-api-model" style="flex: 1; min-width: 0; width: 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #f9f9f9; -webkit-appearance: none; appearance: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <option value="" disabled selected>请拉取模型列表</option>
+                        </select>
+                        <button id="refresh-models-btn" style="flex-shrink: 0; height: 38px; padding: 0 12px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; color: #666;" title="拉取模型列表">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 高级设置折叠区域 -->
+                <div style="border: 1px solid #eee; border-radius: 8px; margin-bottom: 12px; overflow: hidden;">
+                    <div id="toggle-advanced-settings" style="padding: 10px; background: #f8f9fa; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 13px; font-weight: 500; color: #333;">高级对话参数</span>
+                        <i class="fas fa-chevron-down" style="font-size: 12px; color: #666; transition: transform 0.3s;"></i>
+                    </div>
+                    <div id="advanced-settings-content" style="padding: 10px; display: none; background: #fff;">
+                        <div id="ai-advanced-presets" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">
+                            <button type="button" class="ai-preset-btn" data-preset="stable" style="flex: 1 1 30%; padding: 4px 6px; font-size: 12px; border-radius: 999px; border: 1px solid #e0e0e0; background: #f7f7f7; color: #555; cursor: pointer; white-space: nowrap;">稳重严谨</button>
+                            <button type="button" class="ai-preset-btn" data-preset="balanced" style="flex: 1 1 30%; padding: 4px 6px; font-size: 12px; border-radius: 999px; border: 1px solid #e0e0e0; background: #f7f7f7; color: #555; cursor: pointer; white-space: nowrap;">通用对话</button>
+                            <button type="button" class="ai-preset-btn" data-preset="creative" style="flex: 1 1 30%; padding: 4px 6px; font-size: 12px; border-radius: 999px; border: 1px solid #e0e0e0; background: #f7f7f7; color: #555; cursor: pointer; white-space: nowrap;">发散创作</button>
+                            <button type="button" class="ai-preset-btn" data-preset="lore" style="flex: 1 1 30%; padding: 4px 6px; font-size: 12px; border-radius: 999px; border: 1px solid #e0e0e0; background: #f7f7f7; color: #555; cursor: pointer; white-space: nowrap;">设定解读</button>
+                        </div>
+
+                        <!-- 预设模式选择 -->
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 12px; font-weight: 500; color: #666; margin-bottom: 4px;">指令模式 (Instruct Mode)</label>
+                            <select id="ai-instruct-mode" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;">
+                                <option value="none">关闭 (默认)</option>
+                                <option value="alpaca">Alpaca (### Instruction...)</option>
+                                <option value="chatml">ChatML (<|user|>...)</option>
+                                <option value="vicuna">Vicuna (USER:...)</option>
+                                <option value="custom">自定义 (Custom)</option>
+                            </select>
+                        </div>
+
+                        <!-- 自定义指令序列 -->
+                        <div id="custom-instruct-container" style="display: none; margin-bottom: 12px; background: #f9f9f9; padding: 8px; border-radius: 6px;">
+                            <div style="margin-bottom: 8px;">
+                                <label style="font-size: 12px; color: #666;">用户前缀 (User Prefix)</label>
+                                <input type="text" id="ai-custom-user-prefix" placeholder="e.g. User:" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; color: #666;">助手前缀 (Assistant Prefix)</label>
+                                <input type="text" id="ai-custom-assistant-prefix" placeholder="e.g. Assistant:" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                            </div>
+                        </div>
+
+                        <!-- 参数滑块 -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                            <div>
+                                <label style="font-size: 12px; color: #666;">温度 (Temp)</label>
+                                <input type="number" id="ai-temp" step="0.1" min="0" max="2" value="0.7" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; color: #666;">最大回复 (Tokens)</label>
+                                <input type="number" id="ai-max-tokens" step="100" min="100" max="8192" value="2000" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                            <div>
+                                <label style="font-size: 12px; color: #666;">Top P</label>
+                                <input type="number" id="ai-top-p" step="0.05" min="0" max="1" value="1.0" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; color: #666;">Freq Penalty</label>
+                                <input type="number" id="ai-freq-penalty" step="0.1" min="-2" max="2" value="0" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                            </div>
+                        </div>
+
+                        <!-- 上下文设置 -->
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-size: 12px; color: #666;">上下文窗口 (Context Size)</label>
+                            <select id="ai-context-size" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;">
+                                <option value="2048">2k (2048)</option>
+                                <option value="4096" selected>4k (4096)</option>
+                                <option value="8192">8k (8192)</option>
+                                <option value="16384">16k (16384)</option>
+                                <option value="32768">32k (32768)</option>
+                                <option value="128000">128k (128000)</option>
+                            </select>
+                            <div style="font-size: 11px; color: #999; margin-top: 4px;">决定了AI能“记住”多少历史消息</div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="button" id="save-ai-settings" style="flex: 1; padding: 12px; background: #a3b1c6; color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">保存配置</button>
+                    <button type="button" id="test-ai-connection" style="flex: 1; padding: 12px; background: white; color: #a3b1c6; border: 1px solid #a3b1c6; border-radius: 8px; font-weight: 500; cursor: pointer;">测试连接</button>
+                </div>
+            </form>
+
+            <div style="background: #ffffff; border-radius: 12px; padding: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); margin-bottom: 12px;">
+                <div style="font-size: 14px; font-weight: 500; color: #333; margin-bottom: 10px;">配置方案</div>
+                <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                    <select id="ai-profile-select" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #f9f9f9; -webkit-appearance: none; appearance: none;">
+                    </select>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button id="add-profile-btn" style="flex: 1; padding: 8px; background: #f0f0f0; border: none; border-radius: 6px; font-size: 13px; color: #333; cursor: pointer;">新建</button>
+                    <button id="rename-profile-btn" style="flex: 1; padding: 8px; background: #f0f0f0; border: none; border-radius: 6px; font-size: 13px; color: #333; cursor: pointer;">重命名</button>
+                    <button id="delete-profile-btn" style="flex: 1; padding: 8px; background: #fee; border: none; border-radius: 6px; font-size: 13px; color: #d32f2f; cursor: pointer;">删除</button>
+                </div>
+            </div>
+
+            <div style="background: #ffffff; border-radius: 12px; padding: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); margin-bottom: 12px; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="font-weight: 600; font-size: 14px;">调试控制台</div>
+                    <div id="clear-ai-console" style="font-size: 12px; color: #999; cursor: pointer; padding: 4px 8px;">清空</div>
+                </div>
+                <div id="ai-console-output" style="background: #1e1e1e; color: #d4d4d4; font-family: monospace; font-size: 12px; padding: 10px; border-radius: 6px; height: 150px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; touch-action: pan-y;">等待操作...</div>
+            </div>
+
+            <div style="background: #ffffff; border-radius: 12px; padding: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); margin-bottom: 12px; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="font-weight: 600; font-size: 14px;">API 使用记录</div>
+                    <div id="reset-ai-usage" style="font-size: 12px; color: #999; cursor: pointer; padding: 4px 8px;">重置</div>
+                </div>
+                <div id="ai-usage-summary" style="font-size: 12px; color: #555; line-height: 1.6; white-space: pre-line;">
+                    暂无使用记录
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <!-- 通知 -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">操作成功</span>
+    </div>
+    
+    <!-- 好友设置页面 -->
+    <div class="friend-settings-page" id="friend-settings-page">
+        <div class="friend-settings-header">
+            <div class="friend-settings-back" id="friend-settings-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="friend-settings-title" id="friend-settings-title">好友设置</div>
+        </div>
+        
+        <div class="friend-settings-body" id="friend-settings-body">
+            <!-- 好友信息卡片 -->
+            <div class="friend-info-card">
+                <div class="friend-avatar-large" id="friend-avatar-large">
+                    <div class="friend-avatar-text" id="friend-avatar-text"></div>
+                    <div class="avatar-change-hint">点击修改头像</div>
+                </div>
+                <div class="friend-name-display" id="friend-name-display"></div>
+                <div class="friend-wechat-id" id="friend-wechat-id"></div>
+            </div>
+            
+            <!-- 设置项 -->
+            <div class="friend-settings-group">
+                <div class="friend-settings-item" id="edit-name-item">
+                    <div class="friend-settings-icon name">
+                        <i class="fas fa-user-edit"></i>
+                    </div>
+                    <div class="friend-settings-content">
+                        <div class="friend-settings-label">好友姓名</div>
+                        <div class="friend-settings-value" id="current-name"></div>
+                    </div>
+                    <div class="friend-settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+                
+                <div class="friend-settings-item" id="edit-wechat-id-item">
+                    <div class="friend-settings-icon wechat-id">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                    <div class="friend-settings-content">
+                        <div class="friend-settings-label">微信号</div>
+                        <div class="friend-settings-value" id="current-wechat-id"></div>
+                    </div>
+                    <div class="friend-settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <div class="friend-settings-item" id="edit-intro-item">
+                    <div class="friend-settings-icon intro">
+                        <i class="fas fa-quote-left"></i>
+                    </div>
+                    <div class="friend-settings-content">
+                        <div class="friend-settings-label">好友简介</div>
+                        <div class="friend-settings-value" id="current-intro">暂无简介</div>
+                    </div>
+                    <div class="friend-settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+                
+                <div class="friend-settings-item" id="edit-remark-item">
+                    <div class="friend-settings-icon remark">
+                        <i class="fas fa-sticky-note"></i>
+                    </div>
+                    <div class="friend-settings-content">
+                        <div class="friend-settings-label">备注</div>
+                        <div class="friend-settings-value" id="current-remark">无备注</div>
+                    </div>
+                    <div class="friend-settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+                
+                <div class="friend-settings-item" id="friend-sticker-folders-item">
+                    <div class="friend-settings-icon stickers">
+                        <i class="fas fa-smile"></i>
+                    </div>
+                    <div class="friend-settings-content">
+                        <div class="friend-settings-label">表情包库</div>
+                        <div class="friend-settings-value" id="current-sticker-folders-count">已绑定 0 个文件夹</div>
+                    </div>
+                    <div class="friend-settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <div class="friend-settings-item" id="friend-beautify-item">
+                    <div class="friend-settings-icon beautify">
+                        <i class="fas fa-magic"></i>
+                    </div>
+                    <div class="friend-settings-content">
+                        <div class="friend-settings-label">美化设置</div>
+                        <div class="friend-settings-value">自定义 CSS 及样式</div>
+                    </div>
+                    <div class="friend-settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <div id="friend-ai-section-label" style="padding: 10px 15px; font-size: 12px; color: #999; background: #faf7f4; border-top: 1px solid #f0ece8;">
+                    AI 对话与记忆（人设 / 世界书 / 总结 / 里程碑）
+                </div>
+
+                <div class="friend-settings-item" id="friend-my-persona-item" style="display: none;">
+                    <div class="friend-settings-icon persona">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="friend-settings-content">
+                        <div class="friend-settings-label">我的人设</div>
+                        <div class="friend-settings-value" id="current-my-persona-status">跟随默认</div>
+                    </div>
+                    <div class="friend-settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <div class="friend-settings-item" id="friend-persona-item" style="display: none;">
+                    <div class="friend-settings-icon persona">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="friend-settings-content">
+                        <div class="friend-settings-label">人设设置</div>
+                        <div class="friend-settings-value" id="current-persona-status">未配置</div>
+                    </div>
+                    <div class="friend-settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <div class="friend-settings-item" id="friend-worldbook-item" style="display: none;">
+                    <div class="friend-settings-icon worldbook">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="friend-settings-content">
+                        <div class="friend-settings-label">世界书</div>
+                        <div class="friend-settings-value" id="current-worldbook-count">未关联</div>
+                    </div>
+                    <div class="friend-settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <div class="friend-settings-item" id="friend-summary-item" style="display: none;">
+                    <div class="friend-settings-icon summary">
+                        <i class="fas fa-align-left"></i>
+                    </div>
+                    <div class="friend-settings-content">
+                        <div class="friend-settings-label">聊天总结</div>
+                        <div class="friend-settings-value" id="current-summary-status">未开启</div>
+                    </div>
+                    <div class="friend-settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <div class="friend-settings-item" id="friend-milestone-item" style="display: none;">
+                    <div class="friend-settings-icon milestone">
+                        <i class="fas fa-flag"></i>
+                    </div>
+                    <div class="friend-settings-content">
+                        <div class="friend-settings-label">里程碑</div>
+                        <div class="friend-settings-value" id="current-milestone-status">未开启</div>
+                    </div>
+                    <div class="friend-settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <div class="friend-settings-item" id="friend-token-query-item">
+                    <div class="friend-settings-icon token" style="background: rgba(76, 175, 80, 0.15); color: #4CAF50;">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <div class="friend-settings-content">
+                        <div class="friend-settings-label">Token使用查询</div>
+                        <div class="friend-settings-value" id="current-token-usage-hint">查看Token消耗统计</div>
+                    </div>
+                    <div class="friend-settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="friend-settings-group">
+                <div class="friend-settings-item" id="delete-friend-item">
+                    <div class="friend-settings-icon delete">
+                        <i class="fas fa-user-minus"></i>
+                    </div>
+                    <div class="friend-settings-content">
+                        <div class="friend-settings-label">删除好友</div>
+                        <div class="friend-settings-value" style="color: #d8a8a8;">删除后将同时删除聊天记录</div>
+                    </div>
+                    <div class="friend-settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="friend-settings-group">
+                <div class="friend-settings-item" id="export-friend-data-item">
+                    <div class="friend-settings-icon" style="background: rgba(163, 177, 198, 0.18); color: #7a8a9a;">
+                        <i class="fas fa-file-export"></i>
+                    </div>
+                    <div class="friend-settings-content">
+                        <div class="friend-settings-label">导出该好友数据</div>
+                        <div class="friend-settings-value">用于个人备份与恢复</div>
+                    </div>
+                    <div class="friend-settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 好友美化设置：放在主好友设置页内作 overlay，Chrome/Opera 层级一致、避免 Opera 虚影 -->
+        <div class="friend-settings-overlay" id="friendBeautifySettingsPage" style="display: none;">
+            <div class="friend-settings-header">
+                <div class="friend-settings-back" id="closeFriendBeautifySettings">
+                    <i class="fas fa-chevron-left"></i>
+                </div>
+                <div class="friend-settings-title">美化设置</div>
+                <div class="friend-settings-action" id="saveFriendBeautifySettings">保存</div>
+            </div>
+            <div class="friend-settings-body app-page-body-lg">
+                <!-- 实时预览效果 -->
+                <div class="settings-group preview-group" style="background: white; border-radius: 16px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden;">
+                    <div style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-eye" style="color: #a8b6d8;"></i> 预览效果
+                    </div>
+                    <div id="beautify-preview-area" style="background: #f8f5f2; border-radius: 12px; padding: 15px; min-height: 100px; display: flex; flex-direction: column; gap: 12px; position: relative;">
+                        <!-- 接收消息预览 -->
+                        <div class="preview-msg-row recv" style="display: flex; gap: 10px; align-items: flex-end;">
+                            <div class="preview-avatar other" style="width: 36px; height: 36px; background: #a3b1c6; border-radius: 25%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; font-weight: bold;">TA</div>
+                            <div class="preview-bubble-wrap" style="display: flex; flex-direction: column; max-width: 75%;">
+                                <div class="preview-quote preview-quote-top" style="font-size: 12px; color: #888; margin-bottom: 4px; padding-left: 4px; border-left: 2px solid #ddd; display: block;">引用: 历史消息内容</div>
+                                <div class="preview-bubble" style="background: white; padding: 12px 15px; border-radius: 18px; font-size: 15px; color: #5a5a5a; box-shadow: 0 2px 5px rgba(0,0,0,0.05); line-height: 1.4; position: relative; border-bottom-left-radius: 4px;">
+                                    这是预览消息的效果展示
+                                </div>
+                                <div class="preview-quote preview-quote-bottom" style="font-size: 12px; color: #888; margin-top: 4px; padding-left: 4px; border-left: 2px solid #ddd; display: none;">引用: 历史消息内容</div>
+                            </div>
+                        </div>
+                        <!-- 发送消息预览 -->
+                        <div class="preview-msg-row sent" style="display: flex; gap: 10px; align-items: flex-end; flex-direction: row-reverse;">
+                            <div class="preview-avatar me" style="width: 36px; height: 36px; background: #8e9aaf; border-radius: 25%; flex-shrink: 0; display: none; align-items: center; justify-content: center; color: white; font-size: 16px; font-weight: bold;">我</div>
+                            <div class="preview-bubble-wrap" style="display: flex; flex-direction: column; max-width: 75%;">
+                                <div class="preview-quote preview-quote-top" style="font-size: 12px; color: #888; margin-bottom: 4px; padding-right: 4px; border-right: 2px solid #ddd; text-align: right; display: block;">引用: 历史消息内容</div>
+                                <div class="preview-bubble" style="background: #d9e6f2; color: #5a5a5a; padding: 12px 15px; border-radius: 18px; font-size: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); line-height: 1.4; position: relative; border-bottom-right-radius: 4px;">
+                                    实时预览气泡和头像效果
+                                </div>
+                                <div class="preview-quote preview-quote-bottom" style="font-size: 12px; color: #888; margin-top: 4px; padding-right: 4px; border-right: 2px solid #ddd; text-align: right; display: none;">引用: 历史消息内容</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 气泡设置 -->
+                <div class="settings-group" style="background: white; border-radius: 16px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <div style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-comment-dots" style="color: #a8b6d8;"></i> 聊天气泡设置
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <div style="font-size: 13px; color: #666; margin-bottom: 8px; display: flex; justify-content: space-between;">
+                                <span>头像垂直位置</span>
+                                <span id="avatar-offset-value">0px</span>
+                            </div>
+                            <input type="range" id="friend-avatar-offset" min="-40" max="40" value="0" style="width: 100%;">
+                        </div>
+
+                        <div id="bubble-detailed-settings" style="display: flex; flex-direction: column; gap: 15px; border-top: 1px solid #f0f0f0; padding-top: 15px; margin-top: 5px;">
+                            <div style="display: flex; gap: 10px;">
+                                <div style="flex: 1;">
+                                    <div style="font-size: 13px; color: #666; margin-bottom: 8px;">好友气泡颜色</div>
+                                    <input type="color" id="friend-bubble-color" style="width: 100%; height: 44px; border: none; border-radius: 10px; cursor: pointer;">
+                                </div>
+                                <div style="flex: 1;">
+                                    <div style="font-size: 13px; color: #666; margin-bottom: 8px;">我的气泡颜色</div>
+                                    <input type="color" id="user-bubble-color" style="width: 100%; height: 44px; border: none; border-radius: 10px; cursor: pointer;">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div style="font-size: 13px; color: #666; margin-bottom: 8px;">对话引用位置</div>
+                                <select id="friend-quote-position" style="width: 100%; height: 44px; padding: 0 10px; border: 1px solid #eee; border-radius: 10px; background: #fff; font-size: 13px; color: #555; outline: none;">
+                                    <option value="top">气泡上方</option>
+                                    <option value="bottom">气泡下方</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <div style="font-size: 13px; color: #666; margin-bottom: 8px; display: flex; justify-content: space-between;">
+                                    <span>圆角程度</span>
+                                    <span id="bubble-radius-value">16px</span>
+                                </div>
+                                <input type="range" id="friend-bubble-radius" min="0" max="30" value="16" style="width: 100%;">
+                            </div>
+
+                            <div class="switch-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                                <span class="switch-label" style="font-size: 13px; color: #666;">固定气泡尾巴 (保留尖角)</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="friend-fix-bubble-tail" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div>
+                                <div style="font-size: 13px; color: #666; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                    <span>气泡自定义 CSS</span>
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <select id="bubble-css-preset-selector" style="font-size: 11px; padding: 4px 6px; border-radius: 4px; border: 1px solid #eee; background: #fff; color: #666; outline: none; max-width: 100px;">
+                                            <option value="">选择预设...</option>
+                                        </select>
+                                        <button id="save-bubble-preset-btn" style="background: #f0f2f5; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #1a73e8; cursor: pointer;">保存当前</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 预设列表 (用于删除管理) -->
+                                <div id="bubble-css-presets-list" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; display: none;">
+                                    <!-- 预设项会动态生成 -->
+                                </div>
+
+                                <textarea id="friend-bubble-custom-css" 
+                                    style="width: 100%; height: 80px; padding: 10px; border: 1px solid #eee; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 12px; resize: none; background: #fafafa;" 
+                                    placeholder=".preview-bubble { ... }"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 字体设置 -->
+                <div class="settings-group" style="background: white; border-radius: 16px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <div style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-font" style="color: #a8b6d8;"></i> 字体设置
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <div style="display: flex; gap: 10px;">
+                            <div style="flex: 1;">
+                                <div style="font-size: 13px; color: #666; margin-bottom: 8px;">字体颜色</div>
+                                <input type="color" id="friend-font-color" style="width: 100%; height: 44px; border: none; border-radius: 10px; cursor: pointer;">
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-size: 13px; color: #666; margin-bottom: 8px; display: flex; justify-content: space-between;">
+                                    <span>字体大小</span>
+                                    <span id="font-size-value">15px</span>
+                                </div>
+                                <input type="range" id="friend-font-size" min="12" max="24" value="15" style="width: 100%;">
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="font-size: 13px; color: #666; margin-bottom: 8px;">自定义字体样式</div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button id="upload-font-btn" style="padding: 8px 15px; background: #a3b1c6; color: white; border: none; border-radius: 8px; font-size: 12px; cursor: pointer;">上传字体文件</button>
+                                <button id="clear-font-btn" style="padding: 8px 15px; background: #eee; color: #666; border: none; border-radius: 8px; font-size: 12px; cursor: pointer;">重置</button>
+                                <span id="font-file-name" style="font-size: 11px; color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100px;">未选择文件</span>
+                            </div>
+                            <input type="file" id="friend-font-upload" accept=".ttf,.otf,.woff,.woff2" style="display: none;">
+                            <input type="hidden" id="friend-font-data">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 头像设置 -->
+                <div class="settings-group" style="background: white; border-radius: 16px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <div style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-user-circle" style="color: #a8b6d8;"></i> 头像设置
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div class="switch-container" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="switch-label" style="font-size: 14px; color: #555;">显示好友头像</span>
+                            <label class="switch">
+                                <input type="checkbox" id="friend-show-friend-avatar" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="switch-container" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="switch-label" style="font-size: 14px; color: #555;">显示用户头像</span>
+                            <label class="switch">
+                                <input type="checkbox" id="friend-show-user-avatar">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div style="margin-top: 5px; border-top: 1px solid #f0f0f0; padding-top: 10px;">
+                            <div style="font-size: 13px; color: #666; margin-bottom: 8px; display: flex; justify-content: space-between;">
+                                <span>头像圆度</span>
+                                <span id="avatar-radius-value">50%</span>
+                            </div>
+                            <input type="range" id="friend-avatar-radius" min="0" max="100" value="50" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 聊天背景设置 -->
+                <div class="settings-group" style="background: white; border-radius: 16px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <div style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-image" style="color: #a8b6d8;"></i> 聊天背景设置
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <div style="font-size: 13px; color: #666; margin-bottom: 10px;">预设莫兰迪色</div>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <!-- 亮色 1 (默认) -->
+                                <div class="bg-preset-item" data-color="#f8f5f2" style="width: 40px; height: 40px; border-radius: 8px; background: #f8f5f2; border: 2px solid #ddd; cursor: pointer; position: relative;"></div>
+                                <!-- 亮色 2 (浅蓝) -->
+                                <div class="bg-preset-item" data-color="#e3e8f0" style="width: 40px; height: 40px; border-radius: 8px; background: #e3e8f0; border: 2px solid transparent; cursor: pointer;"></div>
+                                <!-- 暗色 1 (深灰蓝) -->
+                                <div class="bg-preset-item" data-color="#2c3e50" style="width: 40px; height: 40px; border-radius: 8px; background: #2c3e50; border: 2px solid transparent; cursor: pointer;"></div>
+                                <!-- 暗色 2 (复古绿) -->
+                                <div class="bg-preset-item" data-color="#4a5d4e" style="width: 40px; height: 40px; border-radius: 8px; background: #4a5d4e; border: 2px solid transparent; cursor: pointer;"></div>
+                            </div>
+                        </div>
+
+                        <div style="border-top: 1px solid #f0f0f0; padding-top: 15px;">
+                            <div style="font-size: 13px; color: #666; margin-bottom: 10px;">自定义背景图</div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button id="upload-bg-btn" style="padding: 8px 15px; background: #a3b1c6; color: white; border: none; border-radius: 8px; font-size: 12px; cursor: pointer;">上传图片</button>
+                                <button id="clear-bg-btn" style="padding: 8px 15px; background: #eee; color: #666; border: none; border-radius: 8px; font-size: 12px; cursor: pointer;">重置</button>
+                            </div>
+                            <input type="file" id="friend-bg-upload" accept="image/*" style="display: none;">
+                            <div id="bg-preview-container" style="margin-top: 10px; display: none;">
+                                <img id="bg-preview-img" style="width: 100%; max-height: 150px; border-radius: 8px; object-fit: cover; border: 1px solid #eee;">
+                            </div>
+                        </div>
+
+                        <div class="switch-container" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f0f0f0; padding-top: 15px;">
+                            <span class="switch-label" style="font-size: 14px; color: #555;">使用自定义背景图</span>
+                            <label class="switch">
+                                <input type="checkbox" id="friend-show-background" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 全局自定义 CSS -->
+                <div class="settings-group" style="background: white; border-radius: 16px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <div style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-code" style="color: #a8b6d8;"></i> 全局自定义 CSS (针对此好友)
+                    </div>
+                    <textarea id="friendCustomCssInput" 
+                        style="width: 100%; height: 120px; padding: 12px; border: 1px solid #eee; border-radius: 12px; font-family: 'Consolas', monospace; font-size: 13px; resize: none; background: #fafafa; color: #444; line-height: 1.5;" 
+                        placeholder="/* 在此处输入通用的 CSS 代码 */"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 表情包文件夹绑定对话框（仍在传讯主体内，供好友设置调用） -->
+    <div class="card-overlay" id="friendStickerFoldersOverlay">
+            <div class="folders-manager-card">
+                <button class="card-close" id="closeFriendStickerFolders">
+                    <i class="fas fa-times"></i>
+                </button>
+                
+                <div class="batch-import-title">绑定表情包文件夹</div>
+                
+                <div style="padding: 15px; border-bottom: 1px solid #eee; margin-bottom: 10px;">
+                    <div class="switch-container" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="switch-label" style="font-size: 14px; font-weight: 500;">将表情包共享给TA</span>
+                        <label class="switch">
+                            <input type="checkbox" id="friendStickerShareSwitch">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div style="font-size: 11px; color: #999; margin-top: 5px;">开启共享后，好友回复时可能会使用绑定的文件夹中的内容。</div>
+                </div>
+
+                <div style="padding: 0 15px 10px 15px; font-size: 13px; color: #666;">
+                    选择要绑定给该好友的文件夹：
+                </div>
+                
+                <div class="folders-list" id="friendStickerFoldersList">
+                    <!-- 动态生成 -->
+                </div>
+                
+                <div class="folder-dialog-buttons">
+                    <button class="folder-dialog-btn primary" id="saveFriendStickerFolders">
+                        确定
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    <!-- 好友人设设置页面 -->
+    <div class="friend-settings-page" id="persona-settings-page">
+        <div class="friend-settings-header">
+            <div class="friend-settings-back" id="persona-settings-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="friend-settings-title">人设设置</div>
+        </div>
+        
+        <div class="friend-settings-body">
+            <!-- 角色基础信息卡 -->
+            <div class="friend-settings-group" style="margin-bottom: 15px;">
+                <div class="role-info-card" id="persona-role-card" style="padding: 15px; background: #fff; border-radius: 12px; display: flex; align-items: center; gap: 15px; position: relative; cursor: pointer;">
+                    <div id="persona-role-avatar" style="width: 50px; height: 50px; border-radius: 50%; background: #ccc; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; flex-shrink: 0; background-size: cover; background-position: center;"></div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div id="persona-role-name" style="font-size: 16px; font-weight: 600; color: #333;">角色名</div>
+                            <span id="persona-role-tag" style="font-size: 10px; background: #f0f2f5; color: #999; padding: 2px 6px; border-radius: 4px; display: none;">已设定</span>
+                        </div>
+                        <div id="persona-role-summary" style="font-size: 13px; color: #999; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">点击配置角色基础信息</div>
+                    </div>
+                    <div id="persona-edit-role-btn" style="width: 32px; height: 32px; border-radius: 50%; background: #f0f2f5; display: flex; align-items: center; justify-content: center; color: #666;">
+                        <i class="fas fa-pen" style="font-size: 14px;"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="friend-settings-group">
+                <div class="persona-editor-container" style="padding: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label style="font-size: 14px; color: #666; font-weight: 500;">人设描述 (System Prompt)</label>
+                        <span id="persona-char-count" style="font-size: 12px; color: #999;">0 / 2000</span>
+                    </div>
+                    <textarea id="friend-persona-input" placeholder="输入 AI 扮演该好友时的人设描述、性格特征、对话风格等..." 
+                        style="width: 100%; height: 300px; border: 1px solid #e8e4e0; border-radius: 12px; padding: 15px; font-size: 15px; line-height: 1.6; resize: none; background: #fff; color: #333; outline: none; transition: border-color 0.3s;"
+                        maxlength="2000"></textarea>
+                    <div style="margin-top: 15px; padding: 12px; background: rgba(163, 177, 198, 0.1); border-radius: 8px; font-size: 13px; color: #7a8a9a; line-height: 1.6;">
+                        <i class="fas fa-lightbulb" style="margin-right: 5px; color: #a3b1c6;"></i>
+                        <strong>小贴士：</strong>此处设置的内容将作为 AI 对话的系统提示词。你可以描述好友的：
+                        <ul style="margin: 5px 0 0 18px; padding: 0;">
+                            <li>基本背景（年龄、职业、关系）</li>
+                            <li>性格特征（高冷、热情、幽默、毒舌）</li>
+                            <li>说话习惯（常用口癖、是否发表情、回复长度）</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 更多设置区域 -->
+            <div class="friend-settings-group" style="margin-top: 15px;">
+                <div class="more-settings-header" id="persona-more-settings-toggle" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fff; border-radius: 12px; cursor: pointer; user-select: none;">
+                    <span style="font-size: 15px; font-weight: 500; color: #333;">更多设置 (Advanced)</span>
+                    <i class="fas fa-chevron-down" id="persona-more-settings-icon" style="transition: transform 0.3s;"></i>
+                </div>
+                <div id="persona-more-settings-content" style="display: none; padding: 15px; background: #fff; border-radius: 0 0 12px 12px; margin-top: -10px; padding-top: 25px; border-top: 1px solid #f0f0f0;">
+                    
+                    <!-- 高级对话参数 -->
+                    <div id="persona-advanced-panel">
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding: 8px; background: #fff8e1; border-radius: 6px;">
+                            <input type="checkbox" id="persona-use-global" style="accent-color: #a3b1c6;">
+                            <span style="font-size: 13px; color: #666;">使用全局API设置</span>
+                        </label>
+                        
+                        <div id="persona-global-hint" style="font-size: 11px; color: #999; margin-bottom: 12px; padding: 6px 8px; background: #f9f9f9; border-radius: 4px;">
+                            全局默认: 加载中...
+                        </div>
+                        
+                        <div id="persona-params-area">
+                            <!-- Temperature / 创造性 -->
+                            <div style="margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <label style="font-size: 13px; color: #666;">创造性 (Temperature)</label>
+                                    <span id="persona-temp-value" style="font-size: 13px; color: #333;">0.7</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="range" id="persona-temp-input" min="0" max="1.5" step="0.1" value="0.7" style="flex: 1; accent-color: #a3b1c6;">
+                                    <input type="number" id="persona-temp-number" min="0" max="1.5" step="0.1" value="0.7" style="width: 55px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: center;">
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #bbb; margin-top: 2px;">
+                                    <span>精准</span>
+                                    <span>平衡</span>
+                                    <span>创意</span>
+                                </div>
+                                <div style="font-size: 11px; color: #999; margin-top: 4px;">控制AI回复的随机性。低值=稳定精准，高值=创意多变。</div>
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <label style="font-size: 13px; color: #666;">核采样 (Top P)</label>
+                                    <span id="persona-topp-value" style="font-size: 13px; color: #333;">1.0</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="range" id="persona-topp-input" min="0" max="1" step="0.05" value="1" style="flex: 1; accent-color: #a3b1c6;">
+                                    <input type="number" id="persona-topp-number" min="0" max="1" step="0.05" value="1" style="width: 55px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: center;">
+                                </div>
+                                <div style="font-size: 11px; color: #999; margin-top: 4px;">控制AI选词范围。低值=更精准，高值=更多样。</div>
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <label style="font-size: 13px; color: #666;">频率惩罚</label>
+                                    <span id="persona-freq-value" style="font-size: 13px; color: #333;">0</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="range" id="persona-freq-input" min="0" max="2" step="0.1" value="0" style="flex: 1; accent-color: #a3b1c6;">
+                                    <input type="number" id="persona-freq-number" min="0" max="2" step="0.1" value="0" style="width: 55px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: center;">
+                                </div>
+                                <div style="font-size: 11px; color: #999; margin-top: 4px;">降低重复用词。高值=更多样化表达。</div>
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <label style="font-size: 13px; color: #666;">最大输出</label>
+                                    <span id="persona-maxtokens-value" style="font-size: 13px; color: #333;">默认</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" id="persona-maxtokens-input" min="100" max="32000" step="100" placeholder="留空使用全局" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                                    <span style="font-size: 12px; color: #999;">tokens</span>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 8px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <label style="font-size: 13px; color: #666;">上下文窗口 (Tokens)</label>
+                                    <span id="persona-context-value" style="font-size: 13px; color: #333;">默认</span>
+                                </div>
+                                <select id="persona-context-input" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; background: white;">
+                                    <option value="">使用全局设置</option>
+                                        <option value="2048">2k (2048)</option>
+                                        <option value="4096">4k (4096)</option>
+                                        <option value="8192">8k (8192)</option>
+                                        <option value="16384">16k (16384)</option>
+                                        <option value="32768">32k (32768)</option>
+                                        <option value="65536">64k (65536)</option>
+                                        <option value="131072">128k (131072)</option>
+                                    </select>
+                                    <div style="font-size: 11px; color: #999; margin-top: 4px;">控制AI可用的上下文Token数量。更大的值可容纳更多历史消息。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 提示词预设选择 -->
+                    <div id="persona-prompt-preset-panel" style="margin-top: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label style="font-size: 14px; color: #666; font-weight: 500;">提示词预设</label>
+                            <span id="persona-preset-status" style="font-size: 12px; color: #999;">使用全局</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #666;">
+                                <input type="checkbox" id="persona-use-global-preset" checked style="accent-color: #a3b1c6;">
+                                <span>使用全局提示词设置</span>
+                            </label>
+                        </div>
+                        <div id="persona-preset-select-area" style="display: none;">
+                            <select id="persona-preset-select" style="width: 100%; padding: 10px; border: 1px solid #e8e4e0; border-radius: 8px; font-size: 14px; background: white;">
+                                <option value="">使用全局设置</option>
+                            </select>
+                            <div style="font-size: 11px; color: #999; margin-top: 4px;">选择好友专属的提示词预设，覆盖全局设置。</div>
+                        </div>
+                    </div>
+
+                    <!-- Opening Line -->
+                    <div style="margin-bottom: 20px;">
+                         <label style="font-size: 14px; color: #666; display: block; margin-bottom: 8px;">开场白 (First Message)</label>
+                         <input type="text" id="persona-opening-input" placeholder="例如：你好呀！今天想聊什么？" style="width: 100%; padding: 10px; border: 1px solid #e8e4e0; border-radius: 8px; font-size: 14px; outline: none;">
+                         <div style="font-size: 12px; color: #999; margin-top: 4px;">设置后，作为新聊天时的第一句话（暂未生效，待后续更新支持）</div>
+                    </div>
+
+                    <!-- Examples -->
+                    <div style="margin-bottom: 10px;">
+                         <label style="font-size: 14px; color: #666; display: block; margin-bottom: 8px;">对话范例 (Few-Shot Examples)</label>
+                         <textarea id="persona-examples-input" placeholder="User: 你好&#10;AI: 滚一边去！&#10;&#10;User: 吃饭了吗？&#10;AI: 没吃，气都气饱了。" style="width: 100%; height: 150px; border: 1px solid #e8e4e0; border-radius: 8px; padding: 10px; font-size: 14px; line-height: 1.5; resize: none; outline: none;"></textarea>
+                         <div style="font-size: 12px; color: #999; margin-top: 4px;">提供几组典型的对话示例，帮助 AI 模仿说话风格。</div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <div style="padding: 0 15px; margin-top: 10px;">
+                <button id="save-persona-btn" style="width: 100%; height: 48px; background: #a3b1c6; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 10px rgba(163, 177, 198, 0.3); transition: all 0.3s;">保存人设</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 我的人人设选择页面 -->
+    <div class="friend-settings-page" id="my-persona-page">
+        <div class="friend-settings-header">
+            <div class="friend-settings-back" id="my-persona-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="friend-settings-title">我的人设</div>
+        </div>
+        <div class="friend-settings-body" style="background: #f8f5f2;">
+            <div class="friend-settings-group" style="margin: 0 15px 15px 15px;">
+                <div id="my-persona-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 世界书绑定列表页面 -->
+    <div class="friend-settings-page" id="worldbook-binding-page">
+        <div class="friend-settings-header">
+            <div class="friend-settings-back" id="worldbook-binding-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="friend-settings-title">世界书</div>
+        </div>
+        <div class="friend-settings-body" style="background: #f8f5f2; min-height: 100%;">
+            <div class="worldbook-list-container" id="worldbook-binding-list">
+                <!-- 列表内容由 JS 渲染 -->
+            </div>
+            
+            <div class="worldbook-add-fab" id="worldbook-add-btn">
+                <i class="fas fa-plus"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 世界书选择页面 -->
+    <div class="friend-settings-page" id="worldbook-selector-page">
+        <div class="friend-settings-header">
+            <div class="friend-settings-back" id="worldbook-selector-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="friend-settings-title">添加世界书</div>
+            <div id="worldbook-selector-save-btn" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 14px; color: #fff; cursor: pointer;">保存</div>
+        </div>
+        <div class="friend-settings-body" style="background: #f8f5f2;">
+            <div id="worldbook-selector-list" style="padding-bottom: 20px;">
+                <!-- 列表内容由 JS 渲染 -->
+            </div>
+            <div class="worldbook-selector-actions">
+                <button class="worldbook-selector-save-btn" id="worldbook-selector-save-bottom">保存选择</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="friend-settings-page" id="summary-settings-page">
+        <div class="friend-settings-header">
+            <div class="friend-settings-back" id="summary-settings-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="friend-settings-title">聊天总结</div>
+            <div class="friend-settings-action" id="summary-prompt-settings">
+                <i class="fas fa-sliders-h"></i>
+            </div>
+        </div>
+        <div class="friend-settings-body" style="background: #f8f5f2;">
+            <div class="friend-settings-group" style="margin: 15px; padding: 15px; display: flex; flex-direction: column; gap: 16px;">
+                <div id="summary-pending-note" style="font-size: 12px; color: #999;">未总结消息：0</div>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 14px; font-weight: 600; color: #333;">自动总结</div>
+                        <div style="font-size: 12px; color: #999; margin-top: 4px;">按阈值自动沉淀摘要</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="summary-enabled-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div>
+                    <div style="font-size: 13px; color: #666; margin-bottom: 6px;">总结步长</div>
+                    <input type="number" class="text-input" id="summary-step-input" min="5" max="200" placeholder="20">
+                    <div style="font-size: 12px; color: #999; margin-top: 4px;">达到设定条数后触发自动总结</div>
+                </div>
+            </div>
+            <div class="friend-settings-group" style="margin: 0 15px 15px 15px; padding: 15px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="font-size: 14px; font-weight: 600; color: #333;">总结内容</div>
+                    <div class="summary-add-action" id="summary-add-manual">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                </div>
+                <div class="summary-card-track" id="summary-card-track"></div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="summary-run-manual" style="flex: 1; height: 44px; background: #8aa5c7; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;">手动总结</button>
+                    <button id="summary-clear" style="flex: 1; height: 44px; background: #f1f1f1; color: #666; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;">清空</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="friend-settings-page" id="summary-prompt-page">
+        <div class="friend-settings-header">
+            <div class="friend-settings-back" id="summary-prompt-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="friend-settings-title">总结提示词</div>
+            <div class="friend-settings-action" id="summary-prompt-save">
+                <i class="fas fa-check"></i>
+            </div>
+        </div>
+        <div class="friend-settings-body" style="background: #f8f5f2;">
+            <div class="friend-settings-group" style="margin: 15px; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="font-size: 12px; color: #999;">可用变量：{text} {previous}</div>
+                <textarea id="summary-prompt-input" class="prompt-system-input" placeholder="请输入总结提示词"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="friend-settings-page" id="milestone-settings-page">
+        <div class="friend-settings-header">
+            <div class="friend-settings-back" id="milestone-settings-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="friend-settings-title">里程碑</div>
+            <div class="friend-settings-action" id="milestone-prompt-settings">
+                <i class="fas fa-sliders-h"></i>
+            </div>
+        </div>
+        <div class="friend-settings-body" style="background: #f8f5f2;">
+            <div class="friend-settings-group" style="margin: 15px; padding: 15px; display: flex; flex-direction: column; gap: 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 14px; font-weight: 600; color: #333;">启用里程碑</div>
+                        <div style="font-size: 12px; color: #999; margin-top: 4px;">自动提取关键事件</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="milestone-enabled-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div>
+                    <div style="font-size: 13px; color: #666; margin-bottom: 6px;">Token预算</div>
+                    <input type="number" class="text-input" id="milestone-token-input" min="100" max="1000" placeholder="200">
+                    <div style="font-size: 12px; color: #999; margin-top: 4px;">里程碑注入的最大token数</div>
+                </div>
+                <div>
+                    <div style="font-size: 13px; color: #666; margin-bottom: 6px;">提取步长</div>
+                    <input type="number" class="text-input" id="milestone-step-input" min="10" max="50" placeholder="20">
+                    <div style="font-size: 12px; color: #999; margin-top: 4px;">每N条消息尝试提取一次</div>
+                </div>
+            </div>
+            <div class="friend-settings-group" style="margin: 0 15px 15px 15px; padding: 15px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="font-size: 14px; font-weight: 600; color: #333;">里程碑列表</div>
+                    <div class="summary-add-action" id="milestone-add-manual">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                </div>
+                <div class="milestone-card-track" id="milestone-card-track"></div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="milestone-run-manual" style="flex: 1; height: 44px; background: #8aa5c7; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;">手动提取</button>
+                    <button id="milestone-clear" style="flex: 1; height: 44px; background: #f1f1f1; color: #666; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;">清空</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="friend-settings-page" id="milestone-prompt-page">
+        <div class="friend-settings-header">
+            <div class="friend-settings-back" id="milestone-prompt-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="friend-settings-title">提取提示词</div>
+            <div class="friend-settings-action" id="milestone-prompt-save">
+                <i class="fas fa-check"></i>
+            </div>
+        </div>
+        <div class="friend-settings-body" style="background: #f8f5f2;">
+            <div class="friend-settings-group" style="margin: 15px; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="font-size: 12px; color: #999;">可用变量：{text}</div>
+                <textarea id="milestone-prompt-input" class="prompt-system-input" placeholder="请输入提取提示词"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- 修改字段对话框 -->
+    <div class="edit-field-dialog" id="edit-field-dialog">
+        <div class="edit-field-content">
+            <div class="edit-field-title" id="edit-field-title">修改好友姓名</div>
+            <input type="text" class="field-input" id="edit-field-input" placeholder="" maxlength="20">
+            <div class="field-hint" id="edit-field-hint">请输入新的好友姓名</div>
+            <div class="edit-field-buttons">
+                <button class="edit-field-btn cancel" id="cancel-edit-field">取消</button>
+                <button class="edit-field-btn save" id="save-edit-field">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 头像修改对话框 -->
+    <div class="edit-field-dialog" id="edit-avatar-dialog">
+        <div class="edit-field-content">
+            <div class="edit-field-title">修改好友头像</div>
+            
+            <div class="avatar-selector">
+                <div class="avatar-selector-title">选择头像颜色</div>
+                <div class="avatar-colors-selector" id="avatar-colors-selector">
+                    <div class="avatar-color-selector-option bg-mauve" data-color="bg-mauve"></div>
+                    <div class="avatar-color-selector-option bg-dusty-rose" data-color="bg-dusty-rose"></div>
+                    <div class="avatar-color-selector-option bg-sage" data-color="bg-sage"></div>
+                    <div class="avatar-color-selector-option bg-slate" data-color="bg-slate"></div>
+                    <div class="avatar-color-selector-option bg-clay" data-color="bg-clay"></div>
+                    <div class="avatar-color-selector-option bg-sand" data-color="bg-sand"></div>
+                    <div class="avatar-color-selector-option bg-moss" data-color="bg-moss"></div>
+                </div>
+                
+                <div class="avatar-upload-section">
+                    <button class="avatar-upload-btn" id="upload-avatar-btn">
+                        <i class="fas fa-upload"></i> 上传自定义头像
+                    </button>
+                    <div class="avatar-upload-hint">支持 JPG、PNG 格式，最大 2MB</div>
+                </div>
+                
+                <input type="file" class="avatar-upload" id="friend-avatar-upload" accept="image/*">
+            </div>
+            
+            <div class="edit-field-buttons">
+                <button class="edit-field-btn cancel" id="cancel-edit-avatar">取消</button>
+                <button class="edit-field-btn save" id="save-edit-avatar">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 角色基础信息编辑对话框 -->
+    <div class="edit-field-dialog" id="edit-role-info-dialog">
+        <div class="edit-field-content" style="width: 320px;">
+            <div class="edit-field-title">编辑角色基础信息</div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 12px; color: #999; display: block; margin-bottom: 5px;">角色名称</label>
+                <input type="text" id="role-info-name" class="field-input" placeholder="默认为好友昵称" maxlength="20">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 12px; color: #999; display: block; margin-bottom: 5px;">年龄 / 性别</label>
+                <input type="text" id="role-info-age-gender" class="field-input" placeholder="例如：18岁 / 女" maxlength="30">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 12px; color: #999; display: block; margin-bottom: 5px;">职业 / 身份</label>
+                <input type="text" id="role-info-occupation" class="field-input" placeholder="例如：魔法师 / 学生" maxlength="30">
+            </div>
+
+            <div class="edit-field-buttons">
+                <button class="edit-field-btn cancel" id="cancel-edit-role-info">取消</button>
+                <button class="edit-field-btn save" id="save-edit-role-info">确认</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Token使用查询页面 -->
+    <div class="api-journal-page" id="api-journal-page">
+        <div class="api-journal-header">
+            <div class="api-journal-back" id="api-journal-back">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            <div class="api-journal-title">Token使用查询</div>
+            <div class="api-journal-export" id="api-journal-export">
+                <i class="fas fa-download"></i>
+            </div>
+        </div>
+        <div class="api-journal-summary" id="api-journal-summary">
+            <div class="api-journal-summary-item">
+                <span class="summary-label">总请求</span>
+                <span class="summary-value" id="journal-total-requests">0</span>
+            </div>
+            <div class="api-journal-summary-item">
+                <span class="summary-label">总Token</span>
+                <span class="summary-value" id="journal-total-tokens">0</span>
+            </div>
+            <div class="api-journal-summary-item">
+                <span class="summary-label">成功率</span>
+                <span class="summary-value" id="journal-success-rate">0%</span>
+            </div>
+        </div>
+        <div class="api-journal-list" id="api-journal-list">
+            <!-- 动态生成的记录列表 -->
+        </div>
+        <div class="api-journal-empty" id="api-journal-empty" style="display: none;">
+            <i class="fas fa-chart-pie"></i>
+            <div>暂无Token使用记录</div>
+        </div>
+        <div class="api-journal-load-more" id="api-journal-load-more" style="display: none;">
+            <button id="journal-load-more-btn">加载更多</button>
+        </div>
+    </div>
+    
+    <!-- 删除确认对话框 -->
+    <div class="delete-confirm-dialog" id="delete-confirm-dialog">
+        <div class="delete-confirm-content">
+            <div class="delete-confirm-title">删除好友</div>
+            <div class="delete-confirm-message" id="delete-confirm-message">
+                确定要删除好友 <span id="delete-friend-name"></span> 吗？<br>
+                删除后将同时删除与该好友的所有聊天记录。
+            </div>
+            <div class="delete-confirm-buttons">
+                <button class="delete-confirm-btn cancel" id="cancel-delete-friend">取消</button>
+                <button class="delete-confirm-btn confirm" id="confirm-delete-friend">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 里程碑添加/编辑对话框 -->
+    <div class="edit-field-dialog" id="milestone-edit-dialog">
+        <div class="edit-field-content" style="width: 340px;">
+            <div class="edit-field-title" id="milestone-edit-title">添加里程碑</div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 12px; color: #999; display: block; margin-bottom: 5px;">日期</label>
+                <input type="text" id="milestone-edit-date" class="field-input" placeholder="例如：1月25日" maxlength="20">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 12px; color: #999; display: block; margin-bottom: 5px;">事件描述</label>
+                <textarea id="milestone-edit-event" class="field-input" style="height: 80px; resize: none;" placeholder="描述发生的重要事件" maxlength="100"></textarea>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 12px; color: #999; display: block; margin-bottom: 5px;">优先级 (0-100)</label>
+                <input type="number" id="milestone-edit-priority" class="field-input" placeholder="50" min="0" max="100">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 12px; color: #999; display: block; margin-bottom: 5px;">标签（用逗号分隔）</label>
+                <input type="text" id="milestone-edit-tags" class="field-input" placeholder="例如：关系,物品" maxlength="50">
+            </div>
+
+            <div class="edit-field-buttons">
+                <button class="edit-field-btn cancel" id="cancel-edit-milestone">取消</button>
+                <button class="edit-field-btn save" id="save-edit-milestone">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 长按操作相关元素 -->
+    <!-- 消息长按菜单 -->
+    <div class="message-longpress-menu" id="messageLongpressMenu">
+        <div class="longpress-menu-items">
+            <div class="longpress-menu-item edit" id="editMessage">
+                <span>编辑</span>
+            </div>
+            <div class="longpress-menu-item delete" id="deleteMessage">
+                <span>删除</span>
+            </div>
+            <div class="longpress-menu-item copy" id="copyMessage">
+                <span>复制</span>
+            </div>
+            <div class="longpress-menu-item quote" id="quoteMessage">
+                <span>引用</span>
+            </div>
+            <div class="longpress-menu-item withdraw" id="withdrawMessage" style="display: none;">
+                <span>撤回</span>
+            </div>
+            <div class="longpress-menu-item extract" id="extractText" style="display: none;">
+                <span>提取文字</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 对话列表长按菜单 -->
+    <div class="chat-longpress-menu" id="chatLongpressMenu">
+        <div class="chat-menu-items">
+            <div class="chat-menu-item delete-chat" id="deleteChatItem">
+                <i class="fas fa-trash"></i>
+                <span>删除聊天</span>
+            </div>
+            <div class="chat-menu-item mark-read" id="markChatRead">
+                <i class="fas fa-check-circle"></i>
+                <span>标记为已读</span>
+            </div>
+            <div class="chat-menu-item top-chat" id="toggleTopChat">
+                <i class="fas fa-thumbtack"></i>
+                <span>置顶聊天</span>
+            </div>
+            <div class="chat-menu-item mute-chat" id="toggleMuteChat">
+                <i class="fas fa-bell-slash"></i>
+                <span>消息免打扰</span>
+            </div>
+            <div class="chat-menu-cancel" id="cancelChatMenu">取消</div>
+        </div>
+    </div>
+
+    <!-- 回复长按菜单 -->
+    <div class="reply-longpress-menu" id="replyLongpressMenu">
+        <div class="reply-menu-item edit" id="editReply">
+            <i class="fas fa-edit"></i>
+            <span>编辑</span>
+        </div>
+        <div class="reply-menu-item delete" id="deleteReply">
+            <i class="fas fa-trash"></i>
+            <span>删除</span>
+        </div>
+    </div>
+    
+    <!-- 文件夹长按菜单 -->
+    <div class="folder-longpress-menu" id="folderLongpressMenu">
+        <div class="folder-menu-item edit" id="editFolder">
+            <i class="fas fa-edit"></i>
+            <span>编辑名称</span>
+        </div>
+        <div class="folder-menu-item delete" id="deleteFolder">
+            <i class="fas fa-trash"></i>
+            <span>删除文件夹</span>
+        </div>
+    </div>
+    
+    <!-- 长按提示 -->
+    <div class="longpress-hint" id="longpressHint"></div>
+    
+    <!-- 暗色遮罩 -->
+    <div class="dark-overlay" id="darkOverlay"></div>
+
+    <!-- 模式切换浮窗 -->
+    <div class="mode-switch-popup" id="modeSwitchPopup">
+        <div class="mode-switch-content">
+            <div class="mode-switch-title">选择模式</div>
+            <div class="mode-option" id="modeNoApi">
+                <div class="mode-option-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="mode-option-text">
+                    <div class="mode-option-name">无API模式（默认）</div>
+                    <div class="mode-option-desc">纯字卡对话，无需配置</div>
+                </div>
+                <div class="mode-option-check" id="modeNoApiCheck">
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+            <div class="mode-option" id="modeApi">
+                <div class="mode-option-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="mode-option-text">
+                    <div class="mode-option-name">API模式</div>
+                    <div class="mode-option-desc">AI智能回复，需配置API</div>
+                </div>
+                <div class="mode-option-check" id="modeApiCheck" style="display: none;">
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+        </div>
+        <div class="mode-switch-mask" id="modeSwitchMask"></div>
+    </div>
+
+    <div class="ui-dialog" id="uiDialog" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="ui-dialog-content">
+            <div class="ui-dialog-title" id="uiDialogTitle"></div>
+            <div class="ui-dialog-message" id="uiDialogMessage"></div>
+            <input class="ui-dialog-input" id="uiDialogInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false">
+            <textarea class="ui-dialog-input ui-dialog-textarea" id="uiDialogTextarea" autocomplete="off" autocapitalize="off" spellcheck="false" style="display: none;"></textarea>
+            <div class="ui-dialog-quick-actions" id="uiDialogQuickActions" style="display: none;">
+                <button class="quick-action-btn" data-type="system">系统格式</button>
+                <button class="quick-action-btn" data-type="voice">语音格式</button>
+                <button class="quick-action-btn" data-type="split">气泡分段</button>
+            </div>
+            <div class="ui-dialog-buttons">
+                <button class="ui-dialog-btn cancel" id="uiDialogCancel" type="button">取消</button>
+                <button class="ui-dialog-btn confirm" id="uiDialogConfirm" type="button">确定</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 消息删除确认对话框 -->
+    <div class="delete-confirm-dialog" id="messageDeleteConfirmDialog">
+        <div class="delete-confirm-content">
+            <div class="delete-confirm-title" id="messageDeleteTitle">删除消息</div>
+            <div class="delete-confirm-message" id="messageDeleteMessage">
+                确定要删除这条消息吗？
+            </div>
+            <div class="delete-confirm-buttons">
+                <button class="delete-confirm-btn cancel" id="cancelDeleteMessage">取消</button>
+                <button class="delete-confirm-btn confirm" id="confirmDeleteMessage">删除</button>
+            </div>
+        </div>
+    </div>
+    
+
+    
+    <!-- 底部导航栏 -->
+    <div class="tab-bar">
+        <div class="tab-item active" data-tab="chat-tab">
+            <div class="tab-icon">
+                <i class="fas fa-comment-alt"></i>
+            </div>
+            <div>微信</div>
+        </div>
+        <div class="tab-item" data-tab="contacts-tab">
+            <div class="tab-icon">
+                <i class="fas fa-address-book"></i>
+            </div>
+            <div>通讯录</div>
+        </div>
+        <div class="tab-item" data-tab="me-tab">
+            <div class="tab-icon">
+                <i class="fas fa-user"></i>
+            </div>
+            <div>我</div>
+        </div>
+    </div>
+    
+    <script src="js/core/SafeArea.js" defer></script>
+    <script src="js/apps/messaging/milestone_manager.js" defer></script>
+    <!-- 平台适配器初始化脚本 -->
+    <script>
+        // 等待所有核心服务加载完成后初始化平台适配器
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 等待DeviceAdapter和PatrolService初始化
+            if (window.Core && window.Core.DeviceAdapter && window.Core.PatrolService) {
+                try {
+                    // 等待PlatformLoader完成脚本加载
+                    // PlatformLoader是异步加载脚本的，需要等待它完成
+                    if (window.Core.PlatformLoader) {
+                        // 如果PlatformLoader还在加载，等待它完成
+                        if (!window.Core.PlatformLoader.loaded) {
+                            console.log('[传讯.html] 等待PlatformLoader完成脚本加载...');
+                            let waitCount = 0;
+                            const maxWait = 50; // 最多等待5秒（50 * 100ms）
+                            while (!window.Core.PlatformLoader.loaded || (!window.Core.Platform || !window.Core.Platform.AdapterManager)) {
+                                if (waitCount >= maxWait) {
+                                    console.warn('[传讯.html] PlatformLoader脚本加载超时，使用fallback模式');
+                                    break;
+                                }
+                                await new Promise(resolve => setTimeout(resolve, 100));
+                                waitCount++;
+                            }
+                            if (window.Core.Platform && window.Core.Platform.AdapterManager) {
+                                console.log('[传讯.html] PlatformLoader脚本加载完成');
+                            }
+                        }
+                    } else {
+                        console.warn('[传讯.html] PlatformLoader未找到');
+                    }
+                    
+                    // 初始化设备适配器
+                    const deviceAdapter = new window.Core.DeviceAdapter();
+                    deviceAdapter.setPatrolLogger(window.Core.PatrolService.modules.patrolLogger);
+                    await deviceAdapter.init();
+                    
+                    // 初始化平台适配器管理器
+                    if (window.Core.Platform && window.Core.Platform.AdapterManager) {
+                        const platformManager = new window.Core.Platform.AdapterManager();
+                        platformManager.setPatrolLogger(window.Core.PatrolService.modules.patrolLogger);
+                        await platformManager.init(deviceAdapter);
+                        
+                        // 保存到全局，供main.js使用
+                        window.Core.PlatformAdapterManager = platformManager;
+                        window.Core.DeviceAdapterInstance = deviceAdapter;
+                        
+                        console.log('[传讯.html] 平台适配器初始化完成');
+                    } else {
+                        console.warn('[传讯.html] PlatformAdapterManager未找到，可能PlatformLoader未完成加载');
+                    }
+                    
+                    // 设置PatrolService的设备适配器
+                    window.Core.PatrolService.setDeviceAdapter(deviceAdapter);
+                    await window.Core.PatrolService.init();
+                } catch (e) {
+                    console.error('[传讯.html] 平台适配器初始化失败:', e);
+                }
+            } else {
+                console.warn('[传讯.html] 核心服务未就绪:', {
+                    hasCore: !!window.Core,
+                    hasDeviceAdapter: !!(window.Core && window.Core.DeviceAdapter),
+                    hasPatrolService: !!(window.Core && window.Core.PatrolService)
+                });
+            }
+        });
+    </script>
+    <script src="js/apps/messaging/main.js" defer></script>
+</body>
+</html>
