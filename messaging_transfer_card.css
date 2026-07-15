@@ -1,0 +1,137 @@
+
+/* 
+ * 莫兰迪橙色竖向转账卡片样式
+ * Morandi Orange Vertical Transfer Card
+ */
+.transfer-overlay-card {
+    --card-bg-start: #F3D5B5;
+    --card-bg-end: #FFF8F0;
+    --card-accent: #E0C3A5;
+    --card-text-primary: #5A4A42;
+    --card-text-secondary: #8D6E63;
+    --card-btn-primary-bg: #E6A57E;
+    --card-btn-primary-text: #FFFFFF;
+    
+    background: linear-gradient(165deg, var(--card-bg-start) 0%, var(--card-bg-end) 60%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 20px 50px rgba(141, 110, 99, 0.15), 0 4px 12px rgba(141, 110, 99, 0.05);
+    border-radius: 24px;
+    padding: 30px 24px;
+    align-items: center;
+    text-align: center;
+    max-width: 320px;
+    width: 85%;
+    margin: 0 auto;
+}
+
+/* 顶部图标区域 */
+.transfer-card-icon {
+    width: 64px;
+    height: 64px;
+    background-color: rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.transfer-card-icon i {
+    font-size: 32px;
+    color: var(--card-btn-primary-bg);
+}
+
+/* 标题样式重写 */
+.transfer-overlay-card .capture-title {
+    font-size: 16px;
+    color: var(--card-text-secondary);
+    font-weight: 500;
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+/* 金额样式重写 */
+.transfer-overlay-card .transfer-amount {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--card-text-primary);
+    margin-bottom: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    letter-spacing: -0.5px;
+}
+
+/* 备注样式重写 */
+.transfer-overlay-card .transfer-remark {
+    font-size: 14px;
+    color: var(--card-text-secondary);
+    margin-bottom: 30px;
+    background: rgba(255, 255, 255, 0.4);
+    padding: 8px 16px;
+    border-radius: 12px;
+    max-width: 100%;
+}
+
+/* 按钮区域重写 */
+.transfer-overlay-card .capture-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+}
+
+.transfer-overlay-card .capture-option {
+    width: 100%;
+    min-width: unset;
+    height: 50px;
+    border-radius: 16px;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+}
+
+/* 收款按钮（主要按钮） */
+.transfer-overlay-card .capture-option.primary {
+    background-color: var(--card-btn-primary-bg);
+    color: var(--card-btn-primary-text);
+    box-shadow: 0 4px 12px rgba(230, 165, 126, 0.4);
+}
+
+.transfer-overlay-card .capture-option.primary:active {
+    transform: scale(0.98);
+    background-color: #D99670;
+}
+
+/* 退回按钮（次要按钮） */
+.transfer-overlay-card .capture-option:not(.primary) {
+    background-color: transparent;
+    border: 1px solid rgba(141, 110, 99, 0.2);
+    color: var(--card-text-secondary);
+}
+
+.transfer-overlay-card .capture-option:not(.primary):active {
+    background-color: rgba(141, 110, 99, 0.05);
+}
+
+/* 关闭按钮微调 */
+.transfer-overlay-card .card-close {
+    top: 12px;
+    right: 12px;
+    color: var(--card-text-secondary);
+    opacity: 0.6;
+}
+
+.transfer-overlay-card .card-close:hover {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* 状态文本样式 */
+.transfer-overlay-card .transfer-status-text {
+    color: var(--card-text-secondary) !important;
+    font-weight: 500;
+    font-size: 18px !important;
+    margin-top: 10px !important;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 12px;
+    width: 100%;
+}

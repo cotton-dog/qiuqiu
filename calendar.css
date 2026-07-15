@@ -1,0 +1,513 @@
+:root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --text: #1f2a37;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --accent: #ef4444; /* Red like many calendar apps */
+    --accent-bg: #fee2e2;
+    --primary: #3b82f6;
+    --today-bg: #ef4444;
+    --today-text: #ffffff;
+    --selected-bg: #3b82f6;
+    --selected-text: #ffffff;
+    --weekend: #9ca3af;
+    --success: #10b981;
+    
+    /* Period Colors */
+    --period-bg: #fce7f3;
+    --period-text: #be185d;
+    --period-predicted-border: #fbcfe8;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #000000;
+        --surface: #1c1c1e;
+        --text: #ffffff;
+        --muted: #9ca3af;
+        --border: #38383a;
+        --accent: #ff453a;
+        --accent-bg: #3a1c1c;
+        --primary: #0a84ff;
+        --today-bg: #ff453a;
+        --today-text: #ffffff;
+        --selected-bg: #0a84ff;
+        --selected-text: #ffffff;
+        --weekend: #6e6e73;
+        --success: #34d399;
+        
+        /* Period Colors Dark */
+        --period-bg: #831843;
+        --period-text: #fce7f3;
+        --period-predicted-border: #831843;
+    }
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Header */
+.header {
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg);
+    z-index: 10;
+    padding-top: calc(12px + var(--safe-inset-top, env(safe-area-inset-top)));
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.app-back-btn {
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 20px;
+    cursor: pointer;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.app-back-btn:active {
+    background-color: var(--border);
+}
+
+.header-center {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.header-title {
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.header-title span.year {
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.header-controls {
+    display: flex;
+    gap: 12px;
+}
+
+.control-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+
+.control-icon-btn {
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 20px;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+.control-icon-btn:active {
+    background-color: var(--border);
+}
+
+/* Weekday Header */
+.weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+}
+
+/* Calendar Grid */
+.calendar-container {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.month-view {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-auto-rows: min-content;
+    padding-bottom: 16px;
+    overflow: hidden;
+    width: 100%;
+    /* iOS Swipe support hooks */
+    touch-action: pan-y;
+}
+
+.day-cell {
+    aspect-ratio: 1;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    padding: 4px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: none !important;
+}
+
+.day-cell:nth-child(7n) {
+    border-right: none;
+}
+
+.day-number {
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.day-cell.today .day-number {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.day-cell.selected .day-number {
+    background-color: var(--selected-bg);
+    color: var(--selected-text);
+    font-weight: 700;
+}
+
+.day-cell.today.selected .day-number {
+    background-color: var(--today-bg);
+    color: var(--today-text);
+    font-weight: 700;
+}
+
+/* Period Styles */
+.day-cell.period .day-number {
+    background-color: var(--period-bg);
+    color: var(--period-text);
+}
+
+/* Ensure selection is still visible on top of period, or merge them */
+.day-cell.period.selected .day-number {
+    background-color: var(--selected-bg);
+    color: var(--selected-text);
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--period-bg);
+}
+
+.day-cell.period-predicted .day-number {
+    background-color: var(--period-bg);
+    opacity: 0.6;
+    color: var(--period-text);
+}
+
+.period-info-tag {
+    font-size: 9px;
+    color: var(--period-text);
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    transform: scale(0.8);
+}
+
+.day-cell.prev-month, .day-cell.next-month {
+    color: var(--muted);
+    background-color: rgba(0,0,0,0.02);
+}
+
+.day-lunar {
+    font-size: 9px;
+    color: var(--muted);
+    transform: scale(0.85);
+    line-height: 1;
+}
+
+.day-events {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    width: auto;
+}
+
+.event-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: var(--muted);
+}
+
+.event-dot.important { background-color: var(--accent); }
+.event-dot.work { background-color: var(--primary); }
+.event-dot.personal { background-color: var(--success); }
+
+/* Event List (Below Calendar) */
+.event-list {
+    padding: 16px;
+    background-color: var(--bg);
+    border-top: 1px solid var(--border);
+    flex: 1;
+    min-height: 0;
+}
+
+.event-list-header {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.period-toggle-btn {
+    font-size: 12px;
+    color: var(--period-text);
+    background: var(--period-bg);
+    border: none;
+    padding: 4px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.2s;
+}
+.period-toggle-btn:active {
+    opacity: 0.7;
+}
+.period-toggle-btn.active {
+    background: var(--period-text);
+    color: white;
+}
+
+.event-item {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+}
+
+.event-time {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+    width: 45px;
+    flex-shrink: 0;
+}
+
+.event-marker {
+    width: 4px;
+    height: 40px;
+    border-radius: 2px;
+    background-color: var(--border);
+    flex-shrink: 0;
+}
+
+.event-details {
+    flex: 1;
+}
+
+.event-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.event-desc {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+/* Floating Action Button */
+.fab {
+    position: fixed;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    background-color: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 100;
+    transition: transform 0.2s;
+}
+.fab:active {
+    transform: scale(0.95);
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-card {
+    background-color: var(--bg);
+    width: 90%;
+    max-width: 320px;
+    border-radius: 16px;
+    padding: 20px;
+    transform: scale(0.9);
+    transition: transform 0.2s;
+    max-height: 80vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+}
+.modal-overlay.active .modal-card {
+    transform: scale(1);
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+.form-label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+.form-input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background-color: var(--surface);
+    color: var(--text);
+    font-size: 16px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+}
+.btn-cancel {
+    background-color: transparent;
+    color: var(--muted);
+}
+.btn-save {
+    background-color: var(--accent);
+    color: white;
+}
+
+/* Mobile Responsiveness Improvements */
+@media (max-width: 375px) {
+    .header {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    .header-controls {
+        gap: 8px;
+    }
+    .header-title {
+        font-size: 16px;
+    }
+    .header-title span.year {
+        font-size: 13px;
+    }
+    .control-icon-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 18px;
+    }
+    .app-back-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+    .control-btn {
+        font-size: 14px;
+        padding: 4px;
+    }
+}

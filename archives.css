@@ -1,0 +1,823 @@
+/* css/apps/archives.css */
+
+/* === 档案应用模块样式 (淡彩低饱和风格) === */
+.archives-app-content {
+    flex: 1;
+    min-height: 0; /* Flexbox 滚动修复 */
+    position: relative; /* 确保子元素 absolute 定位基于此容器，而不是覆盖整个应用 */
+    background-color: #f7f5f2; /* 极淡的灰米色底色 */
+    background-image: 
+        radial-gradient(#ebe7e0 1px, transparent 1px),
+        radial-gradient(#ebe7e0 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: 0 0, 12px 12px;
+    padding-bottom: 40px;
+}
+
+.archives-app-stats {
+    padding: 24px;
+    text-align: center;
+    color: #a69984; /* 调淡文字颜色 */
+    font-family: "Courier New", Courier, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    border-bottom: 1px solid #e8e4db;
+    margin-bottom: 20px;
+}
+
+.archives-app-cards-grid {
+    padding: 0 20px 30px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.archives-app-card {
+    background: #ffffff; /* 纯白纸张 */
+    border-radius: 6px;
+    padding: 24px;
+    position: relative;
+    box-shadow: 
+        0 4px 15px rgba(0,0,0,0.03),
+        0 1px 3px rgba(0,0,0,0.02);
+    border: none;
+    border-left: 6px solid #dcd3c1; /* 弱化侧边栏宽度和颜色 */
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    /* iOS 长按防护 */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: pan-y;
+}
+
+/* 档案袋标签效果 - 调为淡色 */
+.archives-app-card::before {
+    content: "ARCHIVE";
+    position: absolute;
+    top: 10px;
+    right: -25px;
+    background: #d5a6a6; /* 淡珊瑚粉，低饱和 */
+    color: rgba(255, 255, 255, 0.9);
+    padding: 3px 30px;
+    font-size: 9px;
+    font-weight: bold;
+    transform: rotate(45deg);
+    z-index: 1;
+    letter-spacing: 1px;
+}
+
+.archives-app-card:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.archives-app-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #f5f2ed;
+}
+
+.archives-app-card-avatar {
+    width: 65px;
+    height: 85px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    flex-shrink: 0;
+    border: 4px solid white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    outline: 1px solid #eee;
+    background-size: cover;
+    background-position: center;
+    filter: saturate(0.8); /* 降低头像饱和度 */
+}
+
+.archives-app-card-main-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.archives-app-card-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #4a4a4a; /* 深灰而非纯黑 */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.archives-app-card-gender {
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.archives-app-card-gender .fa-mars { color: #8faadc; } /* 柔和蓝 */
+.archives-app-card-gender .fa-venus { color: #db9eb5; } /* 柔和粉 */
+.archives-app-card-gender .fa-genderless { color: #b2b2b2; }
+
+.archives-app-card-id {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 11px;
+    color: #9a8c71;
+    background: #f7f5f2;
+    padding: 3px 10px;
+    border-radius: 100px; /* 圆角化 */
+    display: inline-block;
+    width: fit-content;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    border: 1px solid #e8e4db;
+}
+
+.archives-app-card-body {
+    background: rgba(220, 211, 193, 0.1); /* 极淡的米色 */
+    border-radius: 6px;
+    padding: 16px;
+    border: 1px solid rgba(220, 211, 193, 0.2);
+    position: relative;
+}
+
+/* 盖章效果 - 调淡 */
+.archives-app-card-body::after {
+    content: "CONFIDENTIAL";
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 10px;
+    color: rgba(188, 170, 164, 0.25); /* 极淡的褐色 */
+    font-weight: 900;
+    border: 1.5px solid rgba(188, 170, 164, 0.2);
+    padding: 1px 5px;
+    transform: rotate(-12deg);
+    pointer-events: none;
+    font-family: "Courier New", Courier, monospace;
+    letter-spacing: 1px;
+}
+
+.archives-app-card-label {
+    font-size: 10px;
+    color: #b2a694;
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.5px;
+}
+
+.archives-app-card-label::before {
+    content: "";
+    width: 3px;
+    height: 10px;
+    background: #dcd3c1;
+    display: inline-block;
+    border-radius: 1px;
+}
+
+.archives-app-card-intro {
+    font-size: 13px;
+    color: #717171;
+    line-height: 1.6;
+    word-break: break-all;
+    font-style: normal; /* 取消斜体，增加阅读舒适度 */
+}
+
+.archives-app-empty-state {
+    padding: 80px 40px;
+    text-align: center;
+    color: #b2a694;
+}
+
+.archives-app-empty-state i {
+    font-size: 48px;
+    margin-bottom: 24px;
+    opacity: 0.2;
+}
+
+.archives-app-empty-state h3 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.archives-app-empty-state p {
+    margin: 0;
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+/* === 档案详情视图样式 === */
+.archives-detail-view {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f7f5f2; /* 与列表背景一致 */
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    animation: archives-slide-in 0.3s ease-out;
+    padding: 15px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+
+.archives-detail-view::-webkit-scrollbar {
+    display: none;
+}
+
+@keyframes archives-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.archives-detail-pages-wrapper {
+    position: relative;
+    width: 100%;
+    /* max-width: 400px; */ /* 不需要限制最大宽度，适配容器 */
+    margin: 0 auto;
+    min-height: 550px;
+    perspective: 1000px;
+}
+
+.archives-detail-page {
+    width: 100%;
+    transition: transform 0.5s ease;
+    backface-visibility: hidden;
+}
+
+.archives-detail-page.hidden {
+    display: none;
+}
+
+.archives-detail-paper {
+    background: white;
+    border-radius: 0; /* 纸张直角 */
+    padding: 35px 20px;
+    box-shadow: 
+        0 10px 30px rgba(0,0,0,0.05),
+        0 1px 1px rgba(0,0,0,0.1);
+    position: relative;
+    min-height: 580px;
+    border: 1px solid #e8e4db;
+    /* 纸张纹理叠加 */
+    background-image: linear-gradient(rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.85) 100%), url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+    display: flex;
+    flex-direction: column;
+}
+
+/* 首页特有的复古纸张花纹边框 */
+.archives-detail-page-front .archives-detail-paper {
+    border: 12px solid #e8e0d1; /* 纸张厚度感 */
+    padding: 12px;
+    background-color: #fff;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+.archives-detail-page-front .archives-detail-paper::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+    border: 2px dashed #b5a991; /* 内部复古缝线效果 */
+    pointer-events: none;
+    z-index: 5;
+}
+
+.archives-detail-page-front .archives-detail-paper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 1px solid #d1c5b0; /* 外沿勾勒 */
+    pointer-events: none;
+    z-index: 4;
+}
+
+/* 首页大头像容器 - 现在作为全屏背景 */
+.archives-detail-cover-avatar-container {
+    width: 100%;
+    height: 100%;
+    min-height: 580px;
+    margin-bottom: 0;
+    border: none;
+    overflow: visible;
+    position: relative;
+    background-color: #f5f5f5;
+    background-size: cover;
+    background-position: center;
+    display: flex !important;
+    flex-direction: column;
+    z-index: 1;
+}
+
+.archives-detail-cover-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.4); /* 降低白度 */
+    -webkit-backdrop-filter: blur(2.5px) grayscale(0.3); /* 减弱模糊效果 */
+    backdrop-filter: blur(2.5px) grayscale(0.3);
+    z-index: 1 !important;
+    pointer-events: none;
+}
+
+/* 底部信息标签样式 */
+.archives-detail-bottom-tags {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    padding: 0 10px;
+}
+
+.archives-detail-bottom-tag {
+    background: rgba(74, 74, 74, 0.1);
+    border: 1px solid rgba(74, 74, 74, 0.2);
+    padding: 4px 10px;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.archives-detail-bottom-tag .tag-label {
+    font-size: 8px;
+    color: #888;
+    font-family: monospace;
+}
+
+.archives-detail-bottom-tag .tag-value {
+    font-size: 10px;
+    color: #4a4a4a;
+    font-weight: bold;
+}
+
+.archives-detail-cover-card {
+    /* iOS 长按防护 */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: pan-y;
+    position: relative;
+    width: 110px; /* 稍微缩小一点照片，适合放在顶部 */
+    height: 150px;
+    background-color: #fff;
+    border: 5px solid #fff;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    transform: rotate(-3deg);
+    z-index: 10 !important;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: bold;
+    color: #fff;
+    transition: transform 0.3s ease;
+}
+
+.archives-detail-cover-card:hover {
+    transform: rotate(-2deg) scale(1.02);
+}
+
+.archives-detail-cover-card::after {
+    content: "";
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 12px;
+    background: rgba(220, 211, 193, 0.6); /* 类似胶带的效果 */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* 翻页按钮 */
+.archives-detail-flip-btn {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    background: #4a4a4a;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: 'Courier New', Courier, monospace;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.archives-detail-flip-btn:active {
+    transform: scale(0.95);
+}
+
+/* 别针效果 - 只在首页显示或统一显示 */
+.archives-detail-paper::after {
+    content: "";
+    position: absolute;
+    top: -10px;
+    right: 40px;
+    width: 15px;
+    height: 45px;
+    border: 3px solid #b2b2b2;
+    border-radius: 10px;
+    background: rgba(200,200,200,0.2);
+    z-index: 2;
+    transform: rotate(5deg);
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+.archives-detail-header {
+    display: flex;
+    align-items: stretch;
+    gap: 24px;
+    margin-bottom: 30px;
+    padding-top: 10px;
+}
+
+.archives-detail-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.archives-detail-header-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 4px;
+    gap: 12px;
+    position: relative;
+    z-index: 1; /* 确保在叠放图下方 */
+}
+
+.archives-detail-avatar {
+    width: 100px;
+    height: 130px;
+    border: 1px solid #ddd;
+    padding: 4px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    font-weight: bold;
+    color: white;
+    background-size: cover;
+    background-position: center;
+    filter: saturate(0.7) contrast(0.9);
+    position: relative;
+    margin-bottom: 0;
+    margin-top: 10px; /* 往下挪一点，调整为10px */
+}
+
+/* 订书钉效果 */
+.archives-detail-avatar::before {
+    content: "";
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 4px;
+    background: #999;
+    border-radius: 1px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+.archives-detail-name-row {
+    border-bottom: 2px solid #f0ede8;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+}
+
+.archives-detail-name {
+    font-size: 28px;
+    font-weight: 800;
+    color: #3a3a3a;
+    letter-spacing: -0.5px;
+    font-family: "楷体", "STKaiti", serif; /* 增加手写感 */
+}
+
+/* 手写签名区 */
+.archives-detail-signature {
+    margin-top: 30px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+    gap: 15px;
+    padding-right: 10px;
+}
+
+.archives-detail-signature-label {
+    font-size: 10px;
+    color: #b2a694;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.archives-detail-signature-line {
+    width: 120px;
+    border-bottom: 1px solid #dcd3c1;
+    font-family: "Brush Script MT", cursive;
+    font-size: 20px;
+    color: #8faadc;
+    text-align: center;
+    padding-bottom: 5px;
+    opacity: 0.8;
+}
+
+.archives-detail-meta-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.archives-detail-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.archives-detail-meta-label {
+    font-size: 10px;
+    color: #b2a694;
+    font-weight: 700;
+    text-transform: uppercase;
+    width: 50px;
+}
+
+.archives-detail-meta-value {
+    font-size: 14px;
+    color: #555;
+    font-weight: 600;
+}
+
+.archives-detail-side-container {
+    position: relative;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    display: flex;
+    align-items: flex-end;
+    gap: -10px;
+    z-index: 10;
+    pointer-events: none;
+    transform: rotate(2deg);
+    margin-top: 20px;
+    margin-bottom: 20px;
+    justify-content: flex-end;
+    padding-right: 10px;
+}
+
+.archives-detail-side-info {
+    background: #fff;
+    padding: 12px 15px;
+    border-radius: 2px;
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+    border: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 180px; /* 延长宽度，确保文字不换行 */
+    pointer-events: auto;
+    position: relative;
+}
+
+/* 模拟胶带效果 */
+.archives-detail-side-info::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-3deg);
+    width: 50px;
+    height: 15px;
+    background: rgba(214, 203, 183, 0.5);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    z-index: 10;
+}
+
+/* 叠放卡片样式 */
+.archives-detail-side-stack {
+    position: relative;
+    width: 110px;
+    height: 140px;
+    flex-shrink: 0;
+    margin-top: 0;
+    margin-left: -20px; /* 负边距让叠放图贴着信息栏 */
+    z-index: 5; /* 确保在信息栏上方 */
+    pointer-events: auto;
+    transform: rotate(-3deg); /* 独立旋转角度，增加随意感 */
+}
+
+.archives-detail-side-stack-bottom {
+    position: absolute;
+    top: 5px;
+    right: -5px;
+    width: 100%;
+    height: 100%;
+    background-color: #dcd3c1; /* 复古底色 */
+    border-radius: 2px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 1;
+    transform: rotate(5deg);
+}
+
+.archives-detail-side-stack-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #fff;
+    border: 4px solid #fff;
+    border-radius: 2px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    z-index: 2;
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: bold;
+    color: #eee;
+    /* iOS 长按防护 */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: pan-y;
+}
+
+.archives-detail-side-stack-top::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.03);
+}
+
+.archives-detail-side-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.archives-detail-side-label {
+    font-size: 9px;
+    color: #b2a694;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.archives-detail-side-value {
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+    font-family: "Courier New", Courier, monospace;
+}
+
+.archives-detail-info-item {
+    border-bottom: 1px dashed #e8e4db;
+    padding-bottom: 8px;
+}
+
+.archives-detail-info-label {
+    font-size: 11px;
+    color: #b2a694;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.archives-detail-info-value {
+    font-size: 15px;
+    color: #4a4a4a;
+    font-weight: 500;
+}
+
+.archives-detail-section {
+    margin-bottom: 24px;
+}
+
+.archives-detail-section-title {
+    font-size: 12px;
+    color: #9a8c71;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.archives-detail-section-title::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e8e4db;
+}
+
+.archives-detail-intro-box {
+    background: transparent;
+    border: none;
+    border-left: 2px solid #f5f2ed;
+    padding: 0 0 0 20px;
+    border-radius: 0;
+    font-size: 14px;
+    color: #555;
+    line-height: 1.8;
+    min-height: 80px;
+    position: relative;
+}
+
+.archives-detail-stamp {
+    position: absolute;
+    top: 40px;
+    right: 20px;
+    width: 90px;
+    height: 90px;
+    border: 4px double rgba(143, 170, 220, 0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(15deg);
+    color: rgba(143, 170, 220, 0.6);
+    font-weight: 900;
+    font-size: 11px;
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    z-index: 10; /* 提高层级，防止被横线遮挡 */
+    mix-blend-mode: multiply; /* 正片叠底，模拟真实盖章叠加效果 */
+}
+
+/* Iframe 适配 */
+body, html { height: 100%; overflow: hidden; }
+#archivesAppContainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform: none !important;
+    opacity: 1 !important;
+    display: flex !important;
+    flex-direction: column;
+    border-radius: 0;
+}
