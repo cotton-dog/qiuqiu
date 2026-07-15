@@ -1,0 +1,212 @@
+:root {
+    --modal-bg: rgba(255, 255, 255, 0.95);
+    --modal-radius: 20px;
+    --modal-width: 90%;
+    --modal-max-width: 400px;
+    --modal-max-height: 80vh;
+    --modal-header-height: 60px;
+    --modal-footer-height: 60px;
+    --modal-overlay-bg: rgba(0, 0, 0, 0.5);
+    --modal-z-index: var(--z-modal, 2100);
+    --modal-overlay-z-index: var(--z-overlay, 2000);
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: var(--modal-overlay-bg);
+    z-index: var(--modal-overlay-z-index);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+    pointer-events: none;
+    touch-action: none;
+    overscroll-behavior: none;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.modal {
+    position: fixed;
+    top: 10vh;
+    left: 50%;
+    transform: translateX(-50%) scale(0.98);
+    width: var(--modal-width);
+    max-width: var(--modal-max-width);
+    background-color: var(--modal-bg);
+    border-radius: var(--modal-radius);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    z-index: var(--modal-z-index);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+    pointer-events: none;
+    max-height: var(--modal-max-height);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(-50%) scale(1);
+}
+
+.modal-header {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: var(--modal-bg);
+    border-radius: var(--modal-radius) var(--modal-radius) 0 0;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+}
+
+.modal-close {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    font-size: 28px;
+    color: #666;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.modal-close:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.modal-close:active {
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+.modal-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.modal-footer {
+    flex-shrink: 0;
+    padding: 15px 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: var(--modal-bg);
+    border-radius: 0 0 var(--modal-radius) var(--modal-radius);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.modal-footer button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.modal-footer .modal-btn-primary {
+    background-color: #007aff;
+    color: white;
+}
+
+.modal-footer .modal-btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.modal-footer .modal-btn-secondary {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.modal-footer .modal-btn-secondary:hover {
+    background-color: #e5e5e5;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --modal-bg: rgba(30, 30, 30, 0.95);
+    }
+    
+    .modal-title {
+        color: #f5f5f5;
+    }
+    
+    .modal-close {
+        color: #ccc;
+    }
+    
+    .modal-close:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .modal-header, .modal-footer {
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .modal-footer .modal-btn-secondary {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #f5f5f5;
+    }
+    
+    .modal-footer .modal-btn-secondary:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+    }
+}
+
+/* ========== 包装现有元素的轻量级样式（最小化干预） ========== */
+
+/**
+ * 只添加确保基础功能的样式，不覆盖应用原有样式
+ * 使用属性选择器，不强制类名
+ */
+
+/* 确保包装的浮窗高度固定，不受键盘影响 */
+[data-modal-wrapped] {
+    /* 确保基于 viewport 定位 */
+    /* 只在必要时才应用，不强制覆盖 */
+}
+
+/* 标记为高度固定的浮窗 */
+[data-modal-height-fixed] {
+    /* 确保使用 viewport 单位，不受键盘影响 */
+    /* 具体样式由各应用自己定义，这里只做标记 */
+}
+
+/* 键盘弹起时的处理（通过 JavaScript 添加类） */
+[data-modal-wrapped].keyboard-open {
+    /* 确保位置不变 */
+    /* 具体样式由各应用自己定义 */
+}
