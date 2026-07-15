@@ -1,0 +1,95 @@
+/**
+ * iOS平台特定样式
+ * 针对iOS Safari优化的样式
+ */
+
+/* iOS Safari特有的优化 */
+.platform-ios {
+    /* 使用-webkit-前缀确保兼容性 */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.platform-ios input,
+.platform-ios textarea,
+.platform-ios select {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* iOS滚动优化 */
+.platform-ios .scroll-y-hidebar,
+.platform-ios .flex-scroll {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+}
+
+/* iOS键盘弹出时的优化 */
+.platform-ios .keyboard-open {
+    /* iOS键盘弹出时的特殊处理 */
+}
+
+.platform-ios .keyboard-spacer {
+    /* iOS键盘占位元素 */
+    flex: 0 0 0px;
+    /* 移除transition，避免重排和闪屏 */
+    transition: none;
+}
+
+/* iOS安全区域支持 */
+.platform-ios.standalone-mode {
+    /* PWA standalone模式下的安全区域 */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+
+/* iOS backdrop-filter优化 */
+.platform-ios .chat-bubble,
+.platform-ios .mode-menu,
+.platform-ios .persona-editor-modal {
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+/* iOS动画优化 */
+.platform-ios * {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+/* iOS输入框优化 */
+.platform-ios input,
+.platform-ios textarea {
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 0;
+}
+
+/* iOS按钮优化 */
+.platform-ios button {
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS长按菜单优化 */
+.platform-ios .message-longpress-menu,
+.platform-ios .chat-longpress-menu {
+    /* iOS长按菜单的特殊样式 */
+    -webkit-touch-callout: none;
+}
+
+/* iOS视觉优化 */
+.platform-ios .dialogue-body {
+    /* iOS对话区域的优化 */
+    -webkit-overflow-scrolling: touch;
+}
+
+.platform-ios .main-content {
+    /* iOS主内容区的优化 */
+    -webkit-overflow-scrolling: touch;
+}
