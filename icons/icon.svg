@@ -1,0 +1,68 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- 定义整体紫色渐变 (从上到下) -->
+        <linearGradient id="dreamGradient" x1="0" y1="-130" x2="0" y2="330" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#9D50BB"/> <!-- 亮紫 -->
+            <stop offset="100%" stop-color="#6E48AA"/> <!-- 深紫/靛青 -->
+        </linearGradient>
+    </defs>
+
+    <!-- 方形白色背景 (rx=0) -->
+    <rect width="512" height="512" rx="0" fill="#FFFFFF"/>
+    
+    <!-- 捕梦网主体组 (应用渐变) -->
+    <g transform="translate(256, 210)" stroke="url(#dreamGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+        <!-- 外圈圆环 -->
+        <circle cx="0" cy="0" r="130" fill="none" stroke-width="12"/>
+        
+        <!-- 内部花纹 - 8瓣花 -->
+        <g stroke-width="6">
+            <!-- 第一层花瓣 -->
+            <path d="M0 0 Q 30 -60 0 -130 Q -30 -60 0 0" fill="none"/>
+            <path d="M0 0 Q 30 -60 0 -130 Q -30 -60 0 0" transform="rotate(45)" fill="none"/>
+            <path d="M0 0 Q 30 -60 0 -130 Q -30 -60 0 0" transform="rotate(90)" fill="none"/>
+            <path d="M0 0 Q 30 -60 0 -130 Q -30 -60 0 0" transform="rotate(135)" fill="none"/>
+            <path d="M0 0 Q 30 -60 0 -130 Q -30 -60 0 0" transform="rotate(180)" fill="none"/>
+            <path d="M0 0 Q 30 -60 0 -130 Q -30 -60 0 0" transform="rotate(225)" fill="none"/>
+            <path d="M0 0 Q 30 -60 0 -130 Q -30 -60 0 0" transform="rotate(270)" fill="none"/>
+            <path d="M0 0 Q 30 -60 0 -130 Q -30 -60 0 0" transform="rotate(315)" fill="none"/>
+            
+            <!-- 内部连接线/小星星 -->
+            <circle cx="0" cy="0" r="40" stroke-width="4" fill="none" opacity="0.8"/>
+            <circle cx="0" cy="0" r="10" fill="url(#dreamGradient)" stroke="none"/>
+        </g>
+        
+        <!-- 悬挂的羽毛连接线 -->
+        <!-- 左侧 -->
+        <line x1="-110" y1="70" x2="-110" y2="160" stroke-width="6"/>
+        <!-- 中间 -->
+        <line x1="0" y1="130" x2="0" y2="220" stroke-width="6"/>
+        <!-- 右侧 -->
+        <line x1="110" y1="70" x2="110" y2="160" stroke-width="6"/>
+        
+        <!-- 羽毛形状 (Fill使用渐变, 内部纹理为白色) -->
+        <!-- 左羽毛 -->
+        <g transform="translate(-110, 160)">
+            <path d="M0 0 Q 25 30 0 80 Q -25 30 0 0 Z" fill="url(#dreamGradient)" stroke="none"/>
+            <path d="M0 10 L 0 70" stroke="#FFFFFF" stroke-width="3"/>
+            <path d="M0 20 L 10 30 M 0 35 L 12 45 M 0 50 L 10 60" stroke="#FFFFFF" stroke-width="3"/>
+            <path d="M0 20 L -10 30 M 0 35 L -12 45 M 0 50 L -10 60" stroke="#FFFFFF" stroke-width="3"/>
+        </g>
+        
+        <!-- 中间羽毛 (稍大) -->
+        <g transform="translate(0, 220)">
+            <path d="M0 0 Q 35 40 0 110 Q -35 40 0 0 Z" fill="url(#dreamGradient)" stroke="none"/>
+            <path d="M0 15 L 0 95" stroke="#FFFFFF" stroke-width="4"/>
+            <path d="M0 30 L 15 45 M 0 50 L 18 65 M 0 70 L 15 85" stroke="#FFFFFF" stroke-width="3"/>
+            <path d="M0 30 L -15 45 M 0 50 L -18 65 M 0 70 L -15 85" stroke="#FFFFFF" stroke-width="3"/>
+        </g>
+        
+        <!-- 右羽毛 -->
+        <g transform="translate(110, 160)">
+            <path d="M0 0 Q 25 30 0 80 Q -25 30 0 0 Z" fill="url(#dreamGradient)" stroke="none"/>
+            <path d="M0 10 L 0 70" stroke="#FFFFFF" stroke-width="3"/>
+            <path d="M0 20 L 10 30 M 0 35 L 12 45 M 0 50 L 10 60" stroke="#FFFFFF" stroke-width="3"/>
+            <path d="M0 20 L -10 30 M 0 35 L -12 45 M 0 50 L -10 60" stroke="#FFFFFF" stroke-width="3"/>
+        </g>
+    </g>
+</svg>
